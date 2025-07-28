@@ -9,15 +9,15 @@ import lombok.*;
 //<<< DDD / Domain Event
 @Data
 @ToString
-public class 대화저장됨 extends AbstractEvent {
+public class chatSave extends AbstractEvent {
 
     private Long id;
 
-    public 대화저장됨(Chatbot aggregate) {
+    public chatSave(Chatbot aggregate) {
         super(aggregate);
     }
 
-    public 대화저장됨() {
+    public chatSave() {
         super();
     }
 }
