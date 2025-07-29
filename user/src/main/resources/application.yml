@@ -47,11 +47,11 @@ logging:
 
 api:
   url: 
-    user: localhost:0 
+    user: localhost:8084
     
 
 server:
-  port: 0
+  port: 8084
 
 ---
 

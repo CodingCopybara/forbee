@@ -35,7 +35,7 @@ private String name;
 private String password;    
     
     
-private role role;
+private Role role;
 
 
     public static UserRepository repository(){
@@ -84,11 +84,11 @@ private role role;
         //implement business logic here:
         
 
-        forbee.external.UserQuery userQuery = new forbee.external.UserQuery();
-        // userQuery.set??()        
-          = UserApplication.applicationContext
-            .getBean(forbee.external.Service.class)
-            .user(userQuery);
+        // forbee.external.UserQuery userQuery = new forbee.external.UserQuery();
+        // // userQuery.set??()        
+        //   = UserApplication.applicationContext
+        //     .getBean(forbee.external.Service.class)
+        //     .user(userQuery);
 
         SignedIn signedIn = new SignedIn(this);
         signedIn.publishAfterCommit();

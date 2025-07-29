@@ -23,7 +23,7 @@ public class UserController {
     @RequestMapping(value = "/users/{id}/editinfo",
         method = RequestMethod.PUT,
         produces = "application/json;charset=UTF-8")
-    public User editInfo(@PathVariable(value = "id")  id, @RequestBody EditInfoCommand editInfoCommand, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public User editInfo(@PathVariable(value = "id") Long id, @RequestBody EditInfoCommand editInfoCommand, HttpServletRequest request, HttpServletResponse response) throws Exception {
             System.out.println("##### /user/editInfo  called #####");
             Optional<User> optionalUser = userRepository.findById(id);
             
@@ -38,7 +38,7 @@ public class UserController {
     @RequestMapping(value = "/users/{id}/withdrawmember",
         method = RequestMethod.PUT,
         produces = "application/json;charset=UTF-8")
-    public User withdrawMember(@PathVariable(value = "id")  id, @RequestBody WithdrawMemberCommand withdrawMemberCommand, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public User withdrawMember(@PathVariable(value = "id") Long id, @RequestBody WithdrawMemberCommand withdrawMemberCommand, HttpServletRequest request, HttpServletResponse response) throws Exception {
             System.out.println("##### /user/withdrawMember  called #####");
             Optional<User> optionalUser = userRepository.findById(id);
             
