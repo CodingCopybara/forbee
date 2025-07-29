@@ -1,17 +1,19 @@
+server:
+  port: 8080
+
 spring:
-  config:
-    activate:
-      on-profile: default
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
+  application:
+    name: user
+---
+
+spring:
+  profiles: default
   jpa:
     properties:
       hibernate:
         show_sql: true
         format_sql: true
+        implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     stream:
       kafka:
@@ -44,9 +46,9 @@ logging:
     org.springframework.cloud: debug
 
 api:
-  url:
-    user: localhost:0
-
+  url: 
+    user: localhost:0 
+    
 
 server:
   port: 0
@@ -54,19 +56,13 @@ server:
 ---
 
 spring:
-  config:
-    activate:
-      on-profile: docker
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
+  profiles: docker
   jpa:
     properties:
       hibernate:
         show_sql: true
         format_sql: true
+        implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     stream:
       kafka:
@@ -90,7 +86,7 @@ spring:
           contentType: application/json
 
 api:
-  url:
-    user:8080
-
+  url: 
+    user: user:8080 
+    
 

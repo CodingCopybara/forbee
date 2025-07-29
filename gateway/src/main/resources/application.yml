@@ -1,84 +1,63 @@
-server:
+server:
   port: 8088
 
 ---
 
-
-keycloak-client:
-  server-url: http://localhost:9090
-  realm: master
-
 spring:
-  config:
-    activate:
-      on-profile: default
+  profiles: default
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8090/.well-known/jwks.json
   cloud:
     gateway:
-      default-filters:
-        - TokenRelay 
       routes:
-        - id: community
-          uri: http://localhost:8082
-          predicates:
-            - Path=/posts/**, /comments/**, //**, //**,  
-        - id: tree
-          uri: http://localhost:0
-          predicates:
-            - Path=/plants/**,  
-        - id: user
-          uri: http://localhost:0
-          predicates:
-            - Path=/users/**, /memberRequestLists/**,  
-        - id: dashboard
-          uri: http://localhost:0
-          predicates:
+         - id: community
+           uri: http://localhost:8082
+           predicates:
+            - Path=/posts/**/comments/**//**//** 
+         - id: tree
+           uri: http://localhost:0
+           predicates:
+            - Path=/plants/** 
+         - id: user
+           uri: http://localhost:0
+           predicates:
+            - Path=/users/**/memberRequestLists/** 
+         - id: dashboard
+           uri: http://localhost:0
+           predicates:
             - Path= /maps/**
-        - id: chatbot
-          uri: http://localhost:0
-          predicates:
-            - Path=/chatbots/**,  
-        - id: ai
-          uri: http://localhost:0
-          predicates:
-            - Path=//**, //**,  
-        - id: frontend
-          uri: http://localhost:8080
-          predicates:
-            - Path=/**
+         - id: chatbot
+           uri: http://localhost:0
+           predicates:
+            - Path=/chatbots/** 
+         - id: ai
+           uri: http://localhost:0
+           predicates:
+            - Path=//**//** 
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOriginPatterns:
+            allowedOrigins:
               - "*"
             allowedMethods:
               - "*"
             allowedHeaders:
               - "*"
             allowCredentials: true
-  security:
-    oauth2:
-      client:
-        provider:
-          keycloak:
-            issuer-uri: ${keycloak-client.server-url}/realms/${keycloak-client.realm}
-            user-name-attribute: preferred_username
-        registration:
-          keycloak:
-            client-id: "<client-id>"
-            client-secret: 
-            redirect-uri: "gateway-path/login/oauth2/code/client-name"
-            authorization-grant-type: authorization_code
-            scope: openid
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${keycloak-client.server-url}/realms/${keycloak-client.realm}/protocol/openid-connect/certs
+
 
 ---
 
 spring:
-  config:
-    activate:
-      on-profile: docker
+  profiles: docker
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://oauth:8080/.well-known/jwks.json
   cloud:
     gateway:
       routes:
@@ -116,23 +95,6 @@ spring:
             allowedHeaders:
               - "*"
             allowCredentials: true
-  security:
-    oauth2:
-      client:
-        provider:
-          keycloak:
-            issuer-uri: ${keycloak-client.server-url}/realms/${keycloak-client.realm}
-            user-name-attribute: preferred_username
-        registration:
-          keycloak:
-            client-id: "<client-id>"
-            client-secret: 
-            redirect-uri: "{baseUrl}/login/oauth2/code/keycloak"
-            authorization-grant-type: authorization_code
-            scope: openid
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${keycloak-client.server-url}/realms/${keycloak-client.realm}/protocol/openid-connect/certs
 
 server:
   port: 8080
