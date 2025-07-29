@@ -164,9 +164,9 @@ public class OAuth2AuthorizationServerConfig
                         authentication.getOAuth2Request().getGrantType()
                     )
                 ) {
-                    User user = (User) authentication.getPrincipal();
-                    additionalInfo.put("nickname", user.getNickName());
-                    additionalInfo.put("address", user.getAddress());
+                    // User user = (User) authentication.getPrincipal(); // User entity no longer contains nickname/address
+                    // additionalInfo.put("nickname", user.getNickName());
+                    // additionalInfo.put("address", user.getAddress());
                 }
 
                 //                String clientId = authentication.getOAuth2Request().getClientId();

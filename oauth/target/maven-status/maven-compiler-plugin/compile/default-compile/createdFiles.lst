@@ -1,0 +1,11 @@
+com/example/template/service/CustomUserDetailsService.class
+com/example/template/entity/User.class
+com/example/template/client/UserClient$UserProfileRequest.class
+com/example/template/AuthorizationServerApplication.class
+com/example/template/client/UserClient.class
+com/example/template/controller/AuthController.class
+com/example/template/config/JwkSetEndpointConfiguration.class
+com/example/template/config/WebSecurityConfig.class
+com/example/template/repository/UserRepository.class
+com/example/template/config/AuthServerConfig.class
+com/example/template/config/OAuth2AuthorizationServerConfig.class

@@ -1,0 +1,97 @@
+Picked up JAVA_TOOL_OPTIONS: -XX:+UseContainerSupport -XX:ActiveProcessorCount=2
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.example:boot-camp-oauth >---------------------
+[INFO] Building boot-camp-oauth 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:2.3.1.RELEASE:run (default-cli) > test-compile @ boot-camp-oauth >>>
+[INFO] 
+[INFO] --- resources:3.1.0:resources (default-resources) @ boot-camp-oauth ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Copying 1 resource
+[INFO] Copying 1 resource
+[INFO] 
+[INFO] --- compiler:3.8.1:compile (default-compile) @ boot-camp-oauth ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 10 source files to /workspace/forbee/oauth/target/classes
+[INFO] /workspace/forbee/oauth/src/main/java/com/example/template/config/WebSecurityConfig.java: Some input files use or override a deprecated API.
+[INFO] /workspace/forbee/oauth/src/main/java/com/example/template/config/WebSecurityConfig.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- resources:3.1.0:testResources (default-testResources) @ boot-camp-oauth ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /workspace/forbee/oauth/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.8.1:testCompile (default-testCompile) @ boot-camp-oauth ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] <<< spring-boot:2.3.1.RELEASE:run (default-cli) < test-compile @ boot-camp-oauth <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:2.3.1.RELEASE:run (default-cli) @ boot-camp-oauth ---
+[INFO] Attaching agents: []
+Picked up JAVA_TOOL_OPTIONS: -XX:+UseContainerSupport -XX:ActiveProcessorCount=2
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::        (v2.3.1.RELEASE)
+
+2025-07-29 08:36:25.181  INFO 107936 --- [           main] c.e.t.AuthorizationServerApplication     : No active profile set, falling back to default profiles: default
+2025-07-29 08:36:26.334  INFO 107936 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFERRED mode.
+2025-07-29 08:36:26.392  INFO 107936 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 49ms. Found 1 JPA repository interfaces.
+2025-07-29 08:36:26.710  INFO 107936 --- [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=30be4f1d-9636-353c-b777-e91453d74dc6
+2025-07-29 08:36:26.946  INFO 107936 --- [           main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@3cc79c02' of type [org.springframework.security.oauth2.provider.expression.OAuth2MethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2025-07-29 08:36:26.954  INFO 107936 --- [           main] trationDelegate$BeanPostProcessorChecker : Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2025-07-29 08:36:27.264  INFO 107936 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8090 (http)
+2025-07-29 08:36:27.272  INFO 107936 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-07-29 08:36:27.272  INFO 107936 --- [           main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.36]
+2025-07-29 08:36:27.374  INFO 107936 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-07-29 08:36:27.375  INFO 107936 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2179 ms
+2025-07-29 08:36:27.840  INFO 107936 --- [           main] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'applicationTaskExecutor'
+2025-07-29 08:36:27.883  INFO 107936 --- [         task-1] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-29 08:36:27.928  WARN 107936 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-07-29 08:36:27.934  INFO 107936 --- [         task-1] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 5.4.17.Final
+2025-07-29 08:36:28.080  INFO 107936 --- [         task-1] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.1.0.Final}
+2025-07-29 08:36:28.179  INFO 107936 --- [         task-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-07-29 08:36:28.377  INFO 107936 --- [         task-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-07-29 08:36:28.396  INFO 107936 --- [         task-1] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.H2Dialect
+2025-07-29 08:36:28.413  INFO 107936 --- [           main] DeferredRepositoryInitializationListener : Triggering deferred initialization of Spring Data repositories…
+Hibernate: create table users (id bigint generated by default as identity, email varchar(255) not null, password varchar(255) not null, primary key (id))
+Hibernate: alter table users drop constraint if exists UK_6dotkott2kjsp8vw4d0m25fb7
+Hibernate: alter table users add constraint UK_6dotkott2kjsp8vw4d0m25fb7 unique (email)
+2025-07-29 08:36:28.941  INFO 107936 --- [         task-1] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2025-07-29 08:36:28.949  INFO 107936 --- [         task-1] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-29 08:36:29.165  INFO 107936 --- [           main] DeferredRepositoryInitializationListener : Spring Data repositories initialized!
+2025-07-29 08:36:29.956  INFO 107936 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: Ant [pattern='/css/**'], []
+2025-07-29 08:36:29.956  INFO 107936 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: Ant [pattern='/vendor/**'], []
+2025-07-29 08:36:29.956  INFO 107936 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: Ant [pattern='/js/**'], []
+2025-07-29 08:36:29.956  INFO 107936 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: Ant [pattern='/favicon*/**'], []
+2025-07-29 08:36:29.956  INFO 107936 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: Ant [pattern='/img/**'], []
+2025-07-29 08:36:29.956  INFO 107936 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: Ant [pattern='/.well-known/jwks.json'], []
+2025-07-29 08:36:30.030  INFO 107936 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: OrRequestMatcher [requestMatchers=[Ant [pattern='/oauth/token'], Ant [pattern='/oauth/token_key'], Ant [pattern='/oauth/check_token']]], [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@42f2cae8, org.springframework.security.web.context.SecurityContextPersistenceFilter@60e80279, org.springframework.security.web.header.HeaderWriterFilter@62aee901, org.springframework.security.web.authentication.logout.LogoutFilter@4e343265, org.springframework.security.web.authentication.www.BasicAuthenticationFilter@16890f00, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@6074d638, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@e5c52fa, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@3bbc47c9, org.springframework.security.web.session.SessionManagementFilter@3bc3d70e, org.springframework.security.web.access.ExceptionTranslationFilter@1ce57bbb, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@38445703]
+2025-07-29 08:36:30.037  INFO 107936 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: any request, [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@706c062e, org.springframework.security.web.context.SecurityContextPersistenceFilter@fd0e118, org.springframework.security.web.header.HeaderWriterFilter@74844216, org.springframework.web.filter.CorsFilter@5feff876, org.springframework.security.web.authentication.logout.LogoutFilter@4c3fcbe7, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@62f6185a, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@34b462e0, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@10ec4721, org.springframework.security.web.session.SessionManagementFilter@5b0575d0, org.springframework.security.web.access.ExceptionTranslationFilter@56976b8b, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@7a522157]
+2025-07-29 08:36:30.068  WARN 107936 --- [           main] o.s.c.n.a.ArchaiusAutoConfiguration      : No spring.application.name found, defaulting to 'application'
+2025-07-29 08:36:30.071  WARN 107936 --- [           main] c.n.c.sources.URLConfigurationSource     : No URLs will be polled as dynamic configuration sources.
+2025-07-29 08:36:30.071  INFO 107936 --- [           main] c.n.c.sources.URLConfigurationSource     : To enable URLs as dynamic configuration sources, define System property archaius.configurationSource.additionalUrls or make config.properties available on classpath.
+2025-07-29 08:36:30.074  WARN 107936 --- [           main] c.n.c.sources.URLConfigurationSource     : No URLs will be polled as dynamic configuration sources.
+2025-07-29 08:36:30.074  INFO 107936 --- [           main] c.n.c.sources.URLConfigurationSource     : To enable URLs as dynamic configuration sources, define System property archaius.configurationSource.additionalUrls or make config.properties available on classpath.
+2025-07-29 08:36:30.770  WARN 107936 --- [           main] s.o.SpringCloudSecurityAutoConfiguration : All Spring Cloud Security modules and starters are deprecated. They will be moved to individual projects in the next major release.
+2025-07-29 08:36:30.778  INFO 107936 --- [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoint(s) beneath base path '/actuator'
+2025-07-29 08:36:30.878  INFO 107936 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8090 (http) with context path ''
+2025-07-29 08:36:30.887  INFO 107936 --- [           main] DeferredRepositoryInitializationListener : Triggering deferred initialization of Spring Data repositories…
+2025-07-29 08:36:30.888  INFO 107936 --- [           main] DeferredRepositoryInitializationListener : Spring Data repositories initialized!
+2025-07-29 08:36:30.898  INFO 107936 --- [           main] c.e.t.AuthorizationServerApplication     : Started AuthorizationServerApplication in 6.469 seconds (JVM running for 6.85)
+2025-07-29 08:36:31.556  INFO 107936 --- [nio-8090-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-07-29 08:36:31.557  INFO 107936 --- [nio-8090-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2025-07-29 08:36:31.569  INFO 107936 --- [nio-8090-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 12 ms
+2025-07-29 08:37:56.483  INFO 107936 --- [extShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-29 08:37:56.484  INFO 107936 --- [extShutdownHook] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
+2025-07-29 08:37:56.485  INFO 107936 --- [extShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-07-29 08:37:56.487  INFO 107936 --- [extShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE

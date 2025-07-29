@@ -1,13 +1,9 @@
 package com.example.template.config;
 
-import com.example.template.service.UserDetailsServiceImpl;
-import javax.annotation.PostConstruct;
+import com.example.template.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -15,10 +11,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.context.WebApplicationContext;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.CorsUtils;
@@ -30,30 +25,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
-    private WebApplicationContext applicationContext;
-
-    private UserDetailsServiceImpl userDetailsService;
+    private CustomUserDetailsService userDetailsService;
 
     @Autowired
     PasswordEncoder passwordEncoder;
-
-    private final AuthenticationManager authenticationManager;
-
-    @PostConstruct
-    public void completeSetup() {
-        userDetailsService =
-            applicationContext.getBean(UserDetailsServiceImpl.class);
-    }
-
-    /**
-     * 생성자에 @Lazy 를 쓰는 이유는 Autowired 시 bean 이 등록된 후에 실행을 하기 위해서 사용되어진다.
-     * @param authenticationManager
-     */
-    public WebSecurityConfig(
-        @Lazy AuthenticationManager authenticationManager
-    ) {
-        this.authenticationManager = authenticationManager;
-    }
 
     @Override
     public void configure(WebSecurity web) throws Exception {
@@ -95,6 +70,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .cors()
             .and()
             .authorizeRequests()
+            .antMatchers("/auth/signup").permitAll() // 회원가입 엔드포인트 허용
+            .antMatchers("/oauth2/authorize").permitAll() // OAuth2 인가 엔드포인트 허용
+            .antMatchers("/oauth2/token").permitAll() // OAuth2 토큰 엔드포인트 허용
             .antMatchers("/login")
             .permitAll()
             .requestMatchers(CorsUtils::isPreFlightRequest)
