@@ -1,23 +1,26 @@
 package forbee.infra;
 
-import forbee.domain.*;
-import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-//<<< Clean Arch / Inbound Adaptor
-
-@RestController
-// @RequestMapping(value="/chatbots")
-@Transactional
+@Controller
 public class ChatbotController {
 
     @Autowired
-    ChatbotRepository chatbotRepository;
+    private OpenAIService ai;
+
+    @GetMapping("/")
+    public String index() {
+        return "index";
+    }
+
+    @PostMapping("/ask")
+    public String ask(@RequestParam("question") String question, Model model) {
+        String answer = ai.ask(question);
+        model.addAttribute("question", question);
+        model.addAttribute("answer", answer);
+        return "index";
+    }
 }
-//>>> Clean Arch / Inbound Adaptor

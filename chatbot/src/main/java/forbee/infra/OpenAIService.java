@@ -1,45 +1,31 @@
 package forbee.infra;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import okhttp3.*;
+import com.theokanning.openai.service.OpenAiService;
+import com.theokanning.openai.completion.chat.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class OpenAIService {
+    private final OpenAiService client;
 
-    @Value("${openai.api-key}")
-    private String apiKey;
+    public OpenAIService(@Value("${OPENAI_API_KEY}") String apiKey) {
+        this.client = new OpenAiService(apiKey);
+    }
 
-    private final OkHttpClient client = new OkHttpClient();
-    private final ObjectMapper mapper = new ObjectMapper();
-
-    public String ask(String question) throws IOException {
-        MediaType JSON = MediaType.get("application/json; charset=utf-8");
-        String payload = mapper.writeValueAsString(
-            Map.of(
-                "model", "gpt-3.5-turbo",
-                "messages", List.of(
-                    Map.of("role","system","content","당신은 양봉 전문가입니다."),
-                    Map.of("role","user","content",question)
-                )
-            )
-        );
-        RequestBody body = RequestBody.create(payload, JSON);
-        Request req = new Request.Builder()
-            .url("https://api.openai.com/v1/chat/completions")
-            .header("Authorization","Bearer " + apiKey)
-            .post(body)
+    public String ask(String prompt) {
+        ChatCompletionRequest req = ChatCompletionRequest.builder()
+            .model("gpt-3.5-turbo")
+            .messages(List.of(
+                new ChatMessage("system", "당신은 양봉 전문가입니다. 초보자도 이해하기 쉽게 설명해 주세요."),
+                new ChatMessage("user", prompt)))
+            .maxTokens(700)
+            .temperature(0.7)
             .build();
 
-        try (Response resp = client.newCall(req).execute()) {
-            JsonNode root = mapper.readTree(resp.body().string());
-            return root.path("choices").get(0).path("message").path("content").asText();
-        }
+        ChatCompletionResult result = client.createChatCompletion(req);
+        return result.getChoices().get(0).getMessage().getContent().trim();
     }
 }
