@@ -1,0 +1,8 @@
+/workspace/forbee/oauth/src/main/java/com/example/template/config/JwkSetEndpointConfiguration.java
+/workspace/forbee/oauth/src/main/java/com/example/template/entity/User.java
+/workspace/forbee/oauth/src/main/java/com/example/template/repository/UserRepository.java
+/workspace/forbee/oauth/src/main/java/com/example/template/controller/UserController.java
+/workspace/forbee/oauth/src/main/java/com/example/template/config/WebSecurityConfig.java
+/workspace/forbee/oauth/src/main/java/com/example/template/AuthorizationServerApplication.java
+/workspace/forbee/oauth/src/main/java/com/example/template/service/UserDetailsServiceImpl.java
+/workspace/forbee/oauth/src/main/java/com/example/template/config/OAuth2AuthorizationServerConfig.java

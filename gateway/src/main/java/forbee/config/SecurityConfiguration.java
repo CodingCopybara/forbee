@@ -24,7 +24,8 @@ public class SecurityConfiguration {
             .anyExchange()
             .authenticated()
             .and()
-            .oauth2Login(); // to redirect to oauth2 login page.
+            .oauth2ResourceServer() // Add this line
+            .jwt(); // Add this line
 
         return http.build();
     }

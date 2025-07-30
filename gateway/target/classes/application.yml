@@ -5,39 +5,38 @@ server:
 
 spring:
   profiles: default
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8090/.well-known/jwks.json
   cloud:
     gateway:
-#<<< API Gateway / Routes
       routes:
-        - id: community
-          uri: http://localhost:8082
-          predicates:
-            - Path=/posts/**, /comments/**, /undefined/**, /undefined/**, 
-        - id: tree
-          uri: http://localhost:0
-          predicates:
-            - Path=/plants/**, 
-        - id: user
-          uri: http://localhost:0
-          predicates:
-            - Path=/users/**, /memberRequestLists/**, 
-        - id: dashboard
-          uri: http://localhost:0
-          predicates:
-            - Path=, /maps/**
-        - id: chatbot
-          uri: http://localhost:0
-          predicates:
-            - Path=/chatbots/**, 
-        - id: ai
-          uri: http://localhost:0
-          predicates:
-            - Path=/undefined/**, /undefined/**, 
-        - id: frontend
-          uri: http://localhost:8080
-          predicates:
-            - Path=/**
-#>>> API Gateway / Routes
+         - id: community
+           uri: http://localhost:8082
+           predicates:
+            - Path=/posts/**/comments/**//**//** 
+         - id: tree
+           uri: http://localhost:0
+           predicates:
+            - Path=/plants/** 
+         - id: user
+           uri: http://localhost:0
+           predicates:
+            - Path=/users/**/memberRequestLists/** 
+         - id: dashboard
+           uri: http://localhost:0
+           predicates:
+            - Path= /maps/**
+         - id: chatbot
+           uri: http://localhost:0
+           predicates:
+            - Path=/chatbots/** 
+         - id: ai
+           uri: http://localhost:0
+           predicates:
+            - Path=//**//** 
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -54,37 +53,38 @@ spring:
 
 spring:
   profiles: docker
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://oauth:8080/.well-known/jwks.json
   cloud:
     gateway:
       routes:
         - id: community
           uri: http://community:8080
           predicates:
-            - Path=/posts/**, /comments/**, /undefined/**, /undefined/**, 
+            - Path=/posts/**/comments/**//**//** 
         - id: tree
           uri: http://tree:8080
           predicates:
-            - Path=/plants/**, 
+            - Path=/plants/** 
         - id: user
           uri: http://user:8080
           predicates:
-            - Path=/users/**, /memberRequestLists/**, 
+            - Path=/users/**/memberRequestLists/** 
         - id: dashboard
           uri: http://dashboard:8080
           predicates:
-            - Path=, 
+            - Path= /maps/**
         - id: chatbot
           uri: http://chatbot:8080
           predicates:
-            - Path=/chatbots/**, 
+            - Path=/chatbots/** 
         - id: ai
           uri: http://ai:8080
           predicates:
-            - Path=/undefined/**, /undefined/**, 
-        - id: frontend
-          uri: http://frontend:8080
-          predicates:
-            - Path=/**
+            - Path=//**//** 
       globalcors:
         corsConfigurations:
           '[/**]':

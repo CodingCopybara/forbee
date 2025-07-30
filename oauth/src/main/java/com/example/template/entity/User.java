@@ -15,6 +15,9 @@ public class User implements UserDetails {
     @Id
     private String username;
 
+    @Column(unique = true)
+    private String userIdentifier;
+
     @Column(length = 400)
     private String password;
 
@@ -59,6 +62,14 @@ public class User implements UserDetails {
 
     public void setNickName(String nickName) {
         this.nickName = nickName;
+    }
+
+    public String getUserIdentifier() {
+        return userIdentifier;
+    }
+
+    public void setUserIdentifier(String userIdentifier) {
+        this.userIdentifier = userIdentifier;
     }
 
     @Override
