@@ -2,10 +2,8 @@ package com.example.template.entity;
 
 import java.util.Collection;
 import javax.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 
 @Entity
@@ -15,28 +13,14 @@ public class User implements UserDetails {
     @Id
     private String username;
 
-    @Column(unique = true)
-    private String userIdentifier;
+    private Long userIdentifier;
 
     @Column(length = 400)
     private String password;
 
-    @Column
-    private String role;
-
-    // additional
-    private String nickName;
-    private String address;
-
-    @Transient
-    private Collection<? extends GrantedAuthority> authorities;
-
     private boolean accountNonExpired = true;
-
     private boolean accountNonLocked = true;
-
     private boolean credentialsNonExpired = true;
-
     private boolean enabled = true;
 
     @Override
@@ -48,27 +32,11 @@ public class User implements UserDetails {
         this.username = username;
     }
 
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getNickName() {
-        return nickName;
-    }
-
-    public void setNickName(String nickName) {
-        this.nickName = nickName;
-    }
-
-    public String getUserIdentifier() {
+    public Long getUserIdentifier() {
         return userIdentifier;
     }
 
-    public void setUserIdentifier(String userIdentifier) {
+    public void setUserIdentifier(Long userIdentifier) {
         this.userIdentifier = userIdentifier;
     }
 
@@ -81,23 +49,9 @@ public class User implements UserDetails {
         this.password = password;
     }
 
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return authorities;
-    }
-
-    public void setAuthorities(
-        Collection<? extends GrantedAuthority> authorities
-    ) {
-        this.authorities = authorities;
+        return AuthorityUtils.createAuthorityList("ROLE_USER");
     }
 
     @Override

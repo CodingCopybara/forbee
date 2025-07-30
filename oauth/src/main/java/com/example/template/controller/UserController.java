@@ -10,8 +10,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.UUID; // userIdentifier 생성을 위해 추가
+// import java.util.UUID; // userIdentifier 생성을 위해 추가 (이제 Long이므로 사용 안함)
 
 @RestController
 @RequestMapping("/api/users")
@@ -23,16 +24,18 @@ public class UserController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private final RestTemplate restTemplate = new RestTemplate(); // 추가
+
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody User registrationUser) {
-        if (userRepository.findByUsername(registrationUser.getUsername()) != null) {
+    public ResponseEntity<String> registerUser(@RequestBody RegistrationRequestDto registrationDto) {
+        if (userRepository.findByUsername(registrationDto.getEmail()) != null) { // 변경
             return new ResponseEntity<>("Email already registered!", HttpStatus.BAD_REQUEST);
         }
 
-        // userIdentifier가 제공되지 않으면 UUID로 자동 생성
-        String userIdentifier = registrationUser.getUserIdentifier();
-        if (userIdentifier == null || userIdentifier.isEmpty()) {
-            userIdentifier = UUID.randomUUID().toString();
+        // userIdentifier가 제공되지 않으면 System.currentTimeMillis()로 자동 생성
+        Long userIdentifier = registrationDto.getUserIdentifier();
+        if (userIdentifier == null) {
+            userIdentifier = System.currentTimeMillis();
         } else {
             // userIdentifier가 이미 존재하는지 확인 (선택 사항, 필요에 따라 추가)
             if (userRepository.findByUserIdentifier(userIdentifier) != null) {
@@ -41,15 +44,30 @@ public class UserController {
         }
 
         User newUser = new User();
-        newUser.setUsername(registrationUser.getUsername());
-        newUser.setPassword(passwordEncoder.encode(registrationUser.getPassword()));
+        newUser.setUsername(registrationDto.getEmail()); // 변경
+        newUser.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
         newUser.setUserIdentifier(userIdentifier); // userIdentifier 설정
-        newUser.setRole("USER"); // 기본 역할 설정
 
         userRepository.save(newUser);
 
-        // TODO: user 서비스에 나머지 사용자 정보(역할, 이름 등)를 저장하는 로직 추가
-        // 예: userClient.createUserProfile(userIdentifier, registrationUser.getNickName(), registrationUser.getAddress(), registrationUser.getRole());
+        // user 서비스에 사용자 프로필 정보 전송
+        try {
+            // user 서비스로 전송할 DTO 생성
+            UserProfileDto userProfileDto = new UserProfileDto();
+            userProfileDto.setUserIdentifier(newUser.getUserIdentifier());
+            userProfileDto.setUsername(newUser.getUsername()); // username으로 사용
+            userProfileDto.setName(registrationDto.getName()); // 이름 추가
+
+            // user 서비스의 /users/signup 엔드포인트로 POST 요청
+            String userServiceUrl = "http://localhost:8084/users/signup"; // user 서비스의 실제 주소로 변경
+            restTemplate.postForEntity(userServiceUrl, userProfileDto, String.class);
+
+        } catch (Exception e) {
+            // user 서비스로의 전송 실패 시 처리 (로그 기록 등)
+            e.printStackTrace();
+            // 사용자 등록은 성공했으므로 201 응답을 유지하거나, 500 오류를 반환할 수 있습니다.
+            // 여기서는 일단 201을 유지합니다.
+        }
 
         return new ResponseEntity<>("User registered successfully with identifier: " + userIdentifier, HttpStatus.CREATED);
     }

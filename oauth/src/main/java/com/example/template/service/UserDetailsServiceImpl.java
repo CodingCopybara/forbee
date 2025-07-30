@@ -36,10 +36,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             );
         }
 
-        user.setAuthorities(
-            AuthorityUtils.createAuthorityList(String.valueOf(user.getRole()))
-        );
-
         return user;
     }
 }

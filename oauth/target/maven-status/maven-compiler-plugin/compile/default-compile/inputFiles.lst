@@ -4,5 +4,7 @@
 /workspace/forbee/oauth/src/main/java/com/example/template/controller/UserController.java
 /workspace/forbee/oauth/src/main/java/com/example/template/config/WebSecurityConfig.java
 /workspace/forbee/oauth/src/main/java/com/example/template/AuthorizationServerApplication.java
+/workspace/forbee/oauth/src/main/java/com/example/template/controller/RegistrationRequestDto.java
 /workspace/forbee/oauth/src/main/java/com/example/template/service/UserDetailsServiceImpl.java
 /workspace/forbee/oauth/src/main/java/com/example/template/config/OAuth2AuthorizationServerConfig.java
+/workspace/forbee/oauth/src/main/java/com/example/template/controller/UserProfileDto.java

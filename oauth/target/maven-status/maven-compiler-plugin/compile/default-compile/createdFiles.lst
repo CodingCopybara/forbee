@@ -1,5 +1,7 @@
 com/example/template/service/UserDetailsServiceImpl.class
 com/example/template/controller/UserController.class
+com/example/template/controller/RegistrationRequestDto.class
+com/example/template/controller/UserProfileDto.class
 com/example/template/entity/User.class
 com/example/template/config/JwkSetEndpointConfiguration.class
 com/example/template/config/WebSecurityConfig.class

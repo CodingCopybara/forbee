@@ -53,13 +53,23 @@ public class UserController {
     @RequestMapping(value = "/users/signup",
             method = RequestMethod.POST,
             produces = "application/json;charset=UTF-8")
-    public User signUp(HttpServletRequest request, HttpServletResponse response, 
-        @RequestBody SignUpCommand signUpCommand) throws Exception {
-            System.out.println("##### /user/signUp  called #####");
-            User user = new User();
-            user.signUp(signUpCommand);
-            userRepository.save(user);
-            return user;
+    public User signUp(HttpServletRequest request, HttpServletResponse response,
+        @RequestBody User userProfile) throws Exception { // SignUpCommand 대신 User 객체를 받음
+            System.out.println("##### /user/signUp (from oauth) called #####");
+
+            // userIdentifier가 이미 존재하는지 확인
+            if (userRepository.findById(userProfile.getUserIdentifier()).isPresent()) {
+                throw new Exception("User profile with this identifier already exists!");
+            }
+            // email이 이미 존재하는지 확인
+            if (userRepository.findByUsername(userProfile.getUsername()) != null) {
+                throw new Exception("User profile with this username already exists!");
+            }
+
+            // 받은 userProfile 객체를 그대로 저장
+            userProfile.setName(userProfile.getName()); // name 필드 설정
+            userRepository.save(userProfile);
+            return userProfile;
     }
     @RequestMapping(value = "/users/signin",
             method = RequestMethod.POST,
