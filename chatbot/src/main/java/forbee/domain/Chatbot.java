@@ -14,7 +14,8 @@ import lombok.Data;
 @Table(name = "chatbot_table")
 @Data
 public class Chatbot {
-    @Id @GeneratedValue(strategy = GenerationType.AUTO)
+    @Id 
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     private Date requestTime;
@@ -41,4 +42,7 @@ public class Chatbot {
         return chatbotRepository;
     }
 }
+
+
+
 //>>> DDD / Aggregate Root

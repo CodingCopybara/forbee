@@ -46,9 +46,6 @@ logging:
     org.springframework.cloud: debug
 
 
-server:
-  port: 0
-
 ---
 
 spring:

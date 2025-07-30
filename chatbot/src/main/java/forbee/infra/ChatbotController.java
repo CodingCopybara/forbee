@@ -17,46 +17,32 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 
 
-@RestController
-@RequestMapping("/chatbots")
+@RestController @RequestMapping("/chatbots")
 public class ChatbotController {
+  private final ChatbotRepository repo;
+  private final WebClient chatClient;
 
-    private final ChatbotRepository chatbotRepository;
-    private final WebClient chatClient;
+  public ChatbotController(ChatbotRepository repo,
+                           @Qualifier("chatClient") WebClient client){
+    this.repo = repo; this.chatClient = client;
+  }
 
-    @Autowired
-    public ChatbotController(
-        ChatbotRepository chatbotRepository,
-        @Qualifier("chatClient") WebClient chatClient
-    ) {
-        this.chatbotRepository = chatbotRepository;
-        this.chatClient = chatClient;
-    }
+  @PostMapping("/ask")
+  public Chatbot ask(@RequestBody Map<String,String> payload){
+    String q = payload.get("question");
 
-    @PostMapping("/ask")
-    public Chatbot ask(@RequestBody Map<String, String> payload) {
-        String question = payload.get("question");
+    // 1) Python FastAPI 호출
+    ChatResponse resp = chatClient.post().uri("/chat")
+      .bodyValue(Map.of("question",q))
+      .retrieve()
+      .bodyToMono(ChatResponse.class)
+      .block();
 
-        // Python 마이크로서비스 호출
-        ChatResponse chatResp = chatClient.post()
-            .uri("/chat")
-            .bodyValue(Map.of("question", question))
-            .retrieve()
-            .bodyToMono(ChatResponse.class)
-            .block();
-
-        String answer = chatResp.getAnswer();
-
-        // 엔티티에 저장
-        Chatbot chatbot = new Chatbot();
-        chatbot.setRequestTime(new Date());
-        chatbot.setRequest(new Comment(question, new Date()));
-        chatbot.setResponse(new Comment(answer, new Date()));
-        return chatbotRepository.save(chatbot);
-    }
-
-    @GetMapping
-    public List<Chatbot> listAll() {
-        return chatbotRepository.findAll();
-    }
+    // 2) 엔티티에 조립·저장
+    Chatbot cb = new Chatbot();
+    cb.setRequestTime(new Date());
+    cb.setRequest(new Comment(q,new Date()));
+    cb.setResponse(new Comment(resp.getAnswer(),new Date()));
+    return repo.save(cb);
+  }
 }
