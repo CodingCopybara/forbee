@@ -25,6 +25,10 @@ import ast
 from langchain.chains import LLMChain
 import re
 from dotenv import load_dotenv
+import pandas as pd
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import Chroma
+from langchain.docstore.document import Document
 
 # openAI key
 def load_api_keys(env_path="/workspace/forbee/ai/src/main/java/forbee/infra/.env"):
@@ -37,11 +41,10 @@ def load_api_keys(env_path="/workspace/forbee/ai/src/main/java/forbee/infra/.env
     else:
         print(f"[WARN] .env 파일을 찾을 수 없습니다: {env_path}")
 
-# state 선언
-
 load_api_keys()
 openai_key = os.getenv("OPENAI_API_KEY")
 
+# state 선언
 class DiseaseInfo(TypedDict):
     severity: int
     description: str
@@ -57,20 +60,15 @@ class DiseaseState(TypedDict, total=False):
     severity: Optional[int]          # 1, 2, 3, 4
     user_answers: Optional[List[str]]
     questions: Optional[List[str]]
-    conversation: Optional[List[Dict[str, str]]]  # {"role": "user/agent", "content": "..."}
+    #conversation: Optional[List[Dict[str, str]]]  # {"role": "user/agent", "content": "..."}
     prescription: Optional[str]
     disease_info: Optional[DiseaseInfo]
     next_step: Optional[str]         # "check_severity", "generate_questions" 등
 
 # RAG
 # csv -> vector DB
-import pandas as pd
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
-from langchain.docstore.document import Document
-
 # CSV 로드
-df = pd.read_csv("/content/drive/MyDrive/forbee/bee_disease_with_severity.csv")
+df = pd.read_csv("/workspace/forbee/ai/agent/bee_disease_with_severity.csv")
 
 # Document 리스트 생성 (RAG 검색용)
 docs = []
@@ -149,7 +147,7 @@ def get_disease_info(disease_name: str) -> dict:
     content = results[0].page_content
     return parse_disease_content(content)
 
-def check_severity(state: "DiseaseState") -> "DiseaseState":
+def check_severity(state: "DiseaseState") -> "Disease":
     """
     RAG에서 질병 정보(기본 심각도)를 가져와 confidence와 함께 최종 심각도 결정.
     """
@@ -181,6 +179,8 @@ def generate_prescription(state: "DiseaseState") -> "DiseaseState":
     """
     질병명 기반, RAG로 처방전 생성 -> 병원 연결 정보 제공
     """
+    #chain = get_conversation_chain(userId)
+    
     disease = state["disease_name"]
     disease_info = state["disease_info"]["raw"]
     severity = state["severity"]
@@ -203,24 +203,16 @@ def generate_prescription(state: "DiseaseState") -> "DiseaseState":
         """
     )
 
-    llm = ChatOpenAI(model_name = 'gpt-4o-mini' ,temperature = 0)
-    prescription_chain = LLMChain(llm=llm, prompt=prescription_prompt)
-    response = prescription_chain.run({
-        "disease": disease,
-        "disease_info": disease_info,
-        "severity": severity
-    }).strip()
-
-    conversation = state.get("conversation", [])
-    conversation.append({"role": "agent", "content": response})
+    #response = chain.run(prescription_prompt)
 
     state["prescription"] = response
-    state["conversation"] = conversation
 
     return state
 
 # 심각도 <= 2: 추가 정보 얻기 위해 질문
-def generate_question(state: DiseaseState) -> DiseaseState:
+def generate_question(state: DiseaseState, userId: int) -> DiseaseState:
+    chain = get_conversation_chain(userId)
+    
     disease_info = state["disease_info"]["raw"]
     disease_name = state["disease_name"]
     severity = state["severity"]
@@ -239,25 +231,13 @@ def generate_question(state: DiseaseState) -> DiseaseState:
         - 질문은 간결하게 하세요.
         """
     )
-    llm = ChatOpenAI(model_name = 'gpt-4o-mini' ,temperature = 0)
-    chain = LLMChain(prompt=prompt, llm=llm)
 
-    response = chain.run({
-        "disease_info" : disease_info,
-        "disease_name" : disease_name,
-        "severity" : severity
-    }).strip()
+    response = chain.run(prompt)
 
     questions = [q.strip("- ").strip() for q in response.split("\n") if q.strip()]
 
-    conversation = state.get("conversation", [])
-    conversation.append({"role": "agent", "content": "추가 질문:\n" + "\n".join(questions)})
-    return {
-        **state,
-        "questions": questions,
-        "user_answers": [],
-        "conversation": conversation
-    }
+    state["questions"] = questions
+    return state
 
 # 사용자 답변 저장 후 최종 처방전 생성
 def process_user_answers(state: "DiseaseState", answers: list[str]) -> "DiseaseState":
@@ -266,8 +246,8 @@ def process_user_answers(state: "DiseaseState", answers: list[str]) -> "DiseaseS
     심각도 재판단 후 다음 단계로 전환.
     """
     state["user_answers"] = answers
-    # 대화 기록에 추가
-    state.setdefault("conversation", []).append({"role": "user", "content": str(answers)})
+
+    #memory.chat_memory.add_user_message("답변: " + "; ".join(answers))
 
     return state
 
@@ -275,6 +255,8 @@ def generate_final_prescription(state: "DiseaseState") -> "DiseaseState":
     """
     질병명 + 사용자 응답 기반으로 최종 처방전 생성 -> 심각도 재판단 후 병원 연결 정보 제공
     """
+    #chain = get_conversation_chain(userId)
+
     disease = state["disease_name"]
     severity = state["severity"]
     answers = "; ".join(state.get("user_answers", []))
@@ -303,24 +285,13 @@ def generate_final_prescription(state: "DiseaseState") -> "DiseaseState":
         """
     )
 
-    llm = ChatOpenAI(model_name = 'gpt-4o-mini' ,temperature = 0)
-    prescription_chain = LLMChain(llm=llm, prompt=prescription_prompt)
-    response = prescription_chain.run({
-        "disease": disease,
-        "answers": answers,
-        "disease_info": disease_info,
-        "severity": severity
-    }).strip()
+    #response = chain.run(prescription_prompt)
 
     match = re.search(r"\[최종 심각도\]\s*:\s*(\d+)", response)
     final_severity = int(match.group(1)) if match else severity
 
-    conversation = state.get("conversation", [])
-    conversation.append({"role": "agent", "content": response})
-
     state["severity"] = final_severity
     state["prescription"] = response
-    state["conversation"] = conversation
 
     return state
 
@@ -343,21 +314,3 @@ def route_next(state: DiseaseState) -> Literal["generate_que", "generate_pre"]:
     return state["next_step"]
 
 workflow = StateGraph(DiseaseState)
-
-# 노드 추가 (각 단계 함수 연결)
-workflow.add_node("check", check_severity)
-workflow.add_node("generate_pre", generate_prescription)
-workflow.add_node("generate_que", generate_question)
-#workflow.add_node("process_answer", process_user_answers)
-workflow.add_node("generate_finalpre", generate_final_prescription)
-
-# 노드 연결 (흐름 정의)
-workflow.add_edge(START, "check")
-workflow.add_conditional_edges("check", route_next)
-workflow.add_edge("generate_que", END)
-#workflow.add_edge("process_answer", "generate_finalpre")
-workflow.add_edge("generate_finalpre", END)
-workflow.add_edge("generate_pre", END)
-
-# 그래프 컴파일
-graph = workflow.compile()
