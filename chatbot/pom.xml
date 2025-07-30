@@ -71,12 +71,10 @@
 			<scope>test</scope>
 		</dependency>
 
-
-		<!-- pom.xml -->
+  		<!-- Spring WebFlux: WebClient 사용을 위해 꼭 추가 -->
 		<dependency>
-  			<groupId>com.theokanning.openai-gpt3-java</groupId>
-  			<artifactId>service</artifactId>
-  			<version>0.13.0</version>
+    		<groupId>org.springframework.boot</groupId>
+    		<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 
 

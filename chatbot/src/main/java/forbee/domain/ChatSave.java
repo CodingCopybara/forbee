@@ -1,24 +1,21 @@
 package forbee.domain;
 
-import forbee.domain.*;
-import forbee.infra.AbstractEvent;
-import java.time.LocalDate;
-import java.util.*;
-import lombok.*;
+import lombok.Data;
+import javax.persistence.*;
+import java.time.LocalDateTime;
 
-//<<< DDD / Domain Event
 @Data
-@ToString
-public class ChatSave extends AbstractEvent {
-
+@Entity
+@Table(name = "ChatSave_table")
+public class ChatSave {
+    @Id @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    public ChatSave(Chatbot aggregate) {
-        super(aggregate);
-    }
+    private String userId;
+    private String role;
 
-    public ChatSave() {
-        super();
-    }
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    private LocalDateTime timestamp;
 }
-//>>> DDD / Domain Event

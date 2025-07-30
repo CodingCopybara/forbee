@@ -1,26 +1,14 @@
 package forbee.infra;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import forbee.config.kafka.KafkaProcessor;
-import forbee.domain.*;
-import javax.naming.NameParser;
-import javax.naming.NameParser;
-import javax.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.stereotype.Service;
+import forbee.infra.AbstractEvent;
+import org.springframework.stereotype.Component;
 
-//<<< Clean Arch / Inbound Adaptor
-@Service
-@Transactional
+@Component
 public class PolicyHandler {
-
-    @Autowired
-    ChatbotRepository chatbotRepository;
-
-    @StreamListener(KafkaProcessor.INPUT)
-    public void whatever(@Payload String eventString) {}
+    /**
+     * 도메인 이벤트를 수신하여 정책 검증/처리 로직을 수행
+     */
+    public void handle(AbstractEvent event) {
+        // TODO: 정책 처리 로직 구현
+    }
 }
-//>>> Clean Arch / Inbound Adaptor
