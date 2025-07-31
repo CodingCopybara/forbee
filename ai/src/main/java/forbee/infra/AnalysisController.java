@@ -1,4 +1,5 @@
-package forbee.controller;
+// -> Spring
+package forbee.infra;
 
 import forbee.domain.FastApiService;
 import forbee.domain.ImageAnalysisRequest;

@@ -7,12 +7,10 @@ from typing import List
 import json
 import logging
 
-
 import cv2
 import numpy as np
 import requests
 import torch
-from azure.storage.blob import BlobServiceClient
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
@@ -50,6 +48,7 @@ blob_service_client = None
 if not USE_LOCAL_STORAGE:
     logging.info("--- Running in CLOUD (Azure) mode. ---")
     try:
+        from azure.storage.blob import BlobServiceClient
         AZURE_CONNECTION_STRING = os.environ["AZURE_CONNECTION_STRING"]
         AZURE_CONTAINER_NAME = os.environ["AZURE_CONTAINER_NAME"]
         blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)

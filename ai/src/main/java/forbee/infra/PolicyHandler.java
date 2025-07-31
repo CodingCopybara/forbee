@@ -31,6 +31,10 @@ public class PolicyHandler {
             log.info("Received analysis result from Kafka: {}", result.toString());
 
             notificationService.sendAnalysisResultToUser(result.getUserId(), result);
+            log.info(
+                "Successfully sent analysis result to user {} via WebSocket.",
+                result.getUserId()
+            );
         };
     }
 }

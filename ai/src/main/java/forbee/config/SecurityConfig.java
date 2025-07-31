@@ -1,25 +1,84 @@
 package forbee.config;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.SecurityFilterChain;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+@EnableMethodSecurity(jsr250Enabled = true) // @EnableGlobalMethodSecurity is deprecated
+public class SecurityConfig {
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // Postman, httpie 등 외부 도구에서의 POST/PUT 요청을 위해 CSRF 비활성화
-            .csrf().disable()
-            .authorizeRequests()
-                .antMatchers("/ai/**", "/ws/**").permitAll()
-                // 그 외의 모든 요청은 인증을 요구함
-                .anyRequest().authenticated()
-            .and()
-            // 다른 엔드포인트를 위해 JWT 기반 인증은 계속 활성화
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt());
+            .cors(cors)
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )            
+            // 모든 요청을 허용하도록 설정 (개발 초기 단계, 필요에 따라 보안 규칙 강화)
+            .authorizeHttpRequests(authz ->
+                authz
+                    // Allow unauthenticated access to the WebSocket endpoint for connection handshake
+                    .requestMatchers("/ws/**")
+                    .permitAll()
+                    // Secure other endpoints, e.g., analysis requests
+                    // .requestMatchers("/ai/request-analysis").hasRole("USER")
+                    .anyRequest()
+                    .authenticated()
+            )
+            .oauth2ResourceServer(oauth2 ->
+                oauth2.jwt(jwt ->
+                    jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor())
+                )
+            );
+        return http.build();
+    }
+
+    private Converter<Jwt, ? extends AbstractAuthenticationToken> grantedAuthoritiesExtractor() {
+        JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
+        jwtConverter.setJwtGrantedAuthoritiesConverter(
+            new GrantedAuthoritiesExtractor()
+        );
+        return jwtConverter;
+    }
+
+    static class GrantedAuthoritiesExtractor
+        implements Converter<Jwt, Collection<GrantedAuthority>> {
+        private static final Logger log = LoggerFactory.getLogger(
+            GrantedAuthoritiesExtractor.class
+        );
+
+        public Collection<GrantedAuthority> convert(Jwt jwt) {
+            Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
+            if (realmAccess == null || realmAccess.get("roles") == null) {
+                return Collections.emptyList();
+            }
+            @SuppressWarnings("unchecked")
+            Collection<String> roles = (Collection<String>) realmAccess.get("roles");
+            log.debug("Extracting roles from JWT: {}", roles);
+            return roles
+                .stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .collect(Collectors.toList());
+        }
     }
 }

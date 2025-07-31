@@ -17,7 +17,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         config.enableSimpleBroker("/topic");
 
         // 클라이언트가 서버로 메시지를 보낼 때 사용할 경로의 시작점을 설정합니다.
-        // (지금 당장 사용하진 않습니다)
         config.setApplicationDestinationPrefixes("/app");
     }
 

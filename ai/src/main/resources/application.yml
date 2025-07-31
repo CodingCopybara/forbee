@@ -12,6 +12,7 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
+    open-in-view: false
   cloud:
     stream:
       kafka:
@@ -44,8 +45,7 @@ logging:
     org.springframework.cloud: debug
 
 fastapi:
-  # url: http://localhost:8000
-  url: http://172.26.159.102:8000
+  url: http://localhost:8000
 
 server:
   port: 8081
@@ -67,6 +67,7 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
+    open-in-view: false
   cloud:
     stream:
       kafka:

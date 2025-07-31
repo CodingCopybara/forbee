@@ -1,3 +1,4 @@
+// Spring -> FastAPI
 package forbee.infra;
 
 import forbee.domain.FastApiService;
@@ -26,18 +27,20 @@ public class FastApiServiceImpl implements FastApiService {
     private final WebClient webClient;
 
     public FastApiServiceImpl(@Value("${fastapi.url}") String fastApiUrl) {
-        // 타임아웃 설정을 위한 HttpClient 구성
         HttpClient httpClient = HttpClient
             .create()
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000) // 5초 연결 타임아웃
-            .responseTimeout(Duration.ofSeconds(30)) // AI 작업은 오래 걸릴 수 있으므로 30초 응답 타임아웃
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
+            .responseTimeout(Duration.ofSeconds(30))
             .doOnConnected(conn ->
                 conn.addHandlerLast(new ReadTimeoutHandler(30, TimeUnit.SECONDS))
             );
 
-        this.webClient = WebClient.builder()
-            .baseUrl(fastApiUrl)
-            .clientConnector(new ReactorClientHttpConnector(httpClient)).build();
+        this.webClient =
+            WebClient
+                .builder()
+                .baseUrl(fastApiUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
     }
 
     @Override
@@ -48,11 +51,15 @@ public class FastApiServiceImpl implements FastApiService {
             .body(Mono.just(request), ImageAnalysisRequest.class)
             .retrieve()
             .bodyToMono(Void.class)
-            // 재시도 로직 추가: 네트워크 I/O 오류 시 1초 간격으로 3번 재시도
             .retryWhen(
-                Retry.backoff(3, Duration.ofSeconds(1))
-                    .filter(throwable -> throwable instanceof java.io.IOException)
-                    .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> retrySignal.failure())
+                Retry
+                    .backoff(3, Duration.ofSeconds(1))
+                    .filter(throwable ->
+                        throwable instanceof java.io.IOException
+                    )
+                    .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) ->
+                        retrySignal.failure()
+                    )
             )
             .doOnError(error ->
                 log.error(
@@ -61,7 +68,6 @@ public class FastApiServiceImpl implements FastApiService {
                     error.getMessage()
                 )
             )
-            // 성공 시 아무것도 안함, 에러는 doOnError에서 처리하므로 비워둠
             .subscribe(null, error -> {});
     }
 }
