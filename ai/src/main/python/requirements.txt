@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+ultralytics
+torch
+# torchvision
+# azure-storage-blob
+opencv-python-headless
+matplotlib
+requests
+kafka-python
