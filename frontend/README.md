@@ -3,7 +3,7 @@
 1. Install node modules
 
 ```
-nvm install 20.17.0 // node-version change
+nvm install 20.18.1 // node-version change
 npm install
 ```
 

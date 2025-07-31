@@ -28,12 +28,12 @@ const router = createRouter({
       component: () => import('../components/ui/MemberRequestListGrid.vue'),
     },
     {
-      path: '/maps',
+      path: '/chatbot',
       component: () => import('../components/MapView.vue'),
     },
     {
-      path: '/chatbots',
-      component: () => import('../components/ui/ChatbotGrid.vue'),
+      path: '/mypage',
+      component: () => import('../components/ui/MyPage.vue'),
     },
   ],
 })
