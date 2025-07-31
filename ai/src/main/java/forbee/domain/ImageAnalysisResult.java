@@ -9,7 +9,9 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 public class ImageAnalysisResult {
-    private // 유저 ID
+
+    private String userId;
     private String imageUrl;
+    private String resultImagePath;
     private List<DetectedObject> detectedObjects;
 }

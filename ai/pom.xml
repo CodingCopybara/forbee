@@ -19,6 +19,7 @@
 		<spring-cloud.version>2020.0.3</spring-cloud.version>
 		<spring-cloud-stream.version>Germantown.SR1</spring-cloud-stream.version>
 		<cucumber.version>6.8.1</cucumber.version>
+		<lombok.version>1.18.32</lombok.version>
 	</properties>
 
 	<dependencies>
@@ -29,6 +30,10 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-rest</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -43,6 +48,10 @@
 			<artifactId>spring-boot-starter-hateoas</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
@@ -51,7 +60,7 @@
 		<dependency>
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
-				<version>1.18.12</version>
+				<!-- <version>1.18.12</version> -->
 				<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -98,6 +107,13 @@
 			<version>${cucumber.version}</version>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- For advanced retry mechanisms in WebClient -->
+		<dependency>
+			<groupId>io.projectreactor.addons</groupId>
+			<artifactId>reactor-extra</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<dependencyManagement>
@@ -124,6 +140,21 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<!-- 테스트 용으로 추가 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<!-- <version>3.8.1</version> -->
+				<configuration>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

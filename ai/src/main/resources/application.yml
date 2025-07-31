@@ -43,9 +43,13 @@ logging:
     org.hibernate.type: trace
     org.springframework.cloud: debug
 
+fastapi:
+  # url: http://localhost:8000
+  url: http://172.26.159.102:8000
 
 server:
-  port: 0
+  port: 8081
+  # port: 0
 
 ---
 
@@ -85,4 +89,5 @@ spring:
           destination: forbee
           contentType: application/json
 
-
+fastapi:
+  url: http://fastapi:8000

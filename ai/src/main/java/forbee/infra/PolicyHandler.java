@@ -1,48 +1,37 @@
 package forbee.infra;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import forbee.config.kafka.KafkaProcessor;
-import forbee.domain.*;
-import forbee.infra.NotificationService;  // 추가
-import javax.naming.NameParser;
-import javax.naming.NameParser;
-import javax.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.stereotype.Service;
+import forbee.domain.ImageAnalysisResult;
+import java.util.function.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
 
 //<<< Clean Arch / Inbound Adaptor
-@Service
-@Transactional
+@Configuration
 public class PolicyHandler {
 
-    @Autowired
-    Repository Repository;
-
+    private static final Logger log = LoggerFactory.getLogger(PolicyHandler.class);
     private final NotificationService notificationService;
 
-    @Autowired
     public PolicyHandler(NotificationService notificationService) {
-        this.notificationService = notificationService
+        this.notificationService = notificationService;
     }
 
-    // @StreamListener(KafkaProcessor.INPUT)
-    // public void whatever(@Payload String eventString) {}
+    @Bean
+    public Consumer<Message<ImageAnalysisResult>> eventIn() {
+        return message -> {
+            ImageAnalysisResult result = message.getPayload();
+            if (result == null) {
+                log.warn("Received a null payload from Kafka. Skipping.");
+                return;
+            }
 
-    @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverAnalysisCompleted_handle(@Payload ImageAnalysisResult analysisResult) {
-        if (analysisResult != null && analysisResult.getDetectedObjects() != null) {
-            System.out.println("Received Analysis Result via Kafka: " + analysisResult.toString());
-            // analysisResult.getDetectedObjects().forEach(object -> {
-            //     System.out.println("Detected object label: " + object.getLabel());
-            // });
-            notificationService.sendAnalysisResultToUser(
-                analysisResult.getUserId(),  // 유저 ID
-                analysisResult
-            );
-        }
+            log.info("Received analysis result from Kafka: {}", result.toString());
+
+            notificationService.sendAnalysisResultToUser(result.getUserId(), result);
+        };
     }
 }
 //>>> Clean Arch / Inbound Adaptor

@@ -7,8 +7,10 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 from langchain.chat_models import ChatOpenAI
 from dotenv import load_dotenv
+from cors_config import setup_cors
 
 app = FastAPI()
+setup_cors(app)
 
 load_dotenv("/workspace/forbee/ai/src/main/java/forbee/infra/.env")
 print("[INFO] OPENAI_API_KEY loaded:", os.getenv("OPENAI_API_KEY") is not None)
@@ -33,7 +35,7 @@ def get_user_memory(userId: str):
 
 @app.get("/")
 def read_root():
-    return {"안녕": "FastAPI"}
+    return {"message": "FastAPI is running"}
 
 # 나중에 YOLO에서 받아오는걸로 수정해야함
 @app.post("/diagnose")

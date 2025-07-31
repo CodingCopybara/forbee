@@ -2,6 +2,7 @@ package forbee.controller;
 
 import forbee.domain.FastApiService;
 import forbee.domain.ImageAnalysisRequest;
+import javax.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +21,7 @@ public class AnalysisController {
     }
 
     @PostMapping("/request-analysis")
-    public ResponseEntity<Void> requestAnalysis(@RequestBody ImageAnalysisRequest request) {
+    public ResponseEntity<Void> requestAnalysis(@Valid @RequestBody ImageAnalysisRequest request) {
         fastApiService.requestAnalysis(request);
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }

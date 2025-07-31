@@ -1,4 +1,4 @@
-package forbee.service;
+package forbee.infra;
 
 import forbee.domain.ImageAnalysisResult;
 import org.springframework.beans.factory.annotation.Autowired;
