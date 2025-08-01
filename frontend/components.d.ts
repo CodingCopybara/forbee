@@ -42,6 +42,7 @@ declare module '@vue/runtime-core' {
     IncreaseView: typeof import('./src/components/IncreaseView.vue')['default']
     Index: typeof import('./src/components/pages/Index.vue')['default']
     LargeObject: typeof import('./src/components/primitives/LargeObject.vue')['default']
+    Login: typeof import('./src/components/ui/Login.vue')['default']
     MapView: typeof import('./src/components/MapView.vue')['default']
     MemberRequestList: typeof import('./src/components/MemberRequestList.vue')['default']
     MemberRequestListGrid: typeof import('./src/components/ui/MemberRequestListGrid.vue')['default']

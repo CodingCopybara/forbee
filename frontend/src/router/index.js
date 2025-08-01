@@ -24,8 +24,8 @@ const router = createRouter({
       component: () => import('../components/ui/UserGrid.vue'),
     },
     {
-      path: '/memberRequestLists',
-      component: () => import('../components/ui/MemberRequestListGrid.vue'),
+      path: '/login',
+      component: () => import('../components/ui/Login.vue'),
     },
     {
       path: '/chatbot',

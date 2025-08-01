@@ -19,8 +19,11 @@
 
         <v-spacer></v-spacer>
 
-        <v-btn text color="text-black" to="/mypage">
-          마이페이지
+        <v-btn 
+          text
+          color="text-black"
+          :to="isLoggedIn ? '/mypage' : '/login'">
+          {{ isLoggedIn ? '마이페이지' : '로그인' }}
         </v-btn>
 
       </v-container>
@@ -36,7 +39,7 @@
               rounded="lg"
               class="mt-5"
             >
-              <!--  -->
+
             </v-sheet>
           </v-col>
         </v-row>
@@ -47,11 +50,11 @@
       <v-container>
         <v-row>
           <v-col cols="12" class="text-center">
-            <v-img
+            <!-- <v-img
               src="/nh-logo.png"
               max-width="120"
               class="mb-2"
-            ></v-img>
+            ></v-img> -->
           </v-col>
           <v-col cols="12" class="text-center text-body-2">
             <div>사업자등록번호 203-82-32164(본사) | 139-82-01832(경제사업부) | 558-82-00295(구매사업단)</div>
@@ -63,21 +66,18 @@
       </v-container>
     </v-footer>
 
-    <v-btn
-      class="chatbot-btn"
-      variant="text"
-      style="background: transparent;"
-      elevation="0"
-      ripple=false
-      to="/chatbot"
-    >
-      <img src="bee.png"  alt="chatbot" class="chatbot-img" />
-    </v-btn>
+    <router-link to="/chatbot" class="chatbot-btn">
+      <img src="bee.png" alt="chatbot" class="chatbot-img" />
+    </router-link>
 
   </v-app>
 </template>
 
 <script setup>
+import { ref } from 'vue'
+const isLoggedIn = ref(false)
+// import { useAuth } from "@/composables/useAuth"
+
   const links = [
     '커뮤니티',
     '허니몰',
@@ -99,6 +99,7 @@
   height: 64px;
   object-fit: contain; /* 비율 유지 */
   display: block;
+  cursor: pointer;
 }
 .footer {
   background-color: #F8F4E1; /* 원하는 베이지 톤 */
