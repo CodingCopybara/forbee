@@ -47,7 +47,7 @@
         "@fullcalendar/list": "^5.11.3",
         "@fullcalendar/timegrid": "^5.11.3",
         "@fullcalendar/vue3": "^5.11.2",
-        "@iconify-json/mdi": "^1.1.33",
+        "@iconify-json/mdi": "^1.2.3",
         "@iconify/tools": "^2.1.0",
         "@iconify/vue": "^3.2.1",
         "@intlify/vite-plugin-vue-i18n": "^5.0.1",

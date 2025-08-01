@@ -64,6 +64,7 @@ declare module '@vue/runtime-core' {
     Rating: typeof import('./src/components/vo/Rating.vue')['default']
     RequestApproval: typeof import('./src/components/RequestApproval.vue')['default']
     RequestDeny: typeof import('./src/components/RequestDeny.vue')['default']
+    Role: typeof import('./src/components/Role.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SignIn: typeof import('./src/components/SignIn.vue')['default']
