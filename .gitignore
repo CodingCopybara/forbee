@@ -45,3 +45,5 @@ secrets.yml
 node_modules
 .dist/
 .pem
+__pycache__/
+*.pyc
