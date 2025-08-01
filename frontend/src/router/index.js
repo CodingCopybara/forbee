@@ -8,20 +8,20 @@ const router = createRouter({
       component: () => import('../components/pages/Index.vue'),
     },
     {
-      path: '/posts',
-      component: () => import('../components/ui/PostGrid.vue'),
+      path: '/community',
+      component: () => import('../components/ui/CommunityGrid.vue'),
     },
     {
-      path: '/comments',
-      component: () => import('../components/ui/CommentGrid.vue'),
+      path: '/honeymall',
+      component: () => import('../components/ui/HoneyMallGrid.vue'),
     },
     {
-      path: '/plants',
-      component: () => import('../components/ui/PlantGrid.vue'),
+      path: '/bank',
+      component: () => import('../components/ui/BankGrid.vue'),
     },
     {
-      path: '/users',
-      component: () => import('../components/ui/UserGrid.vue'),
+      path: '/member',
+      component: () => import('../components/ui/MemberGrid.vue'),
     },
     {
       path: '/login',
@@ -29,11 +29,11 @@ const router = createRouter({
     },
     {
       path: '/chatbot',
-      component: () => import('../components/MapView.vue'),
+      component: () => import('../components/ui/Chatbot.vue'),
     },
     {
       path: '/mypage',
-      component: () => import('../components/ui/MyPage.vue'),
+      component: () => import('../components/ui/MyPageGrid.vue'),
     },
   ],
 })

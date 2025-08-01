@@ -11,11 +11,13 @@
 
         <v-btn
           v-for="link in links"
-          :key="link"
-          :text="link"
+          :key="link.label"
+          :to="link.path"
           variant="text"
           color="text-black"
-        ></v-btn>
+        >
+          {{  link.label }}
+        </v-btn>
 
         <v-spacer></v-spacer>
 
@@ -79,10 +81,10 @@ const isLoggedIn = ref(false)
 // import { useAuth } from "@/composables/useAuth"
 
   const links = [
-    '커뮤니티',
-    '허니몰',
-    '농협은행',
-    '조합원'
+    { label: '조합원', path: '/member'},
+    { label: '커뮤니티', path: '/community'},
+    { label: '농협은행', path: 'bank'},
+    { label: '허니몰', path: '/honeymall'}
   ]
 </script>
 
