@@ -1,7 +1,6 @@
 package forbee.infra;
 
 import forbee.domain.ImageAnalysisResult;
-import forbee.domain.AzureStorageService;
 import java.util.function.Consumer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
