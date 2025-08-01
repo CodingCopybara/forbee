@@ -1,4 +1,3 @@
-// Spring -> FastAPI
 package forbee.infra;
 
 import forbee.domain.FastApiService;

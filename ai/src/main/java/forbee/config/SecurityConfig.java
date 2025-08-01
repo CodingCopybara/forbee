@@ -1,6 +1,7 @@
 package forbee.config;
 
 import org.springframework.context.annotation.Bean;
+import static org.springframework.security.config.Customizer.withDefaults;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -14,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -23,13 +24,13 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(jsr250Enabled = true) // @EnableGlobalMethodSecurity is deprecated
+@EnableGlobalMethodSecurity(jsr250Enabled = true)
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors)
+            .cors(withDefaults())
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -38,10 +39,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz ->
                 authz
                     // Allow unauthenticated access to the WebSocket endpoint for connection handshake
-                    .requestMatchers("/ws/**")
+                    .antMatchers("/ws/**", "/ai/request-analysis")
                     .permitAll()
                     // Secure other endpoints, e.g., analysis requests
-                    // .requestMatchers("/ai/request-analysis").hasRole("USER")
+                    // .antMatchers("/ai/request-analysis").hasRole("USER")
                     .anyRequest()
                     .authenticated()
             )

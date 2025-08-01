@@ -1,17 +1,11 @@
 package forbee.domain;
 
-import java.util.List;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.Value;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@Getter
-@NoArgsConstructor
-@ToString
+@Value
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ImageAnalysisResult {
-
     private String userId;
-    private String imageUrl;
     private String resultImagePath;
-    private List<DetectedObject> detectedObjects;
 }

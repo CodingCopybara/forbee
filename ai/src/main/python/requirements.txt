@@ -7,6 +7,7 @@ ultralytics
 torch
 # torchvision
 azure-storage-blob
+azure-identity
 opencv-python-headless
 matplotlib
 requests
