@@ -1,17 +1,27 @@
+server:
+  port: 8080
+
 spring:
-  config:
-    activate:
-      on-profile: default
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
+  application:
+    name: user
+---
+
+spring:
+  profiles: default
+  datasource:
+    url: jdbc:mysql://forbee-user-db.mysql.database.azure.com:3306/user?useSSL=false&serverTimezone=UTC&useLegacyDatetimeCode=false
+    username: forbeeuser
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
+    hibernate:
+      ddl-auto: update
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
         show_sql: true
         format_sql: true
+        implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     stream:
       kafka:
@@ -44,29 +54,31 @@ logging:
     org.springframework.cloud: debug
 
 api:
-  url:
-    user: localhost:0
-
+  url: 
+    user: localhost:8084
+    
 
 server:
-  port: 0
+  port: 8084
 
 ---
 
 spring:
-  config:
-    activate:
-      on-profile: docker
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
+  profiles: docker
+  datasource:
+    url: jdbc:mysql://forbee-user-db.mysql.database.azure.com:3306/user?useSSL=false&serverTimezone=UTC&useLegacyDatetimeCode=false
+    username: forbeeuser
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
+    hibernate:
+      ddl-auto: update
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
         show_sql: true
         format_sql: true
+        implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     stream:
       kafka:
@@ -90,7 +102,7 @@ spring:
           contentType: application/json
 
 api:
-  url:
-    user:8080
-
+  url: 
+    user: user:8080 
+    
 

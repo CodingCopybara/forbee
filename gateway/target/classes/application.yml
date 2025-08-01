@@ -1,4 +1,5 @@
-server:
+
+server:
   port: 8088
 
 ---
@@ -9,42 +10,47 @@ keycloak-client:
   realm: master
 
 spring:
-  config:
-    activate:
-      on-profile: default
+  profiles: default
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8090/.well-known/jwks.json
   cloud:
     gateway:
-      default-filters:
-        - TokenRelay 
       routes:
-        - id: community
-          uri: http://localhost:8082
-          predicates:
-            - Path=/posts/**, /comments/**, //**, //**,  
-        - id: tree
-          uri: http://localhost:0
-          predicates:
-            - Path=/plants/**,  
-        - id: user
-          uri: http://localhost:0
-          predicates:
-            - Path=/users/**, /memberRequestLists/**,  
-        - id: dashboard
-          uri: http://localhost:0
-          predicates:
+         - id: community
+           uri: http://localhost:8082
+           predicates:
+            - Path=/posts/**/comments/**//**//** 
+         - id: tree
+           uri: http://localhost:0
+           predicates:
+            - Path=/plants/** 
+         - id: user
+           uri: http://localhost:8084
+           predicates:
+            - Path=/users/** 
+         - id: dashboard
+           uri: http://localhost:0
+           predicates:
             - Path= /maps/**
-        - id: chatbot
-          uri: http://localhost:0
-          predicates:
-            - Path=/chatbots/**,  
-        - id: ai
-          uri: http://localhost:0
-          predicates:
-            - Path=//**, //**,  
-        - id: frontend
-          uri: http://localhost:8080
-          predicates:
-            - Path=/**
+         - id: chatbot
+           uri: http://localhost:0
+           predicates:
+            - Path=/chatbots/** 
+         - id: ai
+           uri: http://localhost:0
+           predicates:
+            - Path=//**//** 
+         - id: oauth-register
+           uri: http://localhost:8090
+           predicates:
+            - Path=/api/users/register
+         - id: oauth-token
+           uri: http://localhost:8090
+           predicates:
+            - Path=/oauth/token
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -76,9 +82,12 @@ spring:
 ---
 
 spring:
-  config:
-    activate:
-      on-profile: docker
+  profiles: docker
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://oauth:8080/.well-known/jwks.json
   cloud:
     gateway:
       routes:
