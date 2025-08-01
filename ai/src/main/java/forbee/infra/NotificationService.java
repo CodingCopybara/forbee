@@ -1,4 +1,3 @@
-// 프론트로 전송
 package forbee.infra;
 
 import forbee.domain.ImageAnalysisResult;
