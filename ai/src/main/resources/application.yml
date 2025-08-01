@@ -1,12 +1,4 @@
 spring:
-  config:
-    activate:
-      on-profile: default
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
   jpa:
     properties:
       hibernate:
@@ -14,19 +6,10 @@ spring:
         format_sql: true
     open-in-view: false
   cloud:
-    function:
-      definition: rawAnalysisResultIn;finalResultIn
     stream:
       kafka:
         binder:
-          brokers: localhost:9092
-      bindings:
-        rawAnalysisResultIn-in-0:
-          destination: analysis-results
-          group: ai
-        # finalResultIn-in-0:
-        #   destination: notification-topic
-        #   group: ai
+          brokers: ${KAFKA_BROKERS:localhost:9092}
 
 logging:
   level:
@@ -34,16 +17,27 @@ logging:
     org.springframework.cloud: debug
 
 fastapi:
-  url: http://localhost:8000
+  url: ${FASTAPI_URL:http://localhost:8000}
 
 azure:
   storage:
-    endpoint: "https://aivle26storage.blob.core.windows.net"
-    container-name: "images"
+    endpoint: ${AZURE_STORAGE_ENDPOINT:https://<스토리지 이름>.blob.core.windows.net}
+    container-name: ${AZURE_STORAGE_CONTAINER_NAME:}
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: default
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWK_SET_URI:http://localhost:9090/realms/master/protocol/openid-connect/certs}
 
 server:
   port: 8081
-  # port: 0
 
 ---
 
@@ -55,32 +49,12 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
-  jpa:
-    properties:
-      hibernate:
-        show_sql: true
-        format_sql: true
-    open-in-view: false
+          jwk-set-uri: ${JWK_SET_URI:http://keycloak:8080/realms/master/protocol/openid-connect/certs
   cloud:
-    function:
-      definition: rawAnalysisResultIn;finalResultIn
     stream:
       kafka:
         binder:
-          brokers: my-kafka:9092
-      bindings:
-        rawAnalysisResultIn-in-0:
-          destination: analysis-results
-          group: ai-backend-azure-saver
-        # finalResultIn-in-0:
-        #   destination: notification-topic
-        #   group: ai-backend-notifier
+          brokers: ${KAFKA_BROKERS:my-kafka:9092}
 
 fastapi:
   url: http://fastapi:8000
-
-azure:
-  storage:
-    endpoint: "https://aivle26storage.blob.core.windows.net"
-    container-name: "container"
