@@ -1,149 +1,87 @@
 <template>
-    <v-container>
-        <v-snackbar
-            v-model="snackbar.status"
-            :timeout="snackbar.timeout"
-            :color="snackbar.color"
-        >
-            
-            <v-btn style="margin-left: 80px;" text @click="snackbar.status = false">
-                Close
+  <v-container class="py-10 d-flex justify-center">
+    <v-card class="pa-8" max-width="700" elevation="3" rounded="xl" style="width:100%">
+      <!-- 탭 메뉴 -->
+      <v-tabs v-model="tab" color="brown-darken-3" background-color="brown-darken-3" align-tabs="center">
+        <v-tab v-for="item in tabs" :key="item.value">{{ item.label }}</v-tab>
+      </v-tabs>
+      <v-divider class="my-6" />
+
+      <!-- 탭별 컨텐츠 -->
+      <v-window v-model="tab">
+        <v-window-item :value="0">
+          <!-- 첫 번째 탭: 해충/질병 탐지 서비스 -->
+          <div class="text-center mb-6">
+            <img src="nhchar.png" alt="탐지" style="height: 54px; margin-bottom: 12px;" />
+            <h3 class="font-weight-bold mb-2">해충/질병 탐지 서비스</h3>
+            <div class="mb-5">
+              사진 업로드를 통해 해충/질병을 탐지하고 심각도에 따른 대처 방안을 알려드립니다
+            </div>
+            <div class="mb-4" style="font-size: 15px; text-align: left; display: inline-block;">
+              <b>사용 방법</b>
+              <ol style="margin: 0 0 0 16px; padding: 0;">
+                <li>사진 업로드</li>
+                <li>분석 결과 확인</li>
+                <li>대처 방안 안내</li>
+              </ol>
+            </div>
+            <v-btn color="amber-darken-2" rounded large class="mt-5">
+              해충/질병 탐지 서비스 사용하기
             </v-btn>
-        </v-snackbar>
-        <div class="panel">
-            <div class="gs-bundle-of-buttons" style="max-height:10vh;">
-                <v-btn @click="addNewRow" @class="contrast-primary-text" small color="primary">
-                    <v-icon small style="margin-left: -5px;">mdi-plus</v-icon>등록
-                </v-btn>
-                <v-btn :disabled="!selectedRow" style="margin-left: 5px;" @click="openEditDialog()" class="contrast-primary-text" small color="primary">
-                    <v-icon small>mdi-pencil</v-icon>수정
-                </v-btn>
+          </div>
+        </v-window-item>
+        <v-window-item :value="1">
+          <!-- 두 번째 탭: 개화시기 예측 서비스 -->
+          <div class="text-center mb-6">
+            <img src="nhchar.png" alt="개화" style="height: 54px; margin-bottom: 12px;" />
+            <h3 class="font-weight-bold mb-2">개화시기 예측 서비스</h3>
+            <div class="mb-5">
+              최신 기상 데이터와 AI를 활용해 주요 밀원식물의 개화시기를 예측해드립니다.
             </div>
-            <div class="mb-5 text-lg font-bold"></div>
-            <div class="table-responsive">
-                <v-table>
-                    <thead>
-                        <tr>
-                        <th>Id</th>
-                        <th>Location</th>
-                        <th>Plant</th>
-                        <th>FloweringTime</th>
-                        <th>개화시기 예측 모델</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(val, idx) in value" 
-                            @click="changeSelectedRow(val)"
-                            :key="val"  
-                            :style="val === selectedRow ? 'background-color: rgb(var(--v-theme-primary), 0.2) !important;':''"
-                        >
-                            <td class="font-semibold">{{ idx + 1 }}</td>
-                            <td class="whitespace-nowrap" label="Location">{{ val.location }}</td>
-                            <td class="whitespace-nowrap" label="Plant">{{ val.plant }}</td>
-                            <td class="whitespace-nowrap" label="FloweringTime">{{ val.floweringTime }}</td>
-                            <td class="whitespace-nowrap" label="개화시기 예측 모델">
-                                <개화시기예측모델Id :editMode="editMode" v-model="val.개화시기예측모델Id"></개화시기예측모델Id>
-                            </td>
-                            <v-row class="ma-0 pa-4 align-center">
-                                <v-spacer></v-spacer>
-                                <Icon style="cursor: pointer;" icon="mi:delete" @click="deleteRow(val)" />
-                            </v-row>
-                        </tr>
-                    </tbody>
-                </v-table>
+            <div class="mb-4" style="font-size: 15px; text-align: left; display: inline-block;">
+              <b>사용 방법</b>
+              <ol style="margin: 0 0 0 16px; padding: 0;">
+                <li>지역 및 식물 선택</li>
+                <li>예측 결과 확인</li>
+                <li>알림 설정</li>
+              </ol>
             </div>
-        </div>
-        <v-col>
-            <v-dialog
-                v-model="openDialog"
-                transition="dialog-bottom-transition"
-                width="35%"
-            >
-                <v-card>
-                    <v-toolbar
-                        color="primary"
-                        class="elevation-0 pa-4"
-                        height="50px"
-                    >
-                        <div style="color:white; font-size:17px; font-weight:700;">Plant 등록</div>
-                        <v-spacer></v-spacer>
-                        <v-icon
-                            color="white"
-                            small
-                            @click="closeDialog()"
-                        >mdi-close</v-icon>
-                    </v-toolbar>
-                    <v-card-text>
-                        <Plant :offline="offline"
-                            :isNew="!value.idx"
-                            :editMode="true"
-                            :inList="false"
-                            v-model="newValue"
-                            @add="append"
-                        />
-                    </v-card-text>
-                </v-card>
-            </v-dialog>
-            <v-dialog
-                v-model="editDialog"
-                transition="dialog-bottom-transition"
-                width="35%"
-            >
-                <v-card>
-                    <v-toolbar
-                        color="primary"
-                        class="elevation-0 pa-4"
-                        height="50px"
-                    >
-                        <div style="color:white; font-size:17px; font-weight:700;">Plant 수정</div>
-                        <v-spacer></v-spacer>
-                        <v-icon
-                            color="white"
-                            small
-                            @click="closeDialog()"
-                        >mdi-close</v-icon>
-                    </v-toolbar>
-                    <v-card-text>
-                        <div>
-                            <String label="Plant" v-model="selectedRow.plant" :editMode="true"/>
-                            <Date label="FloweringTime" v-model="selectedRow.floweringTime" :editMode="true"/>
-                            <Polygon offline label="Location" v-model="selectedRow.location" :editMode="true"/>
-                            <v-divider class="border-opacity-100 my-divider"></v-divider>
-                            <v-layout row justify-end>
-                                <v-btn
-                                    width="64px"
-                                    color="primary"
-                                    @click="save"
-                                >
-                                    수정
-                                </v-btn>
-                            </v-layout>
-                        </div>
-                    </v-card-text>
-                </v-card>
-            </v-dialog>
-        </v-col>
-    </v-container>
+            <v-btn color="amber-darken-2" rounded large class="mt-5">
+              개화시기 예측 서비스 사용하기
+            </v-btn>
+          </div>
+        </v-window-item>
+        <v-window-item :value="2">
+          <!-- 세 번째 탭: 양봉 환경 분석 서비스 -->
+          <div class="text-center mb-6">
+            <img src="nhchar.png" alt="환경분석" style="height: 54px; margin-bottom: 12px;" />
+            <h3 class="font-weight-bold mb-2">양봉 환경 분석 서비스</h3>
+            <div class="mb-5">
+              양봉장의 기상, 생태환경 데이터 기반으로 맞춤 분석 리포트를 제공합니다.
+            </div>
+            <div class="mb-4" style="font-size: 15px; text-align: left; display: inline-block;">
+              <b>사용 방법</b>
+              <ol style="margin: 0 0 0 16px; padding: 0;">
+                <li>환경 데이터 입력/업로드</li>
+                <li>분석 리포트 확인</li>
+              </ol>
+            </div>
+            <v-btn color="amber-darken-2" rounded large class="mt-5">
+              환경 분석 서비스 사용하기
+            </v-btn>
+          </div>
+        </v-window-item>
+      </v-window>
+    </v-card>
+  </v-container>
 </template>
 
-<script>
-import { ref } from 'vue';
-import { useTheme } from 'vuetify';
-import BaseGrid from '../base-ui/BaseGrid.vue'
-
-
-export default {
-    name: 'plantGrid',
-    mixins:[BaseGrid],
-    components:{
-    },
-    data: () => ({
-        path: 'plants',
-    }),
-    watch: {
-    },
-    methods:{
-    }
-}
-
+<script setup>
+import { ref } from 'vue'
+const tab = ref(0)
+const tabs = [
+  { label: '해충/질병 탐지 서비스', value: 0 },
+  { label: '개화시기 예측 서비스', value: 1 },
+  { label: '양봉 환경 분석 서비스', value: 2 }
+]
 </script>

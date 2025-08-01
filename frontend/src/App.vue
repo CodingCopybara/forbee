@@ -34,15 +34,8 @@
     <v-main class="bg-amber-lighten-1">
       <v-container style="background: transparent;">
         <v-row>
-
           <v-col>
-            <v-sheet
-              min-height="70vh"
-              rounded="lg"
-              class="mt-5"
-            >
-
-            </v-sheet>
+              <router-view />
           </v-col>
         </v-row>
       </v-container>

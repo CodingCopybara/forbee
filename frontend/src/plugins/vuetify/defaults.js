@@ -26,10 +26,10 @@ export default {
     activeColor: 'primary',
     density: 'comfortable',
   },
-  VTabs: {
-    // set v-tabs default color to primary
-    color: 'primary',
-  },
+  // VTabs: {
+  //   // set v-tabs default color to primary
+  //   color: 'primary',
+  // },
   VTooltip: {
     // set v-tooltip default location to top
     location: 'top',
