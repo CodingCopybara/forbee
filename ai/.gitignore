@@ -44,5 +44,7 @@ secrets.yml
 node_modules
 .dist/
 .pem
-.venv
+
+.venv/
 .env
+/results/
