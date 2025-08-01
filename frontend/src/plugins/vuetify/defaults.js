@@ -10,18 +10,18 @@ export default {
     // set v-badge default color to primary
     color: 'primary',
   },
-  VBtn: {
-    // set v-btn default color to primary
-    color: 'primary',
-  },
+  // VBtn: {
+  //   // set v-btn default color to primary
+  //   color: 'primary',
+  // },
   VChip: {
     elevation: 0,
   },
-  VMenu: {
-    VList: {
-      density: 'compact',
-    },
-  },
+  // VMenu: {
+  //   VList: {
+  //     density: 'compact',
+  //   },
+  // },
   VPagination: {
     activeColor: 'primary',
     density: 'comfortable',
@@ -61,13 +61,13 @@ export default {
     color: 'primary',
     hideDetails: 'auto',
   },
-  VRangeSlider: {
-    // set v-range-slider default color to primary
-    color: 'primary',
-    density: 'comfortable',
-    thumbLabel: true,
-    hideDetails: 'auto',
-  },
+  // VRangeSlider: {
+  //   // set v-range-slider default color to primary
+  //   color: 'primary',
+  //   density: 'comfortable',
+  //   thumbLabel: true,
+  //   hideDetails: 'auto',
+  // },
   VRating: {
     // set v-rating default color to primary
     color: 'warning',
@@ -76,11 +76,11 @@ export default {
     // set v-progress-circular default color to primary
     color: 'primary',
   },
-  VSlider: {
-    // set v-slider default color to primary
-    color: 'primary',
-    hideDetails: 'auto',
-  },
+  // VSlider: {
+  //   // set v-slider default color to primary
+  //   color: 'primary',
+  //   hideDetails: 'auto',
+  // },
   VTextField: {
     variant: 'outlined',
     density: 'comfortable',

@@ -35,6 +35,18 @@ const router = createRouter({
       path: '/mypage',
       component: () => import('../components/ui/MyPageGrid.vue'),
     },
+    {
+      path: '/member/disease',
+      component: () => import('../components/vo/MemberDisease.vue'),
+    },
+    {
+      path: '/member/bloom',
+      component: () => import('../components/vo/MemberBloom.vue'),
+    },
+    {
+      path: '/member/env',
+      component: () => import('../components/vo/MemberEnv.vue'),
+    },
   ],
 })
 
