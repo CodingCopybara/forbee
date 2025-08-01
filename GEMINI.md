@@ -5,11 +5,22 @@ This document summarizes the modifications made to the `forbee` microservices pr
 ## Objective
 The primary goal was to establish a robust JWT authentication flow, where the `oauth` service acts as the Authorization Server (issuing JWTs), the `gateway` service acts as a JWT Resource Server (validating JWTs), and the `user` service manages user profile data, distinct from the authentication credentials.
 
+## Database Migration to Azure MySQL
+Both the `oauth` and `user` services were migrated from the in-memory H2 database to a shared Azure MySQL server. This provides persistent storage and a more realistic production-like environment.
+
+*   **New Schemas**: Created `oauth` and `user` schemas on the Azure MySQL instance.
+*   **Configuration**: Updated `application.yml` files in both services to connect to the Azure MySQL database.
+*   **Secrets Management**: Database passwords are not hardcoded. They are loaded from an environment variable (`DB_PASSWORD`), making the configuration secure and portable, especially for deployment environments like Kubernetes.
+*   **Persistent Data**: Changed `spring.jpa.hibernate.ddl-auto` property from `create` to `update` to ensure data persistence across application restarts.
+*   **Dependencies**: Replaced H2 database dependencies with `mysql-connector-java` in the `pom.xml` of both services.
+*   **SSL Configuration**: Initially encountered SSL connection errors (`require_secure_transport=ON`). This was resolved by disabling the SSL requirement on the Azure MySQL server for the development environment.
+
 ## Service-Specific Changes
 
 ### `oauth` Service (Authorization Server, JWT Issuer)
 *   **Role**: Responsible for user authentication, JWT issuance, and managing core authentication credentials (email, hashed password, user identifier).
 *   **Key Changes**:
+    *   **Database**: Migrated from H2 to Azure MySQL (`oauth` schema).
     *   **JWT Signing Key**: Generated `server.jks` using `keytool` and placed it in `src/main/resources` for JWT signing.
     *   **Lombok Version**: Updated Lombok dependency to `1.18.30` in `pom.xml` to address potential compatibility issues.
     *   **`User.java` Entity**:
@@ -31,11 +42,12 @@ The primary goal was to establish a robust JWT authentication flow, where the `o
     *   **`WebSecurityConfig.java`**: Configured Spring Security to permit all requests to `/api/users/register` and `/oauth/token` endpoints.
     *   **`OAuth2AuthorizationServerConfig.java`**: Restored custom `accessDeniedHandler` and `authenticationEntryPoint`. Removed `nickname` and `address` from `TokenEnhancer`.
     *   **`AuthorizationServerApplication.java`**: Updated `CommandLineRunner` to use `setUsername` and removed `setNickName`, `setAddress`, `setRole` calls.
-    *   **`application.yml`**: Changed `ddl-auto` to `create` for schema recreation. Removed `user-service.url` property due to persistent `@Value` resolution issues (temporary workaround).
+    *   **`application.yml`**: Changed `ddl-auto` to `update` for data persistence. Removed `user-service.url` property due to persistent `@Value` resolution issues (temporary workaround).
 
 ### `user` Service (User Profile Management)
 *   **Role**: Responsible for storing and managing detailed user profile information, identified by the `userIdentifier` from the `oauth` service.
 *   **Key Changes**:
+    *   **Database**: Migrated from H2 to Azure MySQL (`user` schema).
     *   **`User.java` Entity**:
         *   Modified `src/main/java/forbee/domain/User.java` to use `userIdentifier` (Long type) as the `@Id`.
         *   Changed `email` field to `username`.
