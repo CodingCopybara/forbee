@@ -17,6 +17,28 @@ Both the `oauth` and `user` services were migrated from the in-memory H2 databas
 
 ## Service-Specific Changes
 
+### `frontend` Service (User Interface)
+*   **Role**: Provides the user interface for the application, including login and registration forms.
+*   **Key Changes**:
+    *   **Login Page (`Login.vue`)**:
+        *   Created a basic login form with email and password fields using Vuetify components.
+        *   Implemented login functionality to send `POST` requests to `gateway`'s `/oauth/token` endpoint using `axios`.
+        *   Configured `axios` to use `uengine-client:uengine-secret` for basic authentication (based on successful `httpie` attempts).
+        *   Implemented redirection to the home page upon successful login.
+        *   Adjusted the overall size and styling of the login form to match Figma design specifications (smaller card, adjusted padding, font sizes, and button styles).
+        *   Added a "회원가입" button that redirects to the registration page.
+    *   **Registration Page (`Register.vue`)**:
+        *   Created a new registration form with email, password, confirm password, and name fields, mirroring the styling of the login page.
+        *   Integrated the registration page into the Vue Router at the `/register` path.
+        *   Implemented registration functionality to send `POST` requests to `gateway`'s `/api/users/register` endpoint using `axios`.
+        *   Added client-side validation for password confirmation.
+        *   Implemented redirection to the login page upon successful registration.
+    *   **Layout (`App.vue`)**:
+        *   Added `<router-view />` inside the main content area (`v-sheet`) to correctly display routed components.
+        *   Adjusted `v-main` and `v-container` to center the content vertically and horizontally, ensuring login/registration forms appear in the middle of the screen.
+
+
+
 ### `oauth` Service (Authorization Server, JWT Issuer)
 *   **Role**: Responsible for user authentication, JWT issuance, and managing core authentication credentials (email, hashed password, user identifier).
 *   **Key Changes**:
@@ -73,6 +95,18 @@ Both the `oauth` and `user` services were migrated from the in-memory H2 databas
     *   **`application.yml`**:
         *   Updated the `user` service routing rule to correctly point to `http://localhost:8084` and use a more general `Path=/users/**` predicate.
         *   Added new routing rules for `oauth-register` and `oauth-token`.
+    *   **CORS Debugging and Resolution Attempts**:
+        *   Encountered persistent `Access-Control-Allow-Origin` header duplication issues, leading to CORS errors (`The 'Access-Control-Allow-Origin' header contains multiple values...`).
+        *   **Initial State**: `application.yml` had `globalcors` with `allowedOrigins: - "*"` and Spring Security configurations (`ResourceServerConfiguration.java`, `SecurityConfiguration.java`) also had `http.cors().and()`.
+        *   **Attempt 1 (Spring Security CORS Removal)**: Removed `http.cors().and()` from both `ResourceServerConfiguration.java` and `SecurityConfiguration.java`, aiming to let `globalcors` handle CORS.
+        *   **Attempt 2 (Specific Origin in `application.yml`)**: Changed `allowedOrigins: - "*"` to specific frontend origin (`https://8080-dlafhr789-forbee-58x0ymk3jqh.ws-us120.gitpod.io`) in `application.yml` to comply with `allowCredentials: true`.
+        *   **Attempt 3 (Custom `CorsResponseHeaderFilter`)**: Implemented a `CorsResponseHeaderFilter` to programmatically remove duplicate `Access-Control-Allow-Origin` headers from the response.
+        *   **Attempt 4 (Revert to Spring Security CORS)**: Removed `globalcors` from `application.yml` and re-enabled `http.cors().and()` in both `ResourceServerConfiguration.java` and `SecurityConfiguration.java`, along with adding a `CorsConfigurationSource` bean in `SecurityConfiguration.java` to define CORS policy.
+        *   **Attempt 5 (Revert to Original State)**: Due to persistent issues, all CORS-related changes were reverted to their initial state, where `application.yml` contains `globalcors` with `allowedOrigins: - "*"` and both `ResourceServerConfiguration.java` and `SecurityConfiguration.java` contain `http.cors().and()`.
+        *   **Observation**: `curl` commands consistently showed duplicate `Access-Control-Allow-Origin` headers in the response, even when internal configurations were seemingly correct. This suggests the duplication might be occurring at an external layer (e.g., Gitpod's proxy/load balancer).
+    *   **Security Configuration Consolidation**:
+        *   Identified that `ResourceServerConfiguration.java` and `SecurityConfiguration.java` were performing similar Spring Security configurations, leading to potential conflicts and redundancy.
+        *   **Consolidated** these configurations into a single `SecurityConfiguration.java` file, merging `pathMatchers` rules and deleting `ResourceServerConfiguration.java`. This aims to simplify the security setup and prevent future conflicts.
 
 ## Key Learnings and Debugging Notes
 

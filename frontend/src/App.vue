@@ -31,21 +31,8 @@
       </v-container>
     </v-app-bar>
 
-    <v-main class="bg-amber-lighten-1">
-      <v-container style="background: transparent;">
-        <v-row>
-
-          <v-col>
-            <v-sheet
-              min-height="70vh"
-              rounded="lg"
-              class="mt-5"
-            >
-
-            </v-sheet>
-          </v-col>
-        </v-row>
-      </v-container>
+    <v-main class="d-flex align-center justify-center" style="min-height: 300px; background-color: #F8F4E1;">
+      <router-view />
     </v-main>
 
     <v-footer class="footer" height="auto">
