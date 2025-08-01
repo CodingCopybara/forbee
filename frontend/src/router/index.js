@@ -8,32 +8,44 @@ const router = createRouter({
       component: () => import('../components/pages/Index.vue'),
     },
     {
-      path: '/posts',
-      component: () => import('../components/ui/PostGrid.vue'),
+      path: '/community',
+      component: () => import('../components/ui/CommunityGrid.vue'),
     },
     {
-      path: '/comments',
-      component: () => import('../components/ui/CommentGrid.vue'),
+      path: '/honeymall',
+      component: () => import('../components/ui/HoneyMallGrid.vue'),
     },
     {
-      path: '/plants',
-      component: () => import('../components/ui/PlantGrid.vue'),
+      path: '/bank',
+      component: () => import('../components/ui/BankGrid.vue'),
     },
     {
-      path: '/users',
-      component: () => import('../components/ui/UserGrid.vue'),
+      path: '/member',
+      component: () => import('../components/ui/MemberGrid.vue'),
     },
     {
-      path: '/memberRequestLists',
-      component: () => import('../components/ui/MemberRequestListGrid.vue'),
+      path: '/login',
+      component: () => import('../components/ui/Login.vue'),
     },
     {
-      path: '/maps',
-      component: () => import('../components/MapView.vue'),
+      path: '/chatbot',
+      component: () => import('../components/ui/Chatbot.vue'),
     },
     {
-      path: '/chatbots',
-      component: () => import('../components/ui/ChatbotGrid.vue'),
+      path: '/mypage',
+      component: () => import('../components/ui/MyPageGrid.vue'),
+    },
+    {
+      path: '/member/disease',
+      component: () => import('../components/vo/MemberDisease.vue'),
+    },
+    {
+      path: '/member/bloom',
+      component: () => import('../components/vo/MemberBloom.vue'),
+    },
+    {
+      path: '/member/env',
+      component: () => import('../components/vo/MemberEnv.vue'),
     },
   ],
 })
