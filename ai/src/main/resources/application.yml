@@ -12,31 +12,34 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
-  cloud:
-    stream:
-      kafka:
-        binder:
-          brokers: localhost:9092
-        streams:
-          binder:
-            configuration:
-              default:
-                key:
-                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-                value:
-                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-      bindings:
-        event-in:
-          group: ai
-#<<< EDA / Topic Name
-          destination: forbee
-#>>> EDA / Topic Name
-          contentType: application/json
-        event-out:
-#<<< EDA / Topic Name
-          destination: forbee
-#>>> EDA / Topic Name
-          contentType: application/json
+#   cloud:
+#     stream:
+#       kafka:
+#         binder:
+#           brokers: localhost:9092
+#         streams:
+#           binder:
+#             configuration:
+#               default:
+#                 key:
+#                   serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+#                 value:
+#                   serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+#       bindings:
+#         event-in:
+#           group: ai
+# #<<< EDA / Topic Name
+#           destination: forbee
+# #>>> EDA / Topic Name
+#           contentType: application/json
+#         event-out:
+# #<<< EDA / Topic Name
+#           destination: forbee
+# #>>> EDA / Topic Name
+#           contentType: application/json
+
+fastapi:
+  url: https://8000-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io/diagnose
 
 logging:
   level:
@@ -45,8 +48,8 @@ logging:
 
 
 server:
-  port: 0
-
+  port: 8080
+  
 ---
 
 spring:
