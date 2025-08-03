@@ -41,8 +41,8 @@ export default {
           link: "/comments",
       },
       {
-          text: "",
-          link: "/",
+          text: "이미지 분석",
+          link: "/image-analysis",
       },
       {
           text: "",

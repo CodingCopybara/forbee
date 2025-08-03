@@ -21,8 +21,8 @@ fastapi:
 
 azure:
   storage:
-    endpoint: ${AZURE_STORAGE_ENDPOINT:https://<스토리지 이름>.blob.core.windows.net}
-    container-name: ${AZURE_STORAGE_CONTAINER_NAME:}
+    account-url: ${AZURE_STORAGE_ACCOUNT_URL:https://aivle26storage.blob.core.windows.net}
+    container-name: ${AZURE_STORAGE_CONTAINER_NAME:container}
 
 ---
 

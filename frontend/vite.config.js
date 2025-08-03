@@ -37,6 +37,9 @@ export default defineConfig({
     DefineOptions(),
     ViteYaml(),
   ],
+  define: {
+    global: 'globalThis',
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -59,6 +62,13 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 8080,
+    proxy: {
+      '/ai': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   },
   css: {
     preprocessorOptions: {

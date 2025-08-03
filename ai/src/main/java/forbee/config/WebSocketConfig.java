@@ -22,8 +22,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // 프론트엔드에서 WebSocket 연결을 맺을 때 사용할 주소(엔드포인트)를 설정합니다.
-        // 예: const socket = new SockJS('/ws');
-        registry.addEndpoint("/ws").setAllowedOriginPatterns("*").withSockJS();
+        // 네이티브 WebSocket 엔드포인트 (최신 브라우저용)
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*");
+        
+        // SockJS fallback 엔드포인트 (호환성용)
+        registry.addEndpoint("/ws-sockjs")
+                .setAllowedOriginPatterns("*")
+                .withSockJS();
     }
 }

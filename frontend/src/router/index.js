@@ -47,6 +47,10 @@ const router = createRouter({
       path: '/member/env',
       component: () => import('../components/vo/MemberEnv.vue'),
     },
+    {
+      path: '/image-analysis',
+      component: () => import('../components/ui/ImageAnalysisPopup.vue'),
+    },
   ],
 })
 
