@@ -39,7 +39,7 @@ spring:
 #           contentType: application/json
 
 fastapi:
-  url: https://8000-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io/diagnose
+  url: https://8000-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io
 
 logging:
   level:
@@ -49,7 +49,7 @@ logging:
 
 server:
   port: 8080
-  
+
 ---
 
 spring:

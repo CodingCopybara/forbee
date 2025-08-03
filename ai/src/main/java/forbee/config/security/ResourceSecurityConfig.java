@@ -24,23 +24,9 @@ public class ResourceSecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors()
-            .and()
-            .csrf()
-            .disable()
-            .authorizeRequests(exchange ->
-                exchange
-                    // .antMatchers("/orders/placeOrder**").hasRole("CUSTOMER")	// You can protect resource here, or each Method Level
-                    // .antMatchers("/orders/manageOrder**").hasRole("ADMIN")
-                    // .antMatchers("/orders/manageOrder**").permitAll()
-                    .anyRequest()
-                    .authenticated()
-            )
-            .oauth2ResourceServer()
-            .jwt(jwt ->
-                jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor())
-            );
-
+            .csrf().disable()
+            .authorizeRequests(auth -> auth.anyRequest().permitAll())  // ✅ 모든 요청 허용
+            .oauth2ResourceServer().disable();   
         return http.build();
     }
 
