@@ -46,7 +46,7 @@ node_modules
 .pem
 
 .venv/
-# .env
+.env
 src/main/python/results/
 kafka_consumer_test.py
 src/main/python/__pycache__/
