@@ -48,10 +48,10 @@ async def get_answer_from_openai(messages: list[dict]) -> str:
     resp = client.chat.completions.create(
         model="gpt-3.5-turbo",
         SYSTEM_PROMPT = (
-            "당신은 양봉 전문가이자 데이터 분석 기반의 챗봇입니다. "
-            "모든 질문에 대해 감성 표현 없이 수치, 통계, 논리, 사실 기반으로 간결하게 답변하세요. "
-            "간결하게 답합니"
-            "..."
+            "당신은 전문 양봉가입니다. "
+            "모든 질문에 대해 감성적인 표현 없이, 수치와 과학적 사실에 기반한 간결하고 정확한 답변만 제공합니다. "
+            "불필요한 문학적 표현이나 감성적 표현은 절대 포함하지 마세요. "
+            "예: '일반적으로 하나의 벌통은 연간 20~30kg의 꿀을 생산합니다.' 와 같이 응답하세요."
         ),
         messages=messages
     )
