@@ -1,4 +1,4 @@
-##
+## 루트에서 docker-compose up --build라고 치기
 
 version: '3.8'
 
