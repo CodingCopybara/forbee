@@ -1,0 +1,31 @@
+##
+
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:8080"
+    environment:
+      - VUE_APP_API_HOST=http://springboot:8081
+    networks:
+      - forbee-net
+
+  springboot:
+    build: ./chatbot
+    ports:
+      - "8081:8081"
+    networks:
+      - forbee-net
+
+  fastapi:
+    build: ./chatbot_ai
+    ports:
+      - "8000:8000"
+    networks:
+      - forbee-net
+
+networks:
+  forbee-net:
+    driver: bridge

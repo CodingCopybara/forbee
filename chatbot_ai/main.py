@@ -55,6 +55,7 @@ async def get_answer_from_openai(messages: list[dict]) -> str:
             "짧게 대답하세요."
             "간략하게 대답하세요."
             "추가적인 정보는 주지 마세요."
+            "답변은 3문장 안으로 끝내세요."
             "예: '하나의 벌통은 연간 20~30kg의 꿀을 생산합니다.'"
         ),
         messages=messages

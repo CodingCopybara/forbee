@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="/static/css/style.css">
   <style>
     body {
-      background-color: transparent;  
+      background-color:transparent;
       margin: 0;
       padding: 40px 0;
       font-family: 'Segoe UI', sans-serif;
@@ -17,23 +17,28 @@
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      border: 2px solid #eee;
+      border: 1px solid #e0e0e0;
       border-radius: 12px;
       overflow: hidden;
+      background-color: #ffeca5;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
     }
+
     .header {
       background: #ffe066;
       padding: 12px;
       font-weight: bold;
       font-size: 20px;
     }
+
     .messages {
       flex: 1;
       padding: 10px;
       overflow-y: auto;
       height: 400px;
-      background: #f9f9f9;
+      background: #fafafa;
     }
+
     .message {
       margin-bottom: 10px;
       padding: 8px 12px;
@@ -41,32 +46,49 @@
       max-width: 80%;
       line-height: 1.5;
     }
+
     .user {
       align-self: flex-end;
-      background: #d1f0ff;
+      background: #dff4ff;
       text-align: right;
     }
+
     .bot {
       align-self: flex-start;
-      background: #fff3c4;
+      background: #fff7d1;
       text-align: left;
     }
+
     .footer {
       display: flex;
       padding: 10px;
       border-top: 1px solid #ccc;
+      background-color: #fff7d7;
     }
+
     textarea {
       flex: 1;
       resize: none;
       padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: #ffffff;
     }
+
     button {
-      padding: 10px 20px;
       margin-left: 10px;
+      padding: 10px 16px;
       background-color: #ffe066;
       border: none;
+      border-radius: 6px;
+      font-weight: bold;
       cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #ffdd55;
     }
   </style>
 </head>
@@ -85,26 +107,36 @@
     </div>
 
     <div class="footer">
-      <form id="chat-form">
-        <textarea id="question" name="question" rows="2" placeholder="질문하세요..." required></textarea>
-        <button type="submit">전송</button>
+      <form id="chat-form" style="display: flex; width: 100%; gap: 10px; align-items: stretch;">
+        <textarea
+          id="question"
+          name="question"
+          rows="2"
+          placeholder="질문을 입력하세요..."
+          required
+          style="flex: 1; padding: 10px; resize: none; border-radius: 6px; border: 1px solid #ccc;"
+        ></textarea>
+        <button
+          type="submit"
+          style="width: 80px; background-color: #ffe066; border: none; border-radius: 6px; cursor: pointer; padding: 10px;"
+        >
+          전송
+        </button>
       </form>
     </div>
+
+
   </div>
 
- 
   <script>
-
     async function streamChat(question) {
       const chatBox = document.getElementById("chat-box");
 
-      // 나의 질문 추가
       const userMsg = document.createElement("div");
       userMsg.className = "message user";
       userMsg.innerHTML = `<strong>나:</strong> ${question}`;
       chatBox.appendChild(userMsg);
 
-      // 챗봇 응답 div
       const botMsg = document.createElement("div");
       botMsg.className = "message bot";
       chatBox.appendChild(botMsg);
@@ -121,8 +153,6 @@
       const decoder = new TextDecoder("utf-8");
 
       let text = "";
-     
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;

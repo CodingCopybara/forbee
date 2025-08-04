@@ -24,5 +24,6 @@ COPY . .
 # ─── Runtime ─────────────────────────────────────────────────────────────────
 EXPOSE 8000
 
-# uvicorn이 app.py 안의 FastAPI 인스턴스(app)를 실행합니다.
-ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# uvicorn이 main.py 안의 FastAPI 인스턴스(app)를 실행합니다.
+ENTRYPOINT ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
