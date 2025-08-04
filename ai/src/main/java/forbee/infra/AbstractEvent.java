@@ -3,15 +3,14 @@ package forbee.infra;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import forbee.AiApplication;
-// 임시 비활성화 - Kafka 의존성 제거로 인해
-// import forbee.config.kafka.KafkaProcessor;
+import forbee.config.kafka.KafkaProcessor;
 import org.springframework.beans.BeanUtils;
-// import org.springframework.messaging.MessageChannel;
-// import org.springframework.messaging.MessageHeaders;
-// import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-// import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.MimeTypeUtils;
 
 //<<< Clean Arch / Outbound Adaptor
 public class AbstractEvent {
@@ -30,10 +29,6 @@ public class AbstractEvent {
     }
 
     public void publish() {
-        /**
-         * spring streams 방식 - 임시 비활성화
-         */
-        /*
         KafkaProcessor processor = AiApplication.applicationContext.getBean(
             KafkaProcessor.class
         );
@@ -49,10 +44,6 @@ public class AbstractEvent {
                 .setHeader("type", getEventType())
                 .build()
         );
-        */
-        
-        // Kafka 비활성화 상태에서는 로그만 출력
-        System.out.println("Event publish (Kafka disabled): " + this.toJson());
     }
 
     public void publishAfterCommit() {
@@ -88,15 +79,11 @@ public class AbstractEvent {
 
     public String toJson() {
         ObjectMapper objectMapper = new ObjectMapper();
-        String json = null;
-
         try {
-            json = objectMapper.writeValueAsString(this);
+            return objectMapper.writeValueAsString(this);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("JSON format exception", e);
         }
-
-        return json;
     }
 }
 //>>> Clean Arch / Outbound Adaptor

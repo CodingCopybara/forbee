@@ -1,6 +1,8 @@
 package forbee.infra;
 
-// 임시 비활성화 - Kafka 의존성 제거로 인해 전체 클래스 주석 처리
+// Kafka → WebSocket 브리지 - 현재 사용하지 않으므로 비활성화
+// 필요시 다시 활성화 가능
+
 /*
 import forbee.domain.ImageAnalysisResult;
 import java.util.function.Consumer;
