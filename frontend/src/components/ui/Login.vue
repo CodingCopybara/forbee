@@ -66,36 +66,17 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { useAuthStore } from '@/stores/auth' // Pinia 스토어 import
 
 const email = ref('')
 const password = ref('')
 const router = useRouter()
+const authStore = useAuthStore() // 스토어 인스턴스 생성
 
 const login = async () => {
-  try {
-    const response = await axios.post(
-      'https://8088-dlafhr789-forbee-hagbxtfzmyl.ws-us120.gitpod.io/oauth/token',
-      new URLSearchParams({
-        grant_type: 'password',
-        username: email.value,
-        password: password.value,
-      }).toString(),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': 'Basic dWVuZ2luZS1jbGllbnQ6dWVuZ2luZS1zZWNyZXQ=', // Base64 encoded uengine-client:uengine-secret
-        },
-      }
-    )
-    console.log('Login successful:', response.data)
-    // Save token and redirect
-    localStorage.setItem('accessToken', response.data.access_token)
-    localStorage.setItem('refreshToken', response.data.refresh_token)
-    router.push('/') // Redirect to home page or dashboard
-  } catch (error) {
-    console.error('Login failed:', error.response ? error.response.data : error.message)
-    alert('로그인 실패: ' + (error.response && error.response.data && error.response.data.error_description ? error.response.data.error_description : error.message))
+  const success = await authStore.login(email.value, password.value) // 스토어의 login 액션 호출
+  if (success) {
+    router.push('/') // 로그인 성공 시 리다이렉트
   }
 }
 

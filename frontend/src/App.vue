@@ -24,8 +24,8 @@
         <v-btn 
           text
           color="text-black"
-          :to="isLoggedIn ? '/mypage' : '/login'">
-          {{ isLoggedIn ? '마이페이지' : '로그인' }}
+          :to="authStore.isLoggedIn ? '/mypage' : '/login'">
+          {{ authStore.isLoggedIn ? '마이페이지' : '로그인' }}
         </v-btn>
 
       </v-container>
@@ -63,9 +63,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const isLoggedIn = ref(false)
-// import { useAuth } from "@/composables/useAuth"
+import { useAuthStore } from '@/stores/auth' // Pinia 스토어 import
+
+const authStore = useAuthStore() // 스토어 인스턴스 생성
 
   const links = [
     { label: '조합원', path: '/member'},
