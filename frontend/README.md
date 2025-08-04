@@ -26,11 +26,6 @@ npm run dev
 
 
 
-3. dist/ 폴더 만드는 방법
-
-npm install  
-npm run build
-
 
 
 
