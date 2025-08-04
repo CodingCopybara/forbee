@@ -18,6 +18,8 @@ public class Chatbot {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    private String userId;
+
     private Date requestTime;
 
     @Embedded
@@ -33,6 +35,15 @@ public class Chatbot {
       @AttributeOverride(name="time",    column=@Column(name="response_comment_time"))
     })
     private Comment response;
+
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
 
 
     public static ChatbotRepository repository() {

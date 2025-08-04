@@ -9,6 +9,8 @@ spring:
 spring:
   profiles: default
   jpa:
+    hibernate:
+      ddl-auto: update   # ✅ 여기 추가!
     properties:
       hibernate:
         show_sql: true
@@ -30,14 +32,10 @@ spring:
       bindings:
         event-in:
           group: chatbot
-#<<< EDA / Topic Name
           destination: forbee
-#>>> EDA / Topic Name
           contentType: application/json
         event-out:
-#<<< EDA / Topic Name
           destination: forbee
-#>>> EDA / Topic Name
           contentType: application/json
 
 logging:
@@ -45,12 +43,13 @@ logging:
     org.hibernate.type: trace
     org.springframework.cloud: debug
 
-
 ---
 
 spring:
   profiles: docker
   jpa:
+    hibernate:
+      ddl-auto: update   # ✅ 여기도 추가!
     properties:
       hibernate:
         show_sql: true
@@ -77,5 +76,3 @@ spring:
         event-out:
           destination: forbee
           contentType: application/json
-
-

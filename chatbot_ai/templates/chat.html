@@ -1,45 +1,154 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
   <meta charset="utf-8">
-  <title>양봉 전문가 챗봇</title>
+  <title>🐝 양봉 전문가 챗봇</title>
   <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    .chat-container {
+      width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      border: 2px solid #eee;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .header {
+      background: #ffe066;
+      padding: 12px;
+      font-weight: bold;
+      font-size: 20px;
+    }
+    .messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      height: 400px;
+      background: #f9f9f9;
+    }
+    .message {
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      max-width: 80%;
+      line-height: 1.5;
+    }
+    .user {
+      align-self: flex-end;
+      background: #d1f0ff;
+      text-align: right;
+    }
+    .bot {
+      align-self: flex-start;
+      background: #fff3c4;
+      text-align: left;
+    }
+    .footer {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ccc;
+    }
+    textarea {
+      flex: 1;
+      resize: none;
+      padding: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      margin-left: 10px;
+      background-color: #ffe066;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <div class="chat-container">
     <div class="header">🐝 양봉 전문가 챗봇</div>
 
-    <div class="messages">
+    <div class="messages" id="chat-box">
       {% for msg in history %}
-        <div class="message {{ 'user' if msg.role=='user' else 'bot' }}">
-          <strong>{{ '나' if msg.role=='user' else '챗봇' }}:</strong>
+        <div class="message {{ 'user' if msg.role == 'user' else 'bot' }}">
+          <strong>{{ '나' if msg.role == 'user' else '챗봇' }}:</strong>
           {{ msg.content }}
         </div>
       {% endfor %}
+      <div class="message bot" id="answer"></div> <!-- 스트리밍용 -->
     </div>
 
     <div class="footer">
-      <form method="post">
-        <textarea name="question" rows="2" placeholder="질문하세요..." required></textarea>
+      <form id="chat-form">
+        <textarea id="question" name="question" rows="2" placeholder="질문하세요..." required></textarea>
         <button type="submit">전송</button>
       </form>
     </div>
   </div>
+
+ 
   <script>
+
+    async function streamChat(question) {
+      const chatBox = document.getElementById("chat-box");
+
+      // 나의 질문 추가
+      const userMsg = document.createElement("div");
+      userMsg.className = "message user";
+      userMsg.innerHTML = `<strong>나:</strong> ${question}`;
+      chatBox.appendChild(userMsg);
+
+      // 챗봇 응답 div
+      const botMsg = document.createElement("div");
+      botMsg.className = "message bot";
+      chatBox.appendChild(botMsg);
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      const response = await fetch("/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      let text = "";
+     
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (let char of chunk) {
+          text += char;
+          botMsg.textContent = `챗봇: ${text}`;
+          chatBox.scrollTop = chatBox.scrollHeight;
+          await new Promise(r => setTimeout(r, 20));
+        }
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
-      const textarea = document.querySelector("textarea[name='question']");
-      const form = textarea.closest("form");
+      const form = document.getElementById("chat-form");
+      const textarea = document.getElementById("question");
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const question = textarea.value.trim();
+        if (question) {
+          textarea.value = "";
+          streamChat(question);
+        }
+      });
 
       textarea.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
-          // Shift 없이 Enter → 폼 제출
           e.preventDefault();
-          form.requestSubmit();  // form.submit() 대신 최신 API
+          form.requestSubmit();
         }
-        // Shift+Enter는 기본 동작(줄바꿈) 허용
       });
     });
   </script>
 </body>
 </html>
-

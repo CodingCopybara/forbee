@@ -3,7 +3,7 @@
 
 파이썬 챗봇 들어가기  
 cd chatbot_ai  
-.env 파일 만들어주기
+.env 파일 만들어주기 (OPENAI_API_KEY=)
 pip install -r requirements.txt 
 uvicorn main:app --reload  
 uvicorn main:app --port 8000
