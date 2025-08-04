@@ -1,5 +1,7 @@
 package forbee.config;
 
+// 임시 비활성화 - OAuth2 의존성 제거로 인해 전체 클래스 주석 처리
+/*
 import org.springframework.context.annotation.Bean;
 import static org.springframework.security.config.Customizer.withDefaults;
 import org.springframework.context.annotation.Configuration;
@@ -83,3 +85,4 @@ public class SecurityConfig {
         }
     }
 }
+*/

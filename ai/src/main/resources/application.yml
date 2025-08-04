@@ -1,60 +1,28 @@
-spring:
-  jpa:
-    properties:
-      hibernate:
-        show_sql: true
-        format_sql: true
-    open-in-view: false
-  cloud:
-    stream:
-      kafka:
-        binder:
-          brokers: ${KAFKA_BROKERS:localhost:19092}
+server:
+  port: 8082
 
-logging:
-  level:
-    org.hibernate.type: trace
-    org.springframework.cloud: debug
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  h2:
+    console:
+      enabled: true
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
 
 fastapi:
-  url: ${FASTAPI_URL:http://localhost:8000}
+  url: ${FASTAPI_URL:http://172.19.206.126:8000}
 
 azure:
   storage:
     account-url: ${AZURE_STORAGE_ACCOUNT_URL:https://aivle26storage.blob.core.windows.net}
-    container-name: ${AZURE_STORAGE_CONTAINER_NAME:container}
+    container-name: ${AZURE_CONTAINER_NAME:container}
 
----
-
-spring:
-  config:
-    activate:
-      on-profile: default
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${JWK_SET_URI:http://localhost:9090/realms/master/protocol/openid-connect/certs}
-
-server:
-  port: 8081
-
----
-
-spring:
-  config:
-    activate:
-      on-profile: docker
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${JWK_SET_URI:http://keycloak:8080/realms/master/protocol/openid-connect/certs
-  cloud:
-    stream:
-      kafka:
-        binder:
-          brokers: ${KAFKA_BROKERS:my-kafka:9092}
-
-fastapi:
-  url: http://fastapi:8000
+logging:
+  level:
+    root: INFO

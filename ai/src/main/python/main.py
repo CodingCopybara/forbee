@@ -6,6 +6,7 @@ import uuid
 from typing import List
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 import cv2
 import numpy as np
 import requests
@@ -14,7 +15,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
 from ultralytics import YOLO
-from kafka import KafkaProducer
+# from kafka import KafkaProducer  # 임시 비활성화
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, ContentSettings
 
@@ -33,12 +34,13 @@ if USE_AZURE_STORAGE:
 else:
     blob_service_client = None
 
-KAFKA_BOOTSTRAP_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
-producer = KafkaProducer(
-    key_serializer=str.encode,
-    bootstrap_servers=[KAFKA_BOOTSTRAP_SERVERS],
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
+# 임시 비활성화 - Kafka 의존성 제거로 인해
+# KAFKA_BOOTSTRAP_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
+# producer = KafkaProducer(
+#     key_serializer=str.encode,
+#     bootstrap_servers=[KAFKA_BOOTSTRAP_SERVERS],
+#     value_serializer=lambda v: json.dumps(v).encode('utf-8')
+# )
 
 MODEL_PATH = "bee_yolov8_detection.pt"
 CONFIDENCE_THRESHOLD = 0.5
@@ -68,8 +70,9 @@ class ImageAnalysisResult(BaseModel):
     detectedObjects: List[DetectedObject]
 
 def upload_image(image_cv: np.ndarray, image_url: str) -> str:
-    image_url = Path(image_url)
-    result_filename = f"{image_url.stem}_{uuid.uuid4().hex[:8]}{image_url.suffix}"
+    parsed_url = urlparse(image_url)
+    clean_path = Path(parsed_url.path)
+    result_filename = f"{clean_path.stem}_{uuid.uuid4().hex[:8]}{clean_path.suffix}"
 
     is_success, buffer = cv2.imencode(".jpg", image_cv)
     if not is_success:
@@ -117,16 +120,20 @@ def process(request: ImageAnalysisRequest):
 
     resultImagePath = upload_image(image_cv, request.imageUrl)
 
-    # Kafka
+    # Kafka - 임시 비활성화
     response_data = ImageAnalysisResult(
         userId=request.userId,
         imageUrl=request.imageUrl,
         resultImagePath=resultImagePath,
         detectedObjects=detectedObjects
     )
-    kafka_topic = "forbee"
-    producer.send(kafka_topic, key=request.userId, value=response_data.model_dump())
-    producer.flush()
+    
+    # Kafka 전송 비활성화 - 로그로 대체
+    print(f"분석 완료 (Kafka 비활성화): {response_data.model_dump()}")
+    
+    # kafka_topic = "forbee"
+    # producer.send(kafka_topic, key=request.userId, value=response_data.model_dump())
+    # producer.flush()
 
 @app.post("/object-detection")
 async def analyze_image(request: ImageAnalysisRequest, background_tasks: BackgroundTasks):

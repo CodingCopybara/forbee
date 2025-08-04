@@ -1,5 +1,7 @@
 package forbee.config.kafka;
 
+// 임시 비활성화 - Kafka 의존성 제거로 인해 전체 인터페이스 주석 처리
+/*
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.messaging.MessageChannel;
@@ -15,3 +17,4 @@ public interface KafkaProcessor {
     @Output(OUTPUT)
     MessageChannel outboundTopic();
 }
+*/

@@ -27,10 +27,16 @@ public class AzureBlobService {
             @Value("${azure.storage.account-url}") String accountUrl,
             @Value("${azure.storage.container-name}") String containerName) {
         this.containerName = containerName;
-        this.blobServiceClient = initializeBlobServiceClient(accountUrl);
+        
+        if (accountUrl == null || accountUrl.trim().isEmpty()) {
+            log.warn("Azure Storage account URL is not configured. Mock mode will be used.");
+            this.blobServiceClient = null;
+        } else {
+            this.blobServiceClient = initializeBlobServiceClient(accountUrl);
+        }
         
         log.info("Azure Blob Service initialized with account: {}, container: {}", 
-                accountUrl, containerName);
+                accountUrl != null ? accountUrl : "NOT_CONFIGURED", containerName);
     }
     
     private BlobServiceClient initializeBlobServiceClient(String accountUrl) {

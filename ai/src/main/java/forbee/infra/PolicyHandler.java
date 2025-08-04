@@ -1,5 +1,7 @@
 package forbee.infra;
 
+// 임시 비활성화 - Kafka 의존성 제거로 인해 전체 클래스 주석 처리
+/*
 import forbee.domain.ImageAnalysisResult;
 import java.util.function.Consumer;
 import org.springframework.context.annotation.Bean;
@@ -23,8 +25,9 @@ public class PolicyHandler {
             if (result == null) {
                 return;
             }
-            notificationService.sendAnalysisResultToUser(result.getUserId(), result);
+            notificationService.sendAnalysisResultToUser(result.userId(), result);
         };
     }
 }
 //>>> Clean Arch / Inbound Adaptor
+*/

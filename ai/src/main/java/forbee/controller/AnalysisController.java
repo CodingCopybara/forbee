@@ -36,6 +36,7 @@ public class AnalysisController {
     @GetMapping("/blob-sas")
     public ResponseEntity<Map<String, String>> getBlobSasToken(@RequestParam String fileName) {
         log.info("SAS token request received for file: {}", fileName);
+        
         try {
             // UUID를 포함한 고유한 파일명 생성
             String uniqueFileName = UUID.randomUUID().toString() + "_" + fileName;
@@ -43,15 +44,59 @@ public class AnalysisController {
             
             Map<String, String> sasInfo = azureBlobService.generateSasForUpload(uniqueFileName);
             log.info("SAS token generated successfully for file: {}", uniqueFileName);
+            
+            // Mock 환경인지 확인하여 프론트엔드에 정보 제공
+            String uploadUrl = sasInfo.get("uploadUrl");
+            if (uploadUrl != null && uploadUrl.contains("mock-storage")) {
+                sasInfo.put("mode", "mock");
+                log.info("Mock mode SAS response returned");
+            } else {
+                sasInfo.put("mode", "azure");
+                log.info("Real Azure SAS response returned");
+            }
+            
             return ResponseEntity.ok(sasInfo);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request for SAS token: {}", e.getMessage());
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Invalid request");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+            
         } catch (Exception e) {
             log.error("Failed to generate SAS token for file: {}. Error: {}", fileName, e.getMessage(), e);
             
-            // 개발 환경에서는 더 상세한 오류 정보 반환
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "SAS token generation failed");
             errorResponse.put("message", e.getMessage());
             errorResponse.put("type", e.getClass().getSimpleName());
+            errorResponse.put("details", "Azure Storage 설정을 확인하거나 로컬 개발 환경에서는 Mock 모드가 사용됩니다.");
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    @GetMapping("/blob-read-sas")
+    public ResponseEntity<Map<String, String>> getReadOnlySasUrl(@RequestParam String fileName) {
+        log.info("Read-only SAS URL request received for file: {}", fileName);
+        
+        try {
+            String readOnlySasUrl = azureBlobService.generateReadOnlySasUrl(fileName);
+            log.info("Read-only SAS URL generated successfully for file: {}", fileName);
+            
+            Map<String, String> response = new HashMap<>();
+            response.put("readOnlyUrl", readOnlySasUrl);
+            response.put("fileName", fileName);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Failed to generate read-only SAS URL for file: {}. Error: {}", fileName, e.getMessage(), e);
+            
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Read-only SAS URL generation failed");
+            errorResponse.put("message", e.getMessage());
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }

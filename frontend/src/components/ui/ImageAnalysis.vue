@@ -265,15 +265,35 @@ export default {
         const sasResponse = await fetch(`/ai/blob-sas?fileName=${encodeURIComponent(file.name)}`)
         
         if (!sasResponse.ok) {
-          const errorText = await sasResponse.text()
-          console.error('SAS 응답 오류:', errorText)
-          throw new Error('SAS 토큰 요청 실패')
+          let errorMessage = 'SAS 토큰 요청 실패'
+          try {
+            // Response body를 한 번만 읽기 위해 text()로 읽은 후 JSON 파싱 시도
+            const responseText = await sasResponse.text()
+            try {
+              const errorData = JSON.parse(responseText)
+              errorMessage = errorData.message || errorData.details || errorMessage
+              console.error('SAS 응답 오류 (JSON):', errorData)
+            } catch (jsonError) {
+              console.error('SAS 응답 오류 (텍스트):', responseText)
+              errorMessage = responseText || errorMessage
+            }
+          } catch (e) {
+            console.error('SAS 응답 읽기 실패:', e)
+          }
+          throw new Error(errorMessage)
         }
         
         const sasData = await sasResponse.json()
         console.log('SAS 토큰 수신:', sasData)
         
-        const { uploadUrl, blobUrl } = sasData
+        const { uploadUrl, blobUrl, mode } = sasData
+        
+        // Mock 환경 감지 (로컬 개발용)
+        if (mode === 'mock' || uploadUrl.includes('mock-storage')) {
+          console.log('로컬 개발 환경 감지 - Mock 모드로 실행')
+          // Base64로 변환된 이미지를 blobUrl로 사용 (로컬 개발용)
+          return this.selectedImage
+        }
         
         console.log('Azure Blob Storage에 업로드 중...')
         const uploadResponse = await fetch(uploadUrl, {
