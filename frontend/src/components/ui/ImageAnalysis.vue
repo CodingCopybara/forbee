@@ -72,124 +72,29 @@
             v-for="item in sortedAnalysisHistory" 
             :key="item.analysisId" 
             class="history-item"
-            @click="viewAnalysisDetail(item)"
           >
             <div class="history-image">
               <img :src="item.originalImage" alt="분석한 이미지" />
-              <div class="status-badge" :class="item.status">
-                <span v-if="item.status === 'analyzing'">🔄 분석 중</span>
-                <span v-else-if="item.status === 'completed'">✅ 완료</span>
-                <span v-else-if="item.status === 'error'">❌ 오류</span>
-              </div>
             </div>
             
             <div class="history-info">
               <h4>{{ item.fileName }}</h4>
               <p class="analysis-time">{{ formatTimestamp(item.createdAt) }}</p>
-              
-              <div class="analysis-summary" v-if="item.status === 'completed' && item.result">
-                <span class="summary-text">
-                  객체 {{ item.result.detectedObjects?.length || 0 }}개 감지
-                </span>
-              </div>
-              
-              <div class="analysis-summary" v-else-if="item.status === 'analyzing'">
-                <span class="summary-text analyzing-text">
-                  분석 진행 중...
-                </span>
-              </div>
-              
-              <div class="analysis-summary" v-else-if="item.status === 'error'">
-                <span class="summary-text error-text">
-                  분석 실패: {{ item.error }}
-                </span>
-              </div>
+
             </div>
             
             <div class="history-actions">
               <button 
-                class="btn-icon" 
-                @click.stop="viewAnalysisDetail(item)"
-                :disabled="item.status === 'analyzing'"
-              >
-                👁️
-              </button>
-              <button 
-                class="btn-icon delete-btn" 
+                class="btn btn-delete" 
                 @click.stop="deleteAnalysisItem(item.analysisId)"
               >
-                🗑️
+                기록 삭제
               </button>
             </div>
           </div>
         </div>
       </div>
-      
-      <!-- Analysis Detail Modal -->
-      <div v-if="selectedAnalysisDetail" class="modal-overlay" @click="closeAnalysisDetail">
-        <div class="modal-content" @click.stop>
-          <div class="modal-header">
-            <h3>{{ selectedAnalysisDetail.fileName }} - 분석 결과</h3>
-            <button class="close-btn" @click="closeAnalysisDetail">&times;</button>
-          </div>
-          
-          <div class="modal-body">
-            <div v-if="selectedAnalysisDetail.result" class="analysis-result">
-              <div class="result-summary">
-                <div class="summary-card">
-                  <div class="summary-item">
-                    <span class="summary-label">감지된 객체</span>
-                    <span class="summary-value">{{ selectedAnalysisDetail.result.detectedObjects?.length || 0 }}개</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="summary-label">분석 시간</span>
-                    <span class="summary-value">{{ formatTimestamp(selectedAnalysisDetail.result.timestamp) }}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Detected Objects -->
-              <div v-if="selectedAnalysisDetail.result.detectedObjects && selectedAnalysisDetail.result.detectedObjects.length > 0" class="detected-objects">
-                <h4>감지된 객체 목록</h4>
-                <div class="object-grid">
-                  <div 
-                    v-for="(obj, index) in selectedAnalysisDetail.result.detectedObjects" 
-                    :key="index" 
-                    class="object-card"
-                  >
-                    <div class="object-header">
-                      <span class="object-label">{{ obj.label }}</span>
-                      <span class="confidence-badge" :class="getConfidenceClass(obj.confidence)">
-                        {{ Math.round(obj.confidence * 100) }}%
-                      </span>
-                    </div>
-                    <div class="object-details">
-                      <div class="detail-row">
-                        <span>위치:</span>
-                        <span>X: {{ obj.boundingBox.x }}, Y: {{ obj.boundingBox.y }}</span>
-                      </div>
-                      <div class="detail-row">
-                        <span>크기:</span>
-                        <span>{{ obj.boundingBox.width }} × {{ obj.boundingBox.height }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Result Image -->
-              <div v-if="selectedAnalysisDetail.result.resultImagePath" class="result-image">
-                <h4>분석된 이미지</h4>
-                <img :src="selectedAnalysisDetail.result.resultImagePath" alt="분석 결과 이미지" class="result-img" />
-              </div>
-            </div>
-            
-            <div v-else class="no-result">
-              <p>분석 결과를 불러올 수 없습니다.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+
     </div>
   </div>
 </template>
@@ -210,8 +115,7 @@ export default {
       analysisResult: null,
       userId: 'user123', // 실제로는 로그인된 사용자 ID
       analysisId: null,
-      analysisHistory: [], // 분석 이력
-      selectedAnalysisDetail: null // 선택된 분석 상세 정보
+      analysisHistory: [] // 분석 이력
     }
   },
   computed: {
@@ -416,12 +320,6 @@ export default {
       return new Date(timestamp).toLocaleString('ko-KR')
     },
     
-    getConfidenceClass(confidence) {
-      if (confidence >= 0.8) return 'high'
-      if (confidence >= 0.6) return 'medium'
-      return 'low'
-    },
-    
     // 분석 이력 관리
     loadAnalysisHistory() {
       try {
@@ -443,21 +341,9 @@ export default {
       }
     },
     
-    viewAnalysisDetail(item) {
-      if (item.status === 'completed' && item.result) {
-        this.selectedAnalysisDetail = item
-      }
-    },
-    
-    closeAnalysisDetail() {
-      this.selectedAnalysisDetail = null
-    },
-    
     deleteAnalysisItem(analysisId) {
-      if (confirm('이 분석 기록을 삭제하시겠습니까?')) {
-        this.analysisHistory = this.analysisHistory.filter(item => item.analysisId !== analysisId)
-        this.saveAnalysisHistory()
-      }
+      this.analysisHistory = this.analysisHistory.filter(item => item.analysisId !== analysisId)
+      this.saveAnalysisHistory()
     }
   }
 }
@@ -633,6 +519,20 @@ export default {
 .btn-secondary:hover {
   background: #5a6268;
   transform: translateY(-2px);
+}
+
+.btn-delete {
+  background: #dc3545;
+  color: white;
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+  font-size: 0.9rem;
+  padding: 8px 16px;
+}
+
+.btn-delete:hover {
+  background: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.6);
 }
 
 .btn:disabled {
@@ -840,36 +740,6 @@ export default {
   object-fit: cover;
 }
 
-.status-badge {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: white;
-}
-
-.status-badge.analyzing {
-  background: #ffc107;
-  animation: pulse 2s infinite;
-}
-
-.status-badge.completed {
-  background: #28a745;
-}
-
-.status-badge.error {
-  background: #dc3545;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.7; }
-  100% { opacity: 1; }
-}
-
 .history-info {
   flex: 1;
 }
@@ -886,132 +756,10 @@ export default {
   font-size: 0.9rem;
 }
 
-.analysis-summary {
-  margin: 0;
-}
-
-.summary-text {
-  font-size: 0.9rem;
-  padding: 4px 8px;
-  border-radius: 12px;
-  background: #e9ecef;
-  color: #495057;
-}
-
-.analyzing-text {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.error-text {
-  background: #f8d7da;
-  color: #721c24;
-}
-
 .history-actions {
   display: flex;
   gap: 10px;
   flex-shrink: 0;
-}
-
-.btn-icon {
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: #6c757d;
-  color: white;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  font-size: 1rem;
-}
-
-.btn-icon:hover {
-  background: #5a6268;
-  transform: scale(1.1);
-}
-
-.btn-icon:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.delete-btn:hover {
-  background: #dc3545;
-}
-
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  max-width: 800px;
-  max-height: 90vh;
-  width: 100%;
-  overflow-y: auto;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 30px;
-  border-bottom: 1px solid #e9ecef;
-  background: #f8f9fa;
-  border-radius: 12px 12px 0 0;
-}
-
-.modal-header h3 {
-  margin: 0;
-  color: #495057;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #6c757d;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-.close-btn:hover {
-  background: #e9ecef;
-  color: #495057;
-}
-
-.modal-body {
-  padding: 30px;
-}
-
-.no-result {
-  text-align: center;
-  color: #6c757d;
-  padding: 40px;
 }
 
 /* Responsive Design */
@@ -1061,19 +809,6 @@ export default {
   
   .history-actions {
     align-self: flex-end;
-  }
-  
-  .modal-content {
-    margin: 10px;
-    max-height: calc(100vh - 20px);
-  }
-  
-  .modal-header {
-    padding: 15px 20px;
-  }
-  
-  .modal-body {
-    padding: 20px;
   }
 }
 </style>
