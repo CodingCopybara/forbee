@@ -14,6 +14,13 @@
         </div>
     </div>
 
+    <div class="manual-diagnose-section">
+      <input v-model="diagnoseForm.disease_name" placeholder="병명(예: 응애)">
+      <input v-model="diagnoseForm.confidence" type="number" placeholder="신뢰도(0~1)">
+      <input v-model="diagnoseForm.userId" placeholder="userId">
+      <v-btn color="#74512D" @click="onSendDiagnose">진단 시작</v-btn>
+    </div>
+
     <div class="upload-section">
       <input type="file" ref="fileInput" @change="handleFileUpload" hidden />
       <v-btn color="warning" @click="$refs.fileInput.click()">사진업로드</v-btn>
@@ -28,78 +35,107 @@
 </template>
 
 <script>
+import axios from 'axios'
+import { analyzeYolo, sendDiagnose, sendAnswer } from '@/api/agent'
+
 export default {
   data() {
     return {
-      userInput: "",
+      // userInput: "",
       messages: [
         { sender: "bot", type: "text", text: "꿀벌 질병/해충 탐지 서비스에 오신걸 환영합니다~! 분석을 원하는 사진을 올려주세요 🤓✨" }
       ],
-      uploadedFile: null,
-      isLoading: false,
+      // uploadedFile: null,
+      // isLoading: false,
+      diagnoseForm: {
+      disease_name: '',
+      confidence: 0.9,
+      userId: ''
+      }
     };
   },
   methods: {
     async handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+      const file = event.target.files[0]
+      if (!file) return
 
-      // 1. 사용자 업로드 메시지 표시
-      const imgUrl = URL.createObjectURL(file);
-      this.messages.push({ sender: "user", type: "image", url: imgUrl });
-
-      this.isLoading = true;
+      // 사용자 업로드 메시지
+      const imgUrl = URL.createObjectURL(file)
+      this.messages.push({ sender: "user", type: "image", url: imgUrl })
+      this.isLoading = true
 
       try {
-        // 2. YOLO 분석 API 호출
-        const formData = new FormData();
-        formData.append("file", file);
+        // YOLO 분석
+        const yoloRes = await analyzeYolo(file)
+        this.messages.push({ sender: "bot", type: "text", text: `YOLO 분석결과: ${yoloRes.data.result}` })
 
-        const yoloRes = await fetch("/api/yolo/analyze", {
-          method: "POST",
-          body: formData,
-        }).then(res => res.json());
-
-        // YOLO 결과 표시
-        this.messages.push({ sender: "bot", type: "text", text: `YOLO 분석결과: ${yoloRes.result}` });
-
-        // 3. Agent API 호출 (YOLO 결과 전달)
-        const agentRes = await fetch("/api/agent/diagnose", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ yolo_result: yoloRes.result })
-        }).then(res => res.json());
-
-        // Agent 처방전 응답 추가
-        this.messages.push({ sender: "bot", type: "text", text: agentRes.prescription });
+        // Agent 진단
+        const agentRes = await sendDiagnose(yoloRes.data.result)
+        this.messages.push({ sender: "bot", type: "text", text: agentRes.data.prescription })
 
       } catch (err) {
-        this.messages.push({ sender: "bot", type: "text", text: "⚠️ 분석 중 오류가 발생했습니다. 다시 시도해주세요." });
+        this.messages.push({ sender: "bot", type: "text", text: "⚠️ 분석 중 오류가 발생했습니다. 다시 시도해주세요." })
       } finally {
-        this.isLoading = false;
+        this.isLoading = false
       }
     },
 
     async sendMessage() {
-      if (!this.userInput.trim()) return;
+      if (!this.userInput.trim()) return
 
-      // 사용자 메시지 추가
-      this.messages.push({ sender: "user", type: "text", text: this.userInput });
+      const message = this.userInput
+      this.messages.push({ sender: "user", type: "text", text: message })
+      this.userInput = ""
 
-      // Agent에게 추가 질문 전달
-      const res = await fetch("/api/agent/answer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: this.userInput })
-      }).then(res => res.json());
+      try {
+        const res = await sendAnswer(message)
+        this.messages.push({ sender: "bot", type: "text", text: res.data.reply })
+      } catch (err) {
+        this.messages.push({ sender: "bot", type: "text", text: "⚠️ 답변 중 오류가 발생했습니다." })
+      }
+    },
 
-      // Agent 응답 추가
-      this.messages.push({ sender: "bot", type: "text", text: res.reply });
+    async onSendDiagnose() {
+      console.log("진단 버튼 눌림!");
+      const { disease_name, confidence, userId } = this.diagnoseForm
+      if (!disease_name || !userId) {
+        alert('병명, userId 모두 입력해 주세요!')
+        return
+      }
+      try {
+        // Agent API 호출 (엔드포인트 맞춰서)
+        const res = await axios.post('https://8080-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io/api/diagnose', {
+          disease_name,
+          confidence: Number(confidence),
+          //userId
+         },
+         {
+          headers: { userId }
+          }
+        );
 
-      this.userInput = "";
-    }
+        const { prescription, questions, response } = res.data;
+        if (questions && questions.length > 0) {
+            this.messages.push({
+            sender: "bot",
+            type: "text",
+            text: `📝 추가 질문: ${questions.join('\n')}`
+        });
+      } else if (prescription) {
+          this.messages.push({
+          sender: "bot",
+          type: "text",
+          text: `🏥🐝 ${prescription}`
+      });
+      }
+        // 결과 표시 (메시지 추가)
+        //this.messages.push({ sender: "bot", type: "text", text: `처방 결과: ${res.data.prescription || JSON.stringify(res.data)}` })
+      } catch (err) {
+        this.messages.push({ sender: "bot", type: "text", text: "⚠️ 에이전트 호출 오류!" })
+      }
+    },
   }
-};
+}
 </script>
 
 <style scoped>
