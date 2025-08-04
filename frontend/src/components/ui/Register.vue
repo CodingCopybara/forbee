@@ -58,6 +58,26 @@
                 class="mb-6"
                 dense
               ></v-text-field>
+              <v-expansion-panels class="mb-3">
+                <v-expansion-panel>
+                  <v-expansion-panel-title>
+                    개인정보 활용 동의
+                  </v-expansion-panel-title>
+                  <v-expansion-panel-text>
+                    <p>1. 개인정보 수집 목적: 서비스 제공 및 회원 관리</p>
+                    <p>2. 수집하는 개인정보 항목: 이메일, 비밀번호, 이름</p>
+                    <p>3. 개인정보 보유 및 이용 기간: 회원 탈퇴 시까지</p>
+                    <p>4. 동의를 거부할 권리가 있으며, 거부 시 회원가입이 제한될 수 있습니다.</p>
+                    <p>5. 기타 사항은 개인정보처리방침을 참고해주시기 바랍니다.</p>
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+              </v-expansion-panels>
+              <v-checkbox
+                v-model="privacyAgreement"
+                label="위 내용에 동의합니다."
+                class="mb-3"
+                dense
+              ></v-checkbox>
               <v-btn
                 type="submit"
                 color="#FEBA17"
@@ -85,6 +105,7 @@ const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const name = ref('')
+const privacyAgreement = ref(false)
 const router = useRouter()
 
 const register = async () => {
@@ -93,9 +114,14 @@ const register = async () => {
     return
   }
 
+  if (!privacyAgreement.value) {
+    alert('개인정보 활용에 동의해야 합니다.')
+    return
+  }
+
   try {
     const response = await axios.post(
-      'https://8088-dlafhr789-forbee-58x0ymk3jqh.ws-us120.gitpod.io/api/users/register',
+      'https://8088-dlafhr789-forbee-hagbxtfzmyl.ws-us120.gitpod.io/api/users/register',
       {
         email: email.value,
         password: password.value,
