@@ -8,9 +8,17 @@ spring:
 
 spring:
   profiles: default
+  datasource:
+    url: jdbc:mysql://forbee-user-db.mysql.database.azure.com:3306/user?useSSL=false&serverTimezone=UTC&useLegacyDatetimeCode=false
+    username: forbeeuser
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
+    hibernate:
+      ddl-auto: update
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
         show_sql: true
         format_sql: true
         implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
@@ -47,19 +55,27 @@ logging:
 
 api:
   url: 
-    user: localhost:0 
+    user: localhost:8084
     
 
 server:
-  port: 0
+  port: 8084
 
 ---
 
 spring:
   profiles: docker
+  datasource:
+    url: jdbc:mysql://forbee-user-db.mysql.database.azure.com:3306/user?useSSL=false&serverTimezone=UTC&useLegacyDatetimeCode=false
+    username: forbeeuser
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
+    hibernate:
+      ddl-auto: update
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
         show_sql: true
         format_sql: true
         implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl

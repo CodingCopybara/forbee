@@ -79,3 +79,5 @@ spring:
           contentType: application/json
 
 
+openai:
+  api-key: ${OPENAI_API_KEY}

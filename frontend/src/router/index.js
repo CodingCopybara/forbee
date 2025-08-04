@@ -35,6 +35,10 @@ const router = createRouter({
       path: '/mypage',
       component: () => import('../components/ui/MyPageGrid.vue'),
     },
+    {
+      path: '/register',
+      component: () => import('../components/ui/Register.vue'),
+    },
   ],
 })
 

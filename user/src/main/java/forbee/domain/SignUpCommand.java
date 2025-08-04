@@ -10,5 +10,5 @@ public class SignUpCommand {
     private String email;
     private String name;
     private String password;
-    private role role;
+    private Role role;
 }

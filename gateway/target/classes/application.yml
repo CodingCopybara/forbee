@@ -22,9 +22,9 @@ spring:
            predicates:
             - Path=/plants/** 
          - id: user
-           uri: http://localhost:0
+           uri: http://localhost:8084
            predicates:
-            - Path=/users/**/memberRequestLists/** 
+            - Path=/users/** 
          - id: dashboard
            uri: http://localhost:0
            predicates:
@@ -37,6 +37,14 @@ spring:
            uri: http://localhost:0
            predicates:
             - Path=//**//** 
+         - id: oauth-register
+           uri: http://localhost:8090
+           predicates:
+            - Path=/api/users/register
+         - id: oauth-token
+           uri: http://localhost:8090
+           predicates:
+            - Path=/oauth/token
       globalcors:
         corsConfigurations:
           '[/**]':

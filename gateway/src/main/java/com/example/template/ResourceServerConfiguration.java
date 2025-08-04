@@ -19,14 +19,25 @@ public class ResourceServerConfiguration {
             .csrf()
             .disable()
             .authorizeExchange()
+<<<<<<<< HEAD:gateway/src/main/java/com/example/template/ResourceServerConfiguration.java
             .pathMatchers("/products/**", "/goods/**", "/oauth/**", "/login/**")
+========
+            .pathMatchers("/login/**", "/logout**", "/products/**", "/api/users/register", "/oauth/token")
+>>>>>>>> feat/frontend/sign:gateway/src/main/java/forbee/config/SecurityConfiguration.java
             .permitAll()
             .anyExchange()
             .authenticated()
             .and()
+<<<<<<<< HEAD:gateway/src/main/java/com/example/template/ResourceServerConfiguration.java
             .oauth2ResourceServer()
             .jwt();
+========
+            .oauth2ResourceServer() // Add this line
+            .jwt(); // Add this line
+>>>>>>>> feat/frontend/sign:gateway/src/main/java/forbee/config/SecurityConfiguration.java
 
         return http.build();
     }
+
+    
 }
