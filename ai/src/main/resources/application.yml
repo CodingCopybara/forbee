@@ -16,6 +16,7 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
 
 fastapi:
+  # url: ${FASTAPI_URL:http://localhost:8000}
   url: ${FASTAPI_URL:http://172.19.206.126:8000}
 
 azure:
