@@ -3,10 +3,12 @@
 
 import os
 import uuid
-from typing import List
+import time
 import json
+from typing import List
 from pathlib import Path
 from urllib.parse import urlparse
+
 import cv2
 import numpy as np
 import requests
@@ -15,7 +17,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
 from ultralytics import YOLO
-# from kafka import KafkaProducer  # 임시 비활성화
+from kafka import KafkaProducer
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, ContentSettings
 
@@ -34,35 +36,45 @@ if USE_AZURE_STORAGE:
 else:
     blob_service_client = None
 
-# 임시 비활성화 - Kafka 의존성 제거로 인해
-# KAFKA_BOOTSTRAP_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
-# producer = KafkaProducer(
-#     key_serializer=str.encode,
-#     bootstrap_servers=[KAFKA_BOOTSTRAP_SERVERS],
-#     value_serializer=lambda v: json.dumps(v).encode('utf-8')
-# )
+# 환경 변수 설정
+KAFKA_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+KAFKA_TOPIC = os.environ.get("KAFKA_TOPIC", "forbee")
 
-MODEL_PATH = "bee_yolov8_detection.pt"
+# Kafka Producer 초기화
+try:
+    producer = KafkaProducer(
+        key_serializer=str.encode,
+        bootstrap_servers=[KAFKA_SERVERS],
+        value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+        acks='all',
+        retries=3
+    )
+except Exception as e:
+    print(f"Kafka 연결 실패: {e}")
+    producer = None
+
+# 모델 초기화
 CONFIDENCE_THRESHOLD = 0.5
-model_full_path = script_dir / MODEL_PATH
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"\ndevice: {device}\n")
-model = YOLO(model_full_path)
-model.to(device)
+model = YOLO(script_dir / "bee_yolov8_detection.pt").to(device)
 
-# Pydantic
+# 데이터 모델
 class ImageAnalysisRequest(BaseModel):
     userId: str
     imageUrl: str
+
 class BoundingBox(BaseModel):
     x: int
     y: int
     width: int
     height: int
+
 class DetectedObject(BaseModel):
     label: str
     confidence: float
     boundingBox: BoundingBox
+
 class ImageAnalysisResult(BaseModel):
     userId: str
     imageUrl: str
@@ -70,72 +82,96 @@ class ImageAnalysisResult(BaseModel):
     detectedObjects: List[DetectedObject]
 
 def upload_image(image_cv: np.ndarray, image_url: str) -> str:
-    parsed_url = urlparse(image_url)
-    clean_path = Path(parsed_url.path)
-    result_filename = f"{clean_path.stem}_{uuid.uuid4().hex[:8]}{clean_path.suffix}"
-
-    is_success, buffer = cv2.imencode(".jpg", image_cv)
-    if not is_success:
-        raise ValueError("결과 이미지 JPEG 인코딩 실패")
+    """이미지 업로드 (Azure 또는 로컬)"""
+    filename = f"{Path(image_url).stem}_{uuid.uuid4().hex[:8]}.jpg"
+    
+    _, buffer = cv2.imencode(".jpg", image_cv)
     image_bytes = buffer.tobytes()
 
     if USE_AZURE_STORAGE and blob_service_client:
-        blob_name = (LOCAL_OUTPUT_DIR / result_filename).as_posix()
+        blob_name = f"results/{filename}"
         blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob_name)
-        blob_client.upload_blob(image_bytes, overwrite=True, content_settings=ContentSettings(content_type='image/jpeg'))
+        blob_client.upload_blob(image_bytes, overwrite=True, 
+                              content_settings=ContentSettings(content_type='image/jpeg'))
         return blob_client.url
-    else:
-        save_path = script_dir / LOCAL_OUTPUT_DIR / result_filename
-        save_path.parent.mkdir(parents=True, exist_ok=True)
-        save_path.write_bytes(image_bytes)
-        url_path = (LOCAL_OUTPUT_DIR / result_filename).as_posix()
-        image_url = f"{LOCAL_IMAGE_SERVER_BASE_URL}/{url_path}"
-        return image_url
+    
+    # 로컬 저장
+    save_path = script_dir / LOCAL_OUTPUT_DIR / filename
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    save_path.write_bytes(image_bytes)
+    return f"{LOCAL_IMAGE_SERVER_BASE_URL}/results/{filename}"
 
 def process(request: ImageAnalysisRequest):
-    response = requests.get(request.imageUrl, stream=True, timeout=20)
+    """이미지 분석 처리"""
+    # 이미지 다운로드 및 디코딩
+    response = requests.get(request.imageUrl, timeout=30)
     response.raise_for_status()
     image_data = np.frombuffer(response.content, np.uint8)
     image_cv = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
 
-
+    # 객체 탐지
     results = model(image_cv)
-
-    detectedObjects = []
+    detected_objects = []
+    
     for box in results[0].boxes:
         confidence = box.conf[0].item()
         if confidence < CONFIDENCE_THRESHOLD:
             continue
+            
         coords = box.xyxy[0].cpu().numpy().astype(int)
-        label_id = box.cls[0].item()
-        label_name = model.names[label_id]
         x1, y1, x2, y2 = coords
-        bbox = BoundingBox(x=x1, y=y1, width=x2 - x1, height=y2 - y1)
-        detectedObjects.append(
-            DetectedObject(label=label_name, confidence=confidence, boundingBox=bbox)
-        )
+        label_name = model.names[box.cls[0].item()]
+        
+        detected_objects.append(DetectedObject(
+            label=label_name,
+            confidence=confidence,
+            boundingBox=BoundingBox(x=x1, y=y1, width=x2-x1, height=y2-y1)
+        ))
+        
+        # 결과 이미지에 박스 그리기
         cv2.rectangle(image_cv, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        text = f"{label_name}: {confidence:.2f}"
-        cv2.putText(image_cv, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        cv2.putText(image_cv, f"{label_name}: {confidence:.2f}", 
+                   (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-    resultImagePath = upload_image(image_cv, request.imageUrl)
-
-    # Kafka - 임시 비활성화
-    response_data = ImageAnalysisResult(
+    # 결과 이미지 업로드
+    result_image_path = upload_image(image_cv, request.imageUrl)
+    
+    # 결과 생성
+    result = ImageAnalysisResult(
         userId=request.userId,
         imageUrl=request.imageUrl,
-        resultImagePath=resultImagePath,
-        detectedObjects=detectedObjects
+        resultImagePath=result_image_path,
+        detectedObjects=detected_objects
     )
     
-    # Kafka 전송 비활성화 - 로그로 대체
-    print(f"분석 완료 (Kafka 비활성화): {response_data.model_dump()}")
+    # Kafka 발행
+    if producer:
+        try:
+            message = {
+                "eventType": "ImageAnalysisCompleted",
+                "timestamp": int(time.time() * 1000),
+                "data": result.model_dump()
+            }
+            producer.send(KAFKA_TOPIC, key=request.userId, value=message)
+            print(f"Kafka 발행 완료: {len(detected_objects)}개 객체 감지")
+        except Exception as e:
+            print(f"Kafka 발행 실패: {e}")
     
-    # kafka_topic = "forbee"
-    # producer.send(kafka_topic, key=request.userId, value=response_data.model_dump())
-    # producer.flush()
+    return result
+
+@app.get("/health")
+def health_check():
+    """서비스 상태 확인"""
+    kafka_status = "connected" if producer else "disconnected"
+    return {
+        "status": "healthy",
+        "service": "Object Detection Service",
+        "device": device,
+        "kafka": kafka_status
+    }
 
 @app.post("/object-detection")
-async def analyze_image(request: ImageAnalysisRequest, background_tasks: BackgroundTasks):
+def analyze_image(request: ImageAnalysisRequest, background_tasks: BackgroundTasks):
+    """이미지 분석 요청"""
     background_tasks.add_task(process, request)
     return {"status": "accepted"}

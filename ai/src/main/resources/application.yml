@@ -4,20 +4,9 @@ server:
 spring:
   main:
     allow-bean-definition-overriding: true
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: password
-  h2:
-    console:
-      enabled: true
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
 
 fastapi:
-  # url: ${FASTAPI_URL:http://localhost:8000}
-  url: ${FASTAPI_URL:http://172.19.206.126:8000}
+  url: ${FASTAPI_URL:http://localhost:8000}
 
 azure:
   storage:
