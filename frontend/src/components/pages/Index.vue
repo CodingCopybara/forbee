@@ -42,7 +42,7 @@ export default {
       },
       {
           text: "이미지 분석",
-          link: "/image-analysis",
+                          link: "/ai",
       },
       {
           text: "",

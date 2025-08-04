@@ -23,7 +23,7 @@ import {
         <VerticalNavLink
             :item="{
                 title: '이미지 분석',
-                to: '/image-analysis',
+                                    to: '/ai',
             }"
         />
         <VerticalNavLink

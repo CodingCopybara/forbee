@@ -22,13 +22,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // 네이티브 WebSocket 엔드포인트 (최신 브라우저용)
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*");
-        
-        // SockJS fallback 엔드포인트 (호환성용)
-        registry.addEndpoint("/ws-sockjs")
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
     }
 }

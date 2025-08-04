@@ -48,8 +48,8 @@ const router = createRouter({
       component: () => import('../components/vo/MemberEnv.vue'),
     },
     {
-      path: '/image-analysis',
-      component: () => import('../components/ui/ImageAnalysisPopup.vue'),
+      path: '/ai',
+      component: () => import('../components/ui/ImageAnalysis.vue'),
     },
   ],
 })
