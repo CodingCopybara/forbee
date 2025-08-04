@@ -9,7 +9,7 @@ spring:
     stream:
       kafka:
         binder:
-          brokers: ${KAFKA_BROKERS:localhost:9092}
+          brokers: ${KAFKA_BROKERS:localhost:19092}
 
 logging:
   level:

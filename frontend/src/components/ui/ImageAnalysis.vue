@@ -3,7 +3,6 @@
     <!-- Header -->
     <div class="page-header">
       <h2>이미지 분석</h2>
-      <p class="subtitle">AI를 활용한 벌통 내부 상태 분석</p>
     </div>
     
     <!-- Main Content -->
@@ -65,7 +64,7 @@
       
       <!-- Analysis History Section -->
       <div v-if="analysisHistory.length > 0" class="history-section">
-        <h3>📋 분석 이력</h3>
+        <h3>분석 이력</h3>
         
         <div class="history-list">
           <div 
@@ -80,7 +79,24 @@
             <div class="history-info">
               <h4>{{ item.fileName }}</h4>
               <p class="analysis-time">{{ formatTimestamp(item.createdAt) }}</p>
-
+              
+              <div class="analysis-summary" v-if="item.status === 'completed' && item.result">
+                <span class="summary-text">
+                  객체 {{ item.result.detectedObjects?.length || 0 }}개 감지
+                </span>
+              </div>
+              
+              <div class="analysis-summary" v-else-if="item.status === 'analyzing'">
+                <span class="summary-text analyzing-text">
+                  분석 진행 중...
+                </span>
+              </div>
+              
+              <div class="analysis-summary" v-else-if="item.status === 'error'">
+                <span class="summary-text error-text">
+                  분석 실패: {{ item.error }}
+                </span>
+              </div>
             </div>
             
             <div class="history-actions">
@@ -754,6 +770,28 @@ export default {
   margin: 0 0 10px 0;
   color: #6c757d;
   font-size: 0.9rem;
+}
+
+.analysis-summary {
+  margin: 0;
+}
+
+.summary-text {
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: #e9ecef;
+  color: #495057;
+}
+
+.analyzing-text {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.error-text {
+  background: #f8d7da;
+  color: #721c24;
 }
 
 .history-actions {

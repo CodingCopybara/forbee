@@ -33,7 +33,7 @@ if USE_AZURE_STORAGE:
 else:
     blob_service_client = None
 
-KAFKA_BOOTSTRAP_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+KAFKA_BOOTSTRAP_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
 producer = KafkaProducer(
     key_serializer=str.encode,
     bootstrap_servers=[KAFKA_BOOTSTRAP_SERVERS],
