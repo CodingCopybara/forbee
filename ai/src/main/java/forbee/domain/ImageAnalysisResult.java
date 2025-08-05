@@ -13,6 +13,7 @@ public class ImageAnalysisResult {
     private List<DetectedObject> detectedObjects;
     private String analysisId;
     private String timestamp;
+    private String event_id;
     
     @Value
     @JsonIgnoreProperties(ignoreUnknown = true)

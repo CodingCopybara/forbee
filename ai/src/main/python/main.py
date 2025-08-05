@@ -151,12 +151,12 @@ def process(request: ImageAnalysisRequest):
     if producer:
         try:
             message = {
-                "eventType": "ImageAnalysisCompleted",
+                "event_id": str(uuid.uuid4()),
                 "timestamp": int(time.time() * 1000),
                 "data": result.model_dump()
             }
             producer.send(KAFKA_TOPIC, key=request.userId, value=message)
-            print(f"Kafka 발행 완료: {len(detected_objects)}개 객체 감지")
+            print("Kafka 발행 완료")
         except Exception as e:
             print(f"Kafka 발행 실패: {e}")
     
