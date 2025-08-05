@@ -1,14 +1,11 @@
 package forbee.domain;
 
-import java.time.LocalDate;
-import java.util.*;
 import lombok.Data;
 
 @Data
 public class WritePostCommand {
-
-    private Long userId;
     private String title;
     private String content;
-    private String image;
+    private String category;
+    private String author;
 }

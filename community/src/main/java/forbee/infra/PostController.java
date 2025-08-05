@@ -1,105 +1,70 @@
 package forbee.infra;
 
 import forbee.domain.*;
-import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-//<<< Clean Arch / Inbound Adaptor
+import javax.transaction.Transactional;
+import java.util.List;
 
 @RestController
-// @RequestMapping(value="/posts")
 @Transactional
+
 public class PostController {
 
     @Autowired
     PostRepository postRepository;
 
-    @RequestMapping(
-        value = "/posts/writepost",
-        method = RequestMethod.POST,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Post writePost(
-        HttpServletRequest request,
-        HttpServletResponse response,
-        @RequestBody WritePostCommand writePostCommand
-    ) throws Exception {
-        System.out.println("##### /post/writePost  called #####");
+    @Autowired
+    PermissionService permissionService;
+
+    @PostMapping("/posts/writepost")
+    public ResponseEntity<Post> writePost(
+        @RequestHeader("Role") String role,
+        @RequestBody WritePostCommand cmd
+    ) {
+        if (role == null) role = "user";   ////// 임시로 권한 부여
+        BoardType boardType = BoardType.fromCategory(cmd.getCategory());
+        Category category = Category.valueOf(role);
+
+        if (!permissionService.canWritePost(boardType, category)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         Post post = new Post();
-        post.writePost(writePostCommand);
+        post.writePost(cmd);
         postRepository.save(post);
-        return post;
+        return ResponseEntity.ok(post);
     }
 
-    @RequestMapping(
-        value = "/posts/{id}/editpost",
-        method = RequestMethod.PUT,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Post editPost(
-        @PathVariable(value = "id") Long id,
-        @RequestBody EditPostCommand editPostCommand,
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) throws Exception {
-        System.out.println("##### /post/editPost  called #####");
-        Optional<Post> optionalPost = postRepository.findById(id);
+    @GetMapping("/posts")
+    public ResponseEntity<?> getPosts(
+        @RequestParam String category,
+        @RequestHeader(value = "Role", required = false) String role
+    ) {
+        try {
+            BoardType boardType = BoardType.fromCategory(category); // 여기가 문제일 수 있음
+            Category userRole = (role != null) ? Category.valueOf(role) : null;
 
-        optionalPost.orElseThrow(() -> new Exception("No Entity Found"));
-        Post post = optionalPost.get();
-        post.editPost(editPostCommand);
+            if (!permissionService.canRead(boardType, userRole)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
 
-        postRepository.save(post);
-        return post;
+            return ResponseEntity.ok(postRepository.findByCategory(category));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("오류 발생: " + e.getMessage());
+        }
     }
 
-    @RequestMapping(
-        value = "/posts/{id}/deletepost",
-        method = RequestMethod.DELETE,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Post deletePost(
-        @PathVariable(value = "id") Long id,
-        @RequestBody DeletePostCommand deletePostCommand,
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) throws Exception {
-        System.out.println("##### /post/deletePost  called #####");
-        Optional<Post> optionalPost = postRepository.findById(id);
+    @RestControllerAdvice
+    public class GlobalExceptionHandler {
 
-        optionalPost.orElseThrow(() -> new Exception("No Entity Found"));
-        Post post = optionalPost.get();
-        post.deletePost(deletePostCommand);
-
-        postRepository.delete(post);
-        return post;
-    }
-
-    @RequestMapping(
-        value = "/posts/{id}/increaseview",
-        method = RequestMethod.PUT,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Post increaseView(
-        @PathVariable(value = "id") Long id,
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) throws Exception {
-        System.out.println("##### /post/increaseView  called #####");
-        Optional<Post> optionalPost = postRepository.findById(id);
-
-        optionalPost.orElseThrow(() -> new Exception("No Entity Found"));
-        Post post = optionalPost.get();
-        post.increaseView();
-
-        postRepository.save(post);
-        return post;
+        @ExceptionHandler(Exception.class)
+        public ResponseEntity<String> handleAll(Exception e) {
+            e.printStackTrace(); // 콘솔 출력
+            return ResponseEntity.badRequest().body("에러 발생: " + e.getMessage());
+        }
     }
 }
-//>>> Clean Arch / Inbound Adaptor

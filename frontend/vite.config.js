@@ -52,19 +52,24 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['vuetify'],
-    entries: [
-      './src/**/*.vue',
-    ],
+    entries: ['./src/**/*.vue'],
   },
   server: {
     host: '0.0.0.0',
     port: 8080,
+    proxy: {
+      '/posts': {
+        target: 'http://localhost:8085',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   css: {
     preprocessorOptions: {
       scss: {
-        api: 'modern'
-      }
-    }
-  }
+        api: 'modern',
+      },
+    },
+  },
 })

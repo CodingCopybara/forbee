@@ -9,7 +9,8 @@ const router = createRouter({
       component: () => import('../components/pages/Index.vue'),
     },
     {
-      path: '/community',
+      path: '/community/:category?',
+      name: 'CommunityBoard',
       component: () => import('../components/ui/CommunityGrid.vue'),
     },
     {
