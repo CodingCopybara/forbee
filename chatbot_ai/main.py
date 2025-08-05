@@ -62,6 +62,12 @@ async def get_answer_from_openai(messages: list[dict]) -> str:
     )
     return resp.choices[0].message.content
 
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8002, reload=True)
+
+
 # ✅ 스트리밍 응답
 async def stream_openai_answer(messages: list[dict]):
     stream = client.chat.completions.create(

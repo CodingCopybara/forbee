@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # ─── Runtime ─────────────────────────────────────────────────────────────────
-EXPOSE 8000
+EXPOSE 8002
 
 # uvicorn이 main.py 안의 FastAPI 인스턴스(app)를 실행합니다.
 ENTRYPOINT ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

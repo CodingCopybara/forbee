@@ -13,23 +13,24 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - VUE_APP_API_HOST=http://springboot:8081
+      - VUE_APP_API_HOST=http://springboot:8082
     networks:
       - forbee-net
 
   springboot:
     build: ./chatbot
     ports:
-      - "8081:8081"
+      - "8082:8082"
     networks:
       - forbee-net
 
   fastapi:
     build: ./chatbot_ai
     ports:
-      - "8000:8000"
+      - "8002:8002"   # 왼쪽 = 외부(로컬), 오른쪽 = 컨테이너 내부
     networks:
       - forbee-net
+
 
 networks:
   forbee-net:
