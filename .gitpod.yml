@@ -1,9 +1,15 @@
 tasks:
-  - command: |
+  - name: Start Spring Boot & FastAPI
+    command: |
       cd chatbot
-      mvn spring-boot:run
+      mvn spring-boot:run &
+      cd ../chatbot_ai
+      uvicorn main:app --host 0.0.0.0 --port 8002
+
 ports:
-  - port: 8080
+  - port: 8082
+    onOpen: open-preview
+  - port: 8002
     onOpen: open-preview
 
 env:

@@ -35,6 +35,7 @@
       <router-view />
     </v-main>
 
+
     <v-footer class="footer" height="auto">
       <v-container>
         <v-row>
@@ -56,7 +57,7 @@
     </v-footer>
 
     <router-link to="/chatbot" class="chatbot-btn">
-      <img src="bee.png" alt="chatbot" class="chatbot-img" />
+      <img src="/bee.png" alt="chatbot" class="chatbot-img" />
     </router-link>
 
   </v-app>

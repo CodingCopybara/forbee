@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
+import Chatbot from '@/components/ui/Chatbot.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -28,7 +29,7 @@ const router = createRouter({
       component: () => import('../components/ui/Login.vue'),
     },
     {
-      path: '/chatbot',
+      path: '/chatbots',
       component: () => import('../components/ui/Chatbot.vue'),
     },
     {
