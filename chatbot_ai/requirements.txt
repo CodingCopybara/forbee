@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-python-dotenv
-openai
-jinja2
-itsdangerous
-python-multipart
