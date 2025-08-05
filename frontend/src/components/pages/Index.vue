@@ -87,7 +87,11 @@ const banners = [
 /* ✅ Hero Section 스타일 */
 .hero {
   background: url("@/assets/background2.jpg") center/cover no-repeat;
+  width: 100vw;
   height: 400px;
+  margin: 0;
+  margin-top: 0 !important;
+  padding: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -95,6 +99,8 @@ const banners = [
   flex-direction: column;
   color: #5c2e2e;
   position: relative;
+  left: 50%;
+  transform: translateX(-50%);
 }
 .hero::after {
   content: "";
@@ -122,10 +128,6 @@ const banners = [
   transform: translateY(-5px);
 }
 
-/* ✅ 오른쪽 홍보 배너 */
-.promo-banner {
-  border-radius: 8px;
-}
 .menu-group {
   margin-top: -130px;
   background: rgba(255, 255, 255);
