@@ -13,6 +13,7 @@ import cv2
 import numpy as np
 import requests
 import torch
+# import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
@@ -24,6 +25,8 @@ from azure.storage.blob import BlobServiceClient, ContentSettings
 load_dotenv()
 script_dir = Path(__file__).parent.resolve()
 app = FastAPI(title="Object Detection Service")
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="0.0.0.0", port=8003)
 
 USE_AZURE_STORAGE = os.environ.get("USE_AZURE_STORAGE", "False").lower() == "true"
 LOCAL_OUTPUT_DIR = Path("results")

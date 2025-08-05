@@ -1,12 +1,12 @@
 server:
-  port: 8082
+  port: 8083
 
 spring:
   main:
     allow-bean-definition-overriding: true
 
 fastapi:
-  url: ${FASTAPI_URL:http://localhost:8000}
+  url: ${FASTAPI_URL:http://localhost:8003}
 
 azure:
   storage:

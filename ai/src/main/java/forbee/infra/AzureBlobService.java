@@ -27,7 +27,11 @@ public class AzureBlobService {
             @Value("${azure.storage.account-url}") String accountUrl,
             @Value("${azure.storage.container-name}") String containerName) {
         this.containerName = containerName;
-        
+
+        // DefaultAzureCredential 체인을 그대로 사용하면
+        // 1) 로컬 az login & Azure CLI
+        // 2) AKS IMDS(Managed Identity)
+        // 순으로 자동 적용됩니다.
         DefaultAzureCredential credential = new DefaultAzureCredentialBuilder().build();
         
         this.blobServiceClient = new BlobServiceClientBuilder()

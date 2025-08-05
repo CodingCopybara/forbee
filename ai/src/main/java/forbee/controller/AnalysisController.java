@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -34,10 +36,10 @@ public class AnalysisController {
     }
 
     @GetMapping("/blob-sas")
-    public ResponseEntity<Map<String, String>> getBlobSasToken(@RequestParam String fileName) {
+    public Mono<ResponseEntity<Map<String, String>>> getBlobSasToken(@RequestParam String fileName) {
         log.info("SAS token request received for file: {}", fileName);
         
-        try {
+        return Mono.fromCallable(() -> {
             // UUID를 포함한 고유한 파일명 생성
             String uniqueFileName = UUID.randomUUID().toString() + "_" + fileName;
             log.info("Generated unique file name: {}", uniqueFileName);
@@ -56,15 +58,16 @@ public class AnalysisController {
             }
             
             return ResponseEntity.ok(sasInfo);
-            
-        } catch (IllegalArgumentException e) {
+        })
+        .subscribeOn(Schedulers.boundedElastic()) // blocking 작업을 별도 스레드에서 실행
+        .onErrorResume(IllegalArgumentException.class, e -> {
             log.warn("Invalid request for SAS token: {}", e.getMessage());
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Invalid request");
             errorResponse.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
-            
-        } catch (Exception e) {
+            return Mono.just(ResponseEntity.badRequest().body(errorResponse));
+        })
+        .onErrorResume(Exception.class, e -> {
             log.error("Failed to generate SAS token for file: {}. Error: {}", fileName, e.getMessage(), e);
             
             Map<String, String> errorResponse = new HashMap<>();
@@ -73,15 +76,15 @@ public class AnalysisController {
             errorResponse.put("type", e.getClass().getSimpleName());
             errorResponse.put("details", "Azure Storage 설정을 확인하거나 로컬 개발 환경에서는 Mock 모드가 사용됩니다.");
             
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+            return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse));
+        });
     }
 
     @GetMapping("/blob-read-sas")
-    public ResponseEntity<Map<String, String>> getReadOnlySasUrl(@RequestParam String fileName) {
+    public Mono<ResponseEntity<Map<String, String>>> getReadOnlySasUrl(@RequestParam String fileName) {
         log.info("Read-only SAS URL request received for file: {}", fileName);
         
-        try {
+        return Mono.fromCallable(() -> {
             String readOnlySasUrl = azureBlobService.generateReadOnlySasUrl(fileName);
             log.info("Read-only SAS URL generated successfully for file: {}", fileName);
             
@@ -90,15 +93,16 @@ public class AnalysisController {
             response.put("fileName", fileName);
             
             return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
+        })
+        .subscribeOn(Schedulers.boundedElastic()) // blocking 작업을 별도 스레드에서 실행
+        .onErrorResume(Exception.class, e -> {
             log.error("Failed to generate read-only SAS URL for file: {}. Error: {}", fileName, e.getMessage(), e);
             
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Read-only SAS URL generation failed");
             errorResponse.put("message", e.getMessage());
             
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+            return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse));
+        });
     }
 }
