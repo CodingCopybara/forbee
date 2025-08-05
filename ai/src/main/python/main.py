@@ -175,6 +175,5 @@ def health_check():
 
 @app.post("/object-detection")
 def analyze_image(request: ImageAnalysisRequest, background_tasks: BackgroundTasks):
-    """이미지 분석 요청"""
     background_tasks.add_task(process, request)
     return {"status": "accepted"}
