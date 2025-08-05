@@ -29,7 +29,7 @@ const router = createRouter({
       component: () => import('../components/ui/Login.vue'),
     },
     {
-      path: '/chatbots',
+      path: '/chatbot',
       component: () => import('../components/ui/Chatbot.vue'),
     },
     {
