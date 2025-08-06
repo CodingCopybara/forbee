@@ -11,7 +11,7 @@ public class PermissionService {
     public boolean canRead(BoardType board, Category user) {
         switch (board) {
             case GENERAL: return true;                                         // 자유게시판: 모두 읽기 가능
-            case QNA:     return user != null && (user == Category.MEMBER || user == Category.ADMIN || user == Category.VETERINARIAN);
+            case QNA:     return user != null;
             case NOTICE:  return user != null;                                 // 공지사항: 로그인 사용자만
             default:      return false;
         }

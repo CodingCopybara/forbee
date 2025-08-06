@@ -1,3 +1,4 @@
+// vite.config.js
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import AutoImport from 'unplugin-auto-import/vite'
@@ -11,7 +12,6 @@ import vuetify from 'vite-plugin-vuetify'
 import ViteYaml from '@modyfi/vite-plugin-yaml'
 
 export default defineConfig(({ mode }) => {
-  // .env 파일에서 VITE_API_URL 불러오기
   const env = loadEnv(mode, process.cwd())
 
   return {
@@ -59,8 +59,14 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 8080,
       proxy: {
-        // '/posts' 로 시작하는 요청을 백엔드로 전달
+        // /posts 로 시작하는 요청을 8085로
         '/posts': {
+          target: env.VITE_API_URL || 'http://localhost:8085',
+          changeOrigin: true,
+          secure: false,
+        },
+        // /comments 도 동일하게 포워딩
+        '/comments': {
           target: env.VITE_API_URL || 'http://localhost:8085',
           changeOrigin: true,
           secure: false,

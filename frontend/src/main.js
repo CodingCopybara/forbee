@@ -14,20 +14,13 @@ import { Icon } from '@iconify/vue'
 // Load custom fonts
 loadFonts()
 
-// Create Vue app
-const app = createApp(App)
-
-// Axios 기본 설정
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8085'
+// Axios 기본 설정 (한 번만 지정)
+axios.defaults.baseURL = ''
 axios.defaults.headers.common['Content-Type'] = 'application/json'
-// 개발용 임시 Role 헤더 추가
-axios.interceptors.request.use(
-  config => {
-    config.headers['Category'] = 'USER'
-    return config
-  },
-  error => Promise.reject(error)
-)
+axios.interceptors.request.use(cfg => { cfg.headers['Role'] = 'USER'; return cfg })
+
+// Vue 앱 생성
+const app = createApp(App)
 
 // 전역 프로퍼티로 axios 제공
 app.config.globalProperties.$axios = axios

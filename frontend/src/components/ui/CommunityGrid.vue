@@ -43,6 +43,8 @@
           v-for="(post, index) in filteredPosts"
           :key="post.id"
           class="post-row"
+          @click="goDetail(post.id)"
+          style="cursor: pointer;"
         >
           <td>{{ index + 1 }}</td>
           <td>{{ post.title }}</td>
@@ -80,38 +82,21 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 
+// 탭 리스트
 const tabs = ['자유게시판', '공지사항', 'QnA']
 const route = useRoute()
 const router = useRouter()
 
+// 선택된 탭
 const selectedTab = ref('자유게시판')
-
-const mapParamToTab = (param) => {
-  if (param === 'free') return '자유게시판'
-  if (param === 'notice') return '공지사항'
-  if (param === 'qna') return 'QnA'
-  return '자유게시판'
-}
-
-const mapTabToParam = (tab) => {
-  if (tab === '자유게시판') return 'free'
-  if (tab === '공지사항') return 'notice'
-  if (tab === 'QnA') return 'qna'
-  return 'free'
-}
-
-selectedTab.value = mapParamToTab(route.params.category)
-
-watch(() => route.params.category, (newVal) => {
-  selectedTab.value = mapParamToTab(newVal)
-})
-
-// 상태
-const openDialog = ref(false)
+// 검색/필터
 const filter = ref('title')
 const search = ref('')
+// 글 목록
 const posts = ref([])
 
+// 모달 & 새 글
+const openDialog = ref(false)
 const newPost = ref({
   title: '',
   content: '',
@@ -121,62 +106,93 @@ const newPost = ref({
   views: 0,
 })
 
-// 필터링
-const filteredPosts = computed(() =>
-  posts.value.filter(post => {
-    const matchTab = post.category === selectedTab.value
-    const matchSearch =
-      !search.value ||
-      post[filter.value]?.toLowerCase().includes(search.value.toLowerCase())
-    return matchTab && matchSearch
-  })
-)
-
-function onSearch() {
-  // 자동 반영
+// URL 파라미터 ↔ 탭 이름 매핑
+const mapParamToTab = param => {
+  if (param === 'free') return '자유게시판'
+  if (param === 'notice') return '공지사항'
+  if (param === 'qna') return 'QnA'
+  return '자유게시판'
+}
+const mapTabToParam = tab => {
+  if (tab === '자유게시판') return 'free'
+  if (tab === '공지사항') return 'notice'
+  if (tab === 'QnA') return 'qna'
+  return 'free'
 }
 
+// 임시 권한
+const userRole = 'user'
+
+// 서버에서 글 불러오기
+async function loadPosts() {
+  try {
+    const res = await axios.get(
+      `/posts?category=${encodeURIComponent(selectedTab.value)}`,
+      { headers: { Role: userRole } }
+    )
+    posts.value = res.data
+  } catch (err) {
+    console.error('포스트 불러오기 실패', err)
+  }
+}
+
+// 상세 보기 이동
+function goDetail(id) {
+  const cat = mapTabToParam(selectedTab.value)
+  router.push({ name: 'PostDetail', params: { category: cat, id } })
+}
+
+// 탭 변경
+function changeTab(tab) {
+  selectedTab.value = tab
+  const param = mapTabToParam(tab)
+  router.push({ path: `/community/${param}` })
+}
+
+// 글 작성
 async function submitPost() {
   if (!newPost.value.title || !newPost.value.content || !newPost.value.category) {
     alert('모든 항목을 입력해주세요.')
     return
   }
-
   try {
-    const res = await axios.post('/posts/writepost', {
-      title: newPost.value.title,
-      content: newPost.value.content,
-      category: newPost.value.category,
-      author: newPost.value.author
-    }, {
-      headers: {
-        Category:  "user"  // 여기를 유저로 임시 권한 부여
-      }
-    })
-
-    posts.value.unshift(res.data)
+    await axios.post(
+      '/posts/writepost',
+      { ...newPost.value },
+      { headers: { Role: userRole } }
+    )
     alert('작성 완료!')
     openDialog.value = false
+    newPost.value = { title: '', content: '', category: '', author: '익명', date: '', views: 0 }
+    await loadPosts()
   } catch (err) {
-    console.error('작성 실패 상세:', err)
+    console.error('작성 실패', err)
     alert('작성 실패: 권한 없음 또는 서버 오류')
   }
-
-  newPost.value = {
-    title: '',
-    content: '',
-    category: '',
-    author: '익명',
-    date: '',
-    views: 0,
-  }
 }
 
-
-function changeTab(tab) {
-  const pathParam = mapTabToParam(tab)
-  router.push({ path: `/community/${pathParam}` })
+// 검색용 (필터만 적용)
+function onSearch() {
+  // nothing needed: filteredPosts 자동 갱신
 }
+
+// 마운트 & 파라미터 변화 시
+onMounted(() => {
+  selectedTab.value = mapParamToTab(route.params.category)
+  loadPosts()
+})
+watch(() => route.params.category, val => {
+  selectedTab.value = mapParamToTab(val)
+  loadPosts()
+})
+
+// 검색 후 보여줄 목록
+const filteredPosts = computed(() =>
+  posts.value.filter(p => {
+    return !search.value ||
+      p[filter.value]?.toLowerCase().includes(search.value.toLowerCase())
+  })
+)
 </script>
 
 
