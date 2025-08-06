@@ -42,7 +42,7 @@
 #     state = generate_final_prescription(state)
 #     return state
 
-from rag_agent import *
+from agent.rag_agent import *
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 
@@ -84,7 +84,7 @@ def generate_prescription_user(state: dict, userId: int) -> dict:
     state["prescription"] = response
     return state
 
-from rag_agent import generate_final_prescription as generate_final_prescription_node
+from agent.rag_agent import generate_final_prescription as generate_final_prescription_node
 
 def generate_final_prescription_user(state: dict, userId: int) -> dict:
     """userId 기반 ConversationChain을 사용하는 최종 처방 생성"""

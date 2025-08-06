@@ -1,35 +1,53 @@
 package forbee.infra;
 
-// Kafka → WebSocket 브리지 - 현재 사용하지 않으므로 비활성화
-// 필요시 다시 활성화 가능
-
-/*
-import forbee.domain.ImageAnalysisResult;
-import java.util.function.Consumer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.Message;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.kafka.annotation.KafkaListener;
+import javax.transaction.Transactional;
+import org.springframework.stereotype.Service;
+import java.util.*;
 
 //<<< Clean Arch / Inbound Adaptor
-@Configuration
+@Service
+@Transactional
 public class PolicyHandler {
 
-    private final NotificationService notificationService;
+    private final FastApiClient fastApiClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public PolicyHandler(NotificationService notificationService) {
-        this.notificationService = notificationService;
+    public PolicyHandler(FastApiClient fastApiClient) {
+        this.fastApiClient = fastApiClient;
     }
 
-    @Bean
-    public Consumer<Message<ImageAnalysisResult>> rawAnalysisResultIn() {
-        return message -> {
-            ImageAnalysisResult result = message.getPayload();
-            if (result == null) {
-                return;
+    @KafkaListener(topics = "forbee", groupId = "ai")
+    public void handleDiseaseEvent(String message) {
+
+        try {
+            // 메시지를 JSON → Map 변환
+            Map<String, Object> event = objectMapper.readValue(message, Map.class);
+
+            // 이벤트에서 diseaseName, confidence, userId 추출
+            Object userIdObj = event.get("userId");
+            Long userId = null;
+            if (userIdObj instanceof Integer) {
+                userId = ((Integer) userIdObj).longValue();
+            } else if (userIdObj instanceof Long) {
+                userId = (Long) userIdObj;
+            } else if (userIdObj != null) {
+                userId = Long.valueOf(userIdObj.toString());
             }
-            notificationService.sendAnalysisResultToUser(result.userId(), result);
-        };
+            //Long userId = (Long) event.get("userId");
+            String diseaseName = (String) event.get("diseaseName");
+            double confidence = Double.parseDouble(event.get("confidence").toString());
+
+            System.out.println("[Kafka Event] userId=" + userId + "질병/해충 탐지됨: " + diseaseName + " (" + confidence + ")");
+
+            // FastAPI 호출
+            String result = fastApiClient.sendDiagnoseRequest(diseaseName, confidence, userId);
+            System.out.println("FastAPI 응답: " + result);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
 //>>> Clean Arch / Inbound Adaptor
-*/
