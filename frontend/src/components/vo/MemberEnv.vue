@@ -1,14 +1,6 @@
 <template>
-  <!-- 오버레이 (로딩) -->
-  <v-overlay :model-value="isLoading" :z-index="200" class="align-center justify-center" scrim="black" contained>
-    <div class="d-flex flex-column align-center">
-      <v-progress-circular indeterminate size="64" color="white" class="mb-4" />
-      <div class="text-h6 text-white">분석 중... 잠시만 기다려주세요.</div>
-    </div>
-  </v-overlay>
+  <!-- 메인 콘텐츠 -->
   <v-main class="pa-0 app-main">
-    
-    <!-- 메인 콘텐츠 -->
     <v-container fluid class="pa-2 app-content">
       <v-row class="fill-height">
         <v-col cols="12" md="8" class="d-flex flex-column" style="min-height: 70vh;">
@@ -47,6 +39,14 @@
           </v-card>
         </v-col>
       </v-row>
+
+      <!-- 오버레이 (로딩) -->
+      <v-overlay :model-value="isLoading" :z-index="1000" class="align-center justify-center" persistent scrim="black" contained>
+        <div class="d-flex flex-column align-center">
+          <v-progress-circular indeterminate size="64" color="white" class="mb-4" />
+          <div class="text-h6 text-white">분석 중... 잠시만 기다려주세요.</div>
+        </div>
+      </v-overlay>
 
       <!-- 결과 다이얼로그 추가 -->
       <v-dialog v-model="showPopup" max-width="60vw" max-height="90vh">
