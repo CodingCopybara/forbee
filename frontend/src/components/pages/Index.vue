@@ -78,7 +78,7 @@ const menus = [
 const banners = [
   { title: "어쩌구 모두 보장! 가축재해보험", desc: "지금 내 꿀벌은 안전할까?", link: "#" , color: "#74512D"},
   { title: "양봉장 인증 마크 신청하기", desc: "꿀벌계의 세스코", link: "#", color: "white"},
-  { title: "달콤과 건강이 가득입니다", desc: "허니몰을 알아보세요", link: "#" , color: "#FEBA17"}
+  { title: "달콤과 건강이 가득입니다", desc: "허니몰을 알아보세요", link: "https://yangbongnh.com/product/list.html?cate_no=29" , color: "#FEBA17"}
 ];
 
 </script>
@@ -87,6 +87,7 @@ const banners = [
 /* ✅ Hero Section 스타일 */
 .hero {
   background: url("@/assets/background2.jpg") center/cover no-repeat;
+  top: -16px;
   width: 100vw;
   height: 400px;
   margin: 0;
@@ -129,7 +130,7 @@ const banners = [
 }
 
 .menu-group {
-  margin-top: -130px;
+  margin-top: -140px;
   background: rgba(255, 255, 255);
   border-radius: 16px;
   z-index: 5;
