@@ -1,6 +1,17 @@
 server:
   port: 8083
 
+azure:
+  storage:
+    account-url: ${AZURE_STORAGE_ACCOUNT_URL:https://aivle26storage.blob.core.windows.net}
+    container-name: ${AZURE_CONTAINER_NAME:container}
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.type: trace
+    org.springframework.cloud: debug
+
 ---
 
 spring:
@@ -26,42 +37,30 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
-# -- 로컬 개발시 Kafka 관련 옵션 필요하다면 아래 주석 해제 --
-#  cloud:
-#    stream:
-#      kafka:
-#        binder:
-#          brokers: localhost:9092
-#        streams:
-#          binder:
-#            configuration:
-#              default:
-#                key:
-#                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-#                value:
-#                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-#      bindings:
-#        event-in:
-#          group: ai
-#          destination: forbee
-#          contentType: application/json
-#        event-out:
-#          destination: forbee
-#          contentType: application/json
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+        streams:
+          binder:
+            configuration:
+              default:
+                key:
+                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+                value:
+                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+      bindings:
+        event-in:
+          group: ai
+          destination: forbee
+          contentType: application/json
+        event-out:
+          destination: forbee
+          contentType: application/json
 
 fastapi:
-  url: ${FASTAPI_URL:https://8002-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io}
-
-azure:
-  storage:
-    account-url: ${AZURE_STORAGE_ACCOUNT_URL:https://aivle26storage.blob.core.windows.net}
-    container-name: ${AZURE_CONTAINER_NAME:container}
-
-logging:
-  level:
-    root: INFO
-    org.hibernate.type: trace
-    org.springframework.cloud: debug
+  url: http://localhost:8003
 
 ---
 
@@ -111,15 +110,4 @@ spring:
           contentType: application/json
 
 fastapi:
-  url: ${FASTAPI_URL:https://8000-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io}
-
-azure:
-  storage:
-    account-url: ${AZURE_STORAGE_ACCOUNT_URL:https://aivle26storage.blob.core.windows.net}
-    container-name: ${AZURE_CONTAINER_NAME:container}
-
-logging:
-  level:
-    root: INFO
-    org.hibernate.type: trace
-    org.springframework.cloud: debug
+  url: http://ai-python:8003
