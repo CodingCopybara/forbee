@@ -36,6 +36,11 @@
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency> -->
 		
+		<dependency> <!-- 추가 -->
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
@@ -109,20 +114,20 @@
 		</dependency>
 
 		<!-- For advanced retry mechanisms in WebClient -->
-		<dependency>
+		<!-- <dependency>
 			<groupId>io.projectreactor.addons</groupId>
 			<artifactId>reactor-extra</artifactId>
-		</dependency>
+		</dependency> -->
 
 		<!-- Azure Blob Storage -->
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-storage-blob</artifactId>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-storage-common</artifactId>
-		</dependency>
+		</dependency> -->
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-identity</artifactId>
