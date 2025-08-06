@@ -1,3 +1,8 @@
+server:
+  port: 8083
+
+---
+
 spring:
   config:
     activate:
@@ -45,7 +50,7 @@ spring:
 #          contentType: application/json
 
 fastapi:
-  url: https://8002-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io # <-- gitpod 주소로 통일
+  url: ${FASTAPI_URL:https://8002-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io}
 
 azure:
   storage:
@@ -57,9 +62,6 @@ logging:
     root: INFO
     org.hibernate.type: trace
     org.springframework.cloud: debug
-
-server:
-  port: 8083
 
 ---
 
@@ -109,7 +111,7 @@ spring:
           contentType: application/json
 
 fastapi:
-  url: https://8000-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io # <-- docker도 gitpod fastapi로 맞춤
+  url: ${FASTAPI_URL:https://8000-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io}
 
 azure:
   storage:
@@ -121,6 +123,3 @@ logging:
     root: INFO
     org.hibernate.type: trace
     org.springframework.cloud: debug
-
-server:
-  port: 8083
