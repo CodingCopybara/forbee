@@ -28,7 +28,10 @@ credential = DefaultAzureCredential()
 blob_service_client = BlobServiceClient(account_url=account_url, credential=credential)
 
 # 환경 변수 설정
-KAFKA_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+if os.path.exists("/.dockerenv"):
+    KAFKA_SERVERS = "my-kafka:9092"  # 컨테이너 환경
+else:
+    KAFKA_SERVERS = "localhost:9092"  # 로컬 환경
 KAFKA_TOPIC = os.environ.get("KAFKA_TOPIC", "forbee")
 
 # Kafka Producer 초기화

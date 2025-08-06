@@ -9,7 +9,7 @@ from agent.agent import run_agent, process_user_answers_with_state
 from langchain.memory import ConversationBufferMemory
 
 # ========== YOLO 관련 ==========
-from src.main.python.bee_yolov8_detection import yolo_detect_image  # 함수로 분리할 것!
+from detection.bee_yolov8_detection import yolo_detect_image  # 함수로 분리할 것!
 
 # ========== Kafka 등 기타 필요 모듈 import ==========
 # (필요하다면 여기서 KafkaProducer 등 공용 객체 초기화)

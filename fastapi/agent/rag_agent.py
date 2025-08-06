@@ -32,7 +32,7 @@ from pathlib import Path
 from langchain.docstore.document import Document
 
 # openAI key
-def load_api_keys(env_path=Path(__file__).parent / ".env"):
+def load_api_keys(env_path=Path(__file__).parent.parent / ".env"):
     """
         env_path (str): .env 파일의 경로 (기본값: 현재 폴더의 .env)
     """
