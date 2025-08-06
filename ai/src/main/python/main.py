@@ -25,19 +25,11 @@ from azure.storage.blob import BlobServiceClient, ContentSettings
 load_dotenv()
 script_dir = Path(__file__).parent.resolve()
 app = FastAPI(title="Object Detection Service")
-# if __name__ == "__main__":
-#     uvicorn.run(app, host="0.0.0.0", port=8003)
 
-USE_AZURE_STORAGE = os.environ.get("USE_AZURE_STORAGE", "False").lower() == "true"
-LOCAL_OUTPUT_DIR = Path("results")
-LOCAL_IMAGE_SERVER_BASE_URL = os.environ.get("LOCAL_IMAGE_SERVER_BASE_URL", "http://localhost:8001")
-if USE_AZURE_STORAGE:
-    account_url = os.environ["AZURE_STORAGE_ACCOUNT_URL"]
-    AZURE_CONTAINER_NAME = os.environ["AZURE_CONTAINER_NAME"]
-    credential = DefaultAzureCredential()
-    blob_service_client = BlobServiceClient(account_url=account_url, credential=credential)
-else:
-    blob_service_client = None
+account_url = os.environ["AZURE_STORAGE_ACCOUNT_URL"]
+AZURE_CONTAINER_NAME = os.environ["AZURE_CONTAINER_NAME"]
+credential = DefaultAzureCredential()
+blob_service_client = BlobServiceClient(account_url=account_url, credential=credential)
 
 # 환경 변수 설정
 KAFKA_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
@@ -91,18 +83,12 @@ def upload_image(image_cv: np.ndarray, image_url: str) -> str:
     _, buffer = cv2.imencode(".jpg", image_cv)
     image_bytes = buffer.tobytes()
 
-    if USE_AZURE_STORAGE and blob_service_client:
+    if blob_service_client:
         blob_name = f"results/{filename}"
         blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob_name)
         blob_client.upload_blob(image_bytes, overwrite=True, 
                               content_settings=ContentSettings(content_type='image/jpeg'))
         return blob_client.url
-    
-    # 로컬 저장
-    save_path = script_dir / LOCAL_OUTPUT_DIR / filename
-    save_path.parent.mkdir(parents=True, exist_ok=True)
-    save_path.write_bytes(image_bytes)
-    return f"{LOCAL_IMAGE_SERVER_BASE_URL}/results/{filename}"
 
 def process(request: ImageAnalysisRequest):
     """이미지 분석 처리"""
@@ -161,17 +147,6 @@ def process(request: ImageAnalysisRequest):
             print(f"Kafka 발행 실패: {e}")
     
     return result
-
-@app.get("/health")
-def health_check():
-    """서비스 상태 확인"""
-    kafka_status = "connected" if producer else "disconnected"
-    return {
-        "status": "healthy",
-        "service": "Object Detection Service",
-        "device": device,
-        "kafka": kafka_status
-    }
 
 @app.post("/object-detection")
 def analyze_image(request: ImageAnalysisRequest, background_tasks: BackgroundTasks):

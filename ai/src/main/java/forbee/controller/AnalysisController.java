@@ -29,13 +29,13 @@ public class AnalysisController {
         this.azureBlobService = azureBlobService;
     }
 
-    @PostMapping("/request-analysis")
+    @PostMapping("/analysis")
     public ResponseEntity<Void> requestAnalysis(@Valid @RequestBody ImageAnalysisRequest request) {
         fastApiService.requestAnalysis(request);
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
-    @GetMapping("/blob-sas")
+    @GetMapping("/wsas")
     public Mono<ResponseEntity<Map<String, String>>> getBlobSasToken(@RequestParam String fileName) {
         log.info("SAS token request received for file: {}", fileName);
         
@@ -46,16 +46,6 @@ public class AnalysisController {
             
             Map<String, String> sasInfo = azureBlobService.generateSasForUpload(uniqueFileName);
             log.info("SAS token generated successfully for file: {}", uniqueFileName);
-            
-            // Mock 환경인지 확인하여 프론트엔드에 정보 제공
-            String uploadUrl = sasInfo.get("uploadUrl");
-            if (uploadUrl != null && uploadUrl.contains("mock-storage")) {
-                sasInfo.put("mode", "mock");
-                log.info("Mock mode SAS response returned");
-            } else {
-                sasInfo.put("mode", "azure");
-                log.info("Real Azure SAS response returned");
-            }
             
             return ResponseEntity.ok(sasInfo);
         })
@@ -74,13 +64,13 @@ public class AnalysisController {
             errorResponse.put("error", "SAS token generation failed");
             errorResponse.put("message", e.getMessage());
             errorResponse.put("type", e.getClass().getSimpleName());
-            errorResponse.put("details", "Azure Storage 설정을 확인하거나 로컬 개발 환경에서는 Mock 모드가 사용됩니다.");
+            errorResponse.put("details", "Azure Storage 설정을 확인해주세요.");
             
             return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse));
         });
     }
 
-    @GetMapping("/blob-read-sas")
+    @GetMapping("/rsas")
     public Mono<ResponseEntity<Map<String, String>>> getReadOnlySasUrl(@RequestParam String fileName) {
         log.info("Read-only SAS URL request received for file: {}", fileName);
         

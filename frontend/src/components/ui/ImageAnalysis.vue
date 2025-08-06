@@ -221,7 +221,7 @@ export default {
         const blobUrl = await this.uploadToAzureBlob(this.selectedFile)
         
         // 2. 분석 요청
-        const response = await fetch('/ai/request-analysis', {
+        const response = await fetch('/ai/analysis', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -262,7 +262,7 @@ export default {
     async uploadToAzureBlob(file) {
       try {
         console.log('SAS 토큰 요청 중...')
-        const sasResponse = await fetch(`/ai/blob-sas?fileName=${encodeURIComponent(file.name)}`)
+        const sasResponse = await fetch(`/ai/wsas?fileName=${encodeURIComponent(file.name)}`)
         
         if (!sasResponse.ok) {
           let errorMessage = 'SAS 토큰 요청 실패'
