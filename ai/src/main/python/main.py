@@ -77,18 +77,17 @@ class ImageAnalysisResult(BaseModel):
     detectedObjects: List[DetectedObject]
 
 def upload_image(image_cv: np.ndarray, image_url: str) -> str:
-    """이미지 업로드 (Azure 또는 로컬)"""
+    """이미지 업로드"""
     filename = f"{Path(image_url).stem}_{uuid.uuid4().hex[:8]}.jpg"
     
     _, buffer = cv2.imencode(".jpg", image_cv)
     image_bytes = buffer.tobytes()
 
-    if blob_service_client:
-        blob_name = f"results/{filename}"
-        blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob_name)
-        blob_client.upload_blob(image_bytes, overwrite=True, 
-                              content_settings=ContentSettings(content_type='image/jpeg'))
-        return blob_client.url
+    blob_name = f"results/{filename}"
+    blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob_name)
+    blob_client.upload_blob(image_bytes, overwrite=True, 
+                            content_settings=ContentSettings(content_type='image/jpeg'))
+    return blob_client.url
 
 def process(request: ImageAnalysisRequest):
     """이미지 분석 처리"""
