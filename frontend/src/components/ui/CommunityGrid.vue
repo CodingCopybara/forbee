@@ -150,7 +150,7 @@ async function submitPost() {
       author: newPost.value.author
     }, {
       headers: {
-        Role:  "user"  // 여기를 유저로 임시 권한 부여
+        Category:  "user"  // 여기를 유저로 임시 권한 부여
       }
     })
 

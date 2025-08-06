@@ -24,13 +24,17 @@ class ChatResponse(BaseModel):
 
 app = FastAPI()
 
-# CORS 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:8080"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# # CORS 설정
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=[
+#       "http://localhost:8080",  # Vue 앱 주소
+#       "http://localhost:8002"   # (필요 시) 직접 API 호출 테스트용
+#     ],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 # 템플릿 & 정적파일 설정
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "chg"))
@@ -113,6 +117,14 @@ async def chat_stream(req: ChatRequest, request: Request):
 async def get_form(request: Request):
     history = request.session.get("history", [])
     return templates.TemplateResponse("chat.html", {"request": request, "history": history})
+
+
+# main.py
+@app.get("/embed", response_class=HTMLResponse)
+async def embed_widget(request: Request):
+    # embed.html 은 최소한의 html 구조와 chat.html의 채팅 부분만 포함
+    return templates.TemplateResponse("embed.html", {"request": request})
+
 
 # ✅ (B-2) HTML POST
 @app.post("/", response_class=HTMLResponse)

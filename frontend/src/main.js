@@ -8,25 +8,39 @@ import '@/styles/styles.scss'
 import '@core/scss/index.scss'
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
-import axios from 'axios';
-import { Icon } from '@iconify/vue';
+import axios from 'axios'
+import { Icon } from '@iconify/vue'
 
+// Load custom fonts
 loadFonts()
 
-// Create vue app
+// Create Vue app
 const app = createApp(App)
 
-// Setting Config
-axios.defaults.baseURL = '';
-app.config.globalProperties.$axios = axios;
+// Axios 기본 설정
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8085'
+axios.defaults.headers.common['Content-Type'] = 'application/json'
+// 개발용 임시 Role 헤더 추가
+axios.interceptors.request.use(
+  config => {
+    config.headers['Category'] = 'USER'
+    return config
+  },
+  error => Promise.reject(error)
+)
 
-// Component
-app.component('Icon',Icon)
+// 전역 프로퍼티로 axios 제공
+app.config.globalProperties.$axios = axios
 
-// Use plugins
+// 전역 컴포넌트 등록
+app.component('Icon', Icon)
+
+// 플러그인 사용
 app.use(vuetify)
 app.use(createPinia())
 app.use(router)
 
-// Mount vue app
+// 마운트
 app.mount('#app')
+
+export default axios

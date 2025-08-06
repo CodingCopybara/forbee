@@ -1,75 +1,43 @@
 package forbee.domain;
 
-import forbee.CommunityApplication;
 import javax.persistence.*;
-import java.util.Date;
-import lombok.Data;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name="Comment_table")
-@Data
 public class Comment {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private Long postId;
-    private Long userId;
     private String content;
-    private Date createdAt;
-    private Date updatedAt;
+    private String author;
+    private LocalDateTime createdAt;
 
-    public static CommentRepository repository() {
-        return CommunityApplication.applicationContext.getBean(CommentRepository.class);
+    public Comment() {}
+
+    public Long getId() { return id; }
+    public Long getPostId() { return postId; }
+    public void setPostId(Long postId) { this.postId = postId; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public String getAuthor() { return author; }
+    public void setAuthor(String author) { this.author = author; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public void writeComment(WritePostCommentCommand cmd) {
+        this.postId = cmd.getPostId();
+        this.content = cmd.getContent();
+        this.author = cmd.getAuthor();
+        this.createdAt = LocalDateTime.now();
     }
 
-    public void writeComment() {
-        // implement writing logic if needed
+    public void editComment(EditPostCommentCommand cmd) {
+        this.content = cmd.getContent();
     }
 
-    public void writePostComment(WritePostCommentCommand command) {
-        WritedPostComment event = new WritedPostComment(this);
-        event.publishAfterCommit();
-    }
-
-    public void deletePostComment(DeletePostCommentCommand command) {
-        DeletedPostComment event = new DeletedPostComment(this);
-        event.publishAfterCommit();
-    }
-
-    public void editPostComment(EditPostCommentCommand command) {
-        EditedPostComment event = new EditedPostComment(this);
-        event.publishAfterCommit();
-    }
-
-    public void writeQnAComment(WriteQnACommentCommand command) {
-        WritedQnAComment event = new WritedQnAComment(this);
-        event.publishAfterCommit();
-    }
-
-    public void deleteQnAComment(DeleteQnACommentCommand command) {
-        DeletedQnAComment event = new DeletedQnAComment(this);
-        event.publishAfterCommit();
-    }
-
-    public void editQnAComment(EditQnACommentCommand command) {
-        EditedQnAComment event = new EditedQnAComment(this);
-        event.publishAfterCommit();
-    }
-
-    public void writeNotificationComment(WriteNotificationCommentCommand command) {
-        WritedNotificationComment event = new WritedNotificationComment(this);
-        event.publishAfterCommit();
-    }
-
-    public void deleteNotificationComment(DeleteNotificationCommentCommand command) {
-        DeletedNotificationComment event = new DeletedNotificationComment(this);
-        event.publishAfterCommit();
-    }
-
-    public void editNotificationComment(EditNotificationCommentCommand command) {
-        EditedNotificationComment event = new EditedNotificationComment(this);
-        event.publishAfterCommit();
+    public void deleteComment(DeletePostCommentCommand cmd) {
+        // deletion logic
     }
 }

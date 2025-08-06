@@ -1,70 +1,115 @@
+
 package forbee.infra;
 
-import forbee.domain.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
+import forbee.domain.BoardType;
+import forbee.domain.Category;
+import forbee.domain.Post;
+import forbee.domain.PostRepository;
+import forbee.domain.WritePostCommand;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import javax.transaction.Transactional;
+import java.net.URI;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@Transactional
-
+@RequestMapping("/posts")
+@CrossOrigin(origins = "http://localhost:8080")
 public class PostController {
+    private final PostRepository postRepository;
+    private final PermissionService permissionService;
 
-    @Autowired
-    PostRepository postRepository;
+    public PostController(PostRepository postRepository, PermissionService permissionService) {
+        this.postRepository = postRepository;
+        this.permissionService = permissionService;
+    }
 
-    @Autowired
-    PermissionService permissionService;
-
-    @PostMapping("/posts/writepost")
+    @PostMapping("/writepost")
     public ResponseEntity<Post> writePost(
-        @RequestHeader("Role") String role,
-        @RequestBody WritePostCommand cmd
-    ) {
-        if (role == null) role = "user";   ////// 임시로 권한 부여
-        BoardType boardType = BoardType.fromCategory(cmd.getCategory());
-        Category category = Category.valueOf(role);
+            @RequestHeader(value = "Role", required = false) String role,
+            @RequestBody WritePostCommand cmd) {
 
-        if (!permissionService.canWritePost(boardType, category)) {
+        // Role 헤더 유효성 검사
+        Category user;
+        if (role != null && !role.isBlank()) {
+            try {
+                user = Category.valueOf(role.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().build();
+            }
+        } else {
+            user = null;
+        }
+
+        BoardType board = BoardType.fromCategory(cmd.getCategory());
+        if (!permissionService.canWritePost(board, user)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        Post post = new Post();
-        post.writePost(cmd);
-        postRepository.save(post);
-        return ResponseEntity.ok(post);
+        Post p = new Post();
+        p.writePost(cmd);
+        Post saved = postRepository.save(p);
+        URI loc = ServletUriComponentsBuilder.fromCurrentRequest()
+                   .path("/{id}")
+                   .buildAndExpand(saved.getId())
+                   .toUri();
+        return ResponseEntity.created(loc).body(saved);
     }
 
-    @GetMapping("/posts")
-    public ResponseEntity<?> getPosts(
-        @RequestParam String category,
-        @RequestHeader(value = "Role", required = false) String role
-    ) {
-        try {
-            BoardType boardType = BoardType.fromCategory(category); // 여기가 문제일 수 있음
-            Category userRole = (role != null) ? Category.valueOf(role) : null;
+    @GetMapping
+    public ResponseEntity<List<Post>> getPosts(
+            @RequestParam(required = false) String category,
+            @RequestHeader(value = "Role", required = false) String role) {
 
-            if (!permissionService.canRead(boardType, userRole)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        // user 변수를 final로 선언하여 lambda에서 참조 가능하게 만듭니다.
+        final Category user;
+        if (role != null && !role.isBlank()) {
+            Category tmp;
+            try {
+                tmp = Category.valueOf(role.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                tmp = null; // 잘못된 role 무시
             }
-
-            return ResponseEntity.ok(postRepository.findByCategory(category));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body("오류 발생: " + e.getMessage());
+            user = tmp;
+        } else {
+            user = null;
         }
+
+        List<Post> posts = (category == null)
+            ? postRepository.findAll()
+            : postRepository.findByCategory(category);
+
+        List<Post> allowed = posts.stream()
+            .filter(post -> {
+                BoardType board = BoardType.fromCategory(post.getCategory());
+                return permissionService.canRead(board, user);
+            })
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(allowed);
     }
 
-    @RestControllerAdvice
-    public class GlobalExceptionHandler {
+    @GetMapping("/{id}")
+    public ResponseEntity<Post> getPostById(
+            @PathVariable Long id,
+            @RequestHeader(value = "Role", required = false) String role) {
 
-        @ExceptionHandler(Exception.class)
-        public ResponseEntity<String> handleAll(Exception e) {
-            e.printStackTrace(); // 콘솔 출력
-            return ResponseEntity.badRequest().body("에러 발생: " + e.getMessage());
+        final Category user = (role != null && !role.isBlank())
+            ? Category.valueOf(role.toUpperCase())
+            : null;
+
+        Post p = postRepository.findById(id)
+                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        BoardType board = BoardType.fromCategory(p.getCategory());
+
+        if (!permissionService.canRead(board, user)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+        return ResponseEntity.ok(p);
     }
 }

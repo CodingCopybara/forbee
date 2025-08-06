@@ -1,212 +1,79 @@
 package forbee.infra;
 
-import forbee.domain.*;
-import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import forbee.domain.Comment;
+import forbee.domain.CommentRepository;
+import forbee.domain.Post;
+import forbee.domain.Category;
+import forbee.domain.BoardType;
+import forbee.domain.WritePostCommentCommand;
+import forbee.domain.EditPostCommentCommand;
+import forbee.domain.DeletePostCommentCommand;
+import forbee.infra.PermissionService;
+import forbee.domain.PostRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-//<<< Clean Arch / Inbound Adaptor
+import java.util.List;
 
 @RestController
-// @RequestMapping(value="/comments")
-@Transactional
+@RequestMapping("/comments")
+@CrossOrigin(origins = "*")
 public class CommentController {
+    private final CommentRepository repo;
+    private final PostRepository postRepository;
+    private final PermissionService permissionService;
 
-    @Autowired
-    CommentRepository commentRepository;
-
-    @RequestMapping(
-        value = "/comments/writepostcomment",
-        method = RequestMethod.POST,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Comment writePostComment(
-        HttpServletRequest request,
-        HttpServletResponse response,
-        @RequestBody WritePostCommentCommand writePostCommentCommand
-    ) throws Exception {
-        System.out.println("##### /comment/writePostComment  called #####");
-        Comment comment = new Comment();
-        comment.writePostComment(writePostCommentCommand);
-        commentRepository.save(comment);
-        return comment;
+    public CommentController(
+        CommentRepository repo,
+        PostRepository postRepository,
+        PermissionService permissionService
+    ) {
+        this.repo = repo;
+        this.postRepository = postRepository;
+        this.permissionService = permissionService;
     }
 
-    @RequestMapping(
-        value = "/comments/{id}/deletepostcomment",
-        method = RequestMethod.DELETE,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Comment deletePostComment(
-        @PathVariable(value = "id") Long id,
-        @RequestBody DeletePostCommentCommand deletePostCommentCommand,
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) throws Exception {
-        System.out.println("##### /comment/deletePostComment  called #####");
-        Optional<Comment> optionalComment = commentRepository.findById(id);
+    /**
+     * 새로운 댓글 등록 (Role 헤더 필수)
+     * POST /comments/write
+     */
+    @PostMapping("/write")
+    public ResponseEntity<Comment> write(
+        @RequestHeader(value = "Role", required = false) String role,
+        @RequestBody WritePostCommentCommand cmd
+    ) {
+        Category user = (role != null) ? Category.valueOf(role.toUpperCase()) : null;
+        Post post = postRepository.findById(cmd.getPostId()).orElseThrow(() -> new RuntimeException("Post not found"));
+        BoardType board = BoardType.fromCategory(post.getCategory());
+        if (!permissionService.canWriteComment(board, user)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
-        optionalComment.orElseThrow(() -> new Exception("No Entity Found"));
-        Comment comment = optionalComment.get();
-        comment.deletePostComment(deletePostCommentCommand);
-
-        commentRepository.delete(comment);
-        return comment;
+        Comment c = new Comment();
+        c.writeComment(cmd);
+        Comment saved = repo.save(c);
+        return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
-    @RequestMapping(
-        value = "/comments/{id}/editpostcomment",
-        method = RequestMethod.PUT,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Comment editPostComment(
-        @PathVariable(value = "id") Long id,
-        @RequestBody EditPostCommentCommand editPostCommentCommand,
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) throws Exception {
-        System.out.println("##### /comment/editPostComment  called #####");
-        Optional<Comment> optionalComment = commentRepository.findById(id);
-
-        optionalComment.orElseThrow(() -> new Exception("No Entity Found"));
-        Comment comment = optionalComment.get();
-        comment.editPostComment(editPostCommentCommand);
-
-        commentRepository.save(comment);
-        return comment;
+    @GetMapping("/post/{postId}")
+    public ResponseEntity<List<Comment>> listByPost(@PathVariable Long postId) {
+        List<Comment> comments = repo.findByPostId(postId);
+        return ResponseEntity.ok(comments);
     }
 
-    @RequestMapping(
-        value = "/comments/writeqnacomment",
-        method = RequestMethod.POST,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Comment writeQnAComment(
-        HttpServletRequest request,
-        HttpServletResponse response,
-        @RequestBody WriteQnACommentCommand writeQnACommentCommand
-    ) throws Exception {
-        System.out.println("##### /comment/writeQnAComment  called #####");
-        Comment comment = new Comment();
-        comment.writeQnAComment(writeQnACommentCommand);
-        commentRepository.save(comment);
-        return comment;
+    @PutMapping("/edit")
+    public ResponseEntity<Comment> edit(@RequestBody EditPostCommentCommand cmd) {
+        Comment existing = repo.findById(cmd.getId())
+            .orElseThrow(() -> new RuntimeException("Comment not found"));
+        existing.editComment(cmd);
+        Comment updated = repo.save(existing);
+        return ResponseEntity.ok(updated);
     }
 
-    @RequestMapping(
-        value = "/comments/{id}/deleteqnacomment",
-        method = RequestMethod.DELETE,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Comment deleteQnAComment(
-        @PathVariable(value = "id") Long id,
-        @RequestBody DeleteQnACommentCommand deleteQnACommentCommand,
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) throws Exception {
-        System.out.println("##### /comment/deleteQnAComment  called #####");
-        Optional<Comment> optionalComment = commentRepository.findById(id);
-
-        optionalComment.orElseThrow(() -> new Exception("No Entity Found"));
-        Comment comment = optionalComment.get();
-        comment.deleteQnAComment(deleteQnACommentCommand);
-
-        commentRepository.delete(comment);
-        return comment;
-    }
-
-    @RequestMapping(
-        value = "/comments/{id}/editqnacomment",
-        method = RequestMethod.PUT,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Comment editQnAComment(
-        @PathVariable(value = "id") Long id,
-        @RequestBody EditQnACommentCommand editQnACommentCommand,
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) throws Exception {
-        System.out.println("##### /comment/editQnAComment  called #####");
-        Optional<Comment> optionalComment = commentRepository.findById(id);
-
-        optionalComment.orElseThrow(() -> new Exception("No Entity Found"));
-        Comment comment = optionalComment.get();
-        comment.editQnAComment(editQnACommentCommand);
-
-        commentRepository.save(comment);
-        return comment;
-    }
-
-    @RequestMapping(
-        value = "/comments/writenotificationcomment",
-        method = RequestMethod.POST,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Comment writeNotificationComment(
-        HttpServletRequest request,
-        HttpServletResponse response,
-        @RequestBody WriteNotificationCommentCommand writeNotificationCommentCommand
-    ) throws Exception {
-        System.out.println(
-            "##### /comment/writeNotificationComment  called #####"
-        );
-        Comment comment = new Comment();
-        comment.writeNotificationComment(writeNotificationCommentCommand);
-        commentRepository.save(comment);
-        return comment;
-    }
-
-    @RequestMapping(
-        value = "/comments/{id}/deletenotificationcomment",
-        method = RequestMethod.DELETE,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Comment deleteNotificationComment(
-        @PathVariable(value = "id") Long id,
-        @RequestBody DeleteNotificationCommentCommand deleteNotificationCommentCommand,
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) throws Exception {
-        System.out.println(
-            "##### /comment/deleteNotificationComment  called #####"
-        );
-        Optional<Comment> optionalComment = commentRepository.findById(id);
-
-        optionalComment.orElseThrow(() -> new Exception("No Entity Found"));
-        Comment comment = optionalComment.get();
-        comment.deleteNotificationComment(deleteNotificationCommentCommand);
-
-        commentRepository.delete(comment);
-        return comment;
-    }
-
-    @RequestMapping(
-        value = "/comments/{id}/editnotificationcomment",
-        method = RequestMethod.PUT,
-        produces = "application/json;charset=UTF-8"
-    )
-    public Comment editNotificationComment(
-        @PathVariable(value = "id") Long id,
-        @RequestBody EditNotificationCommentCommand editNotificationCommentCommand,
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) throws Exception {
-        System.out.println(
-            "##### /comment/editNotificationComment  called #####"
-        );
-        Optional<Comment> optionalComment = commentRepository.findById(id);
-
-        optionalComment.orElseThrow(() -> new Exception("No Entity Found"));
-        Comment comment = optionalComment.get();
-        comment.editNotificationComment(editNotificationCommentCommand);
-
-        commentRepository.save(comment);
-        return comment;
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> delete(@RequestBody DeletePostCommentCommand cmd) {
+        repo.deleteById(cmd.getId());
+        return ResponseEntity.noContent().build();
     }
 }
-//>>> Clean Arch / Inbound Adaptor

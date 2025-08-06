@@ -7,11 +7,33 @@ import org.springframework.stereotype.Service;
 @Service
 public class PermissionService {
 
-    public boolean canWritePost(BoardType boardType, Category category) {
-        return category == Category.admin || category == Category.member;
+    // 읽기 권한 검사
+    public boolean canRead(BoardType board, Category user) {
+        switch (board) {
+            case GENERAL: return true;                                         // 자유게시판: 모두 읽기 가능
+            case QNA:     return user != null && (user == Category.MEMBER || user == Category.ADMIN || user == Category.VETERINARIAN);
+            case NOTICE:  return user != null;                                 // 공지사항: 로그인 사용자만
+            default:      return false;
+        }
     }
 
-    public boolean canRead(BoardType boardType, Category category) {
-        return category != null;
+    // 게시글 작성 권한 검사
+    public boolean canWritePost(BoardType board, Category user) {
+        switch (board) {
+            case GENERAL: return user != null;                                 // 자유게시판: 로그인 사용자 이상
+            case QNA:     return user == Category.MEMBER;                     // QnA: member만
+            case NOTICE:  return user == Category.ADMIN;                      // 공지사항: admin만
+            default:      return false;
+        }
+    }
+
+    // 댓글 작성 권한 검사
+    public boolean canWriteComment(BoardType board, Category user) {
+        switch (board) {
+            case GENERAL: return user != null;                                 // 자유게시판: 로그인 사용자 이상
+            case QNA:     return user == Category.VETERINARIAN;               // QnA: veterinarian만
+            case NOTICE:  return false;                                       // 공지사항: 불가
+            default:      return false;
+        }
     }
 }

@@ -1,24 +1,10 @@
 package forbee.domain;
 
-import forbee.domain.*;
-import forbee.infra.AbstractEvent;
-import java.time.LocalDate;
-import java.util.*;
-import lombok.*;
-
-//<<< DDD / Domain Event
-@Data
-@ToString
-public class ViewIncreased extends AbstractEvent {
-
+public class ViewIncreased {
     private Long id;
 
-    public ViewIncreased(Post aggregate) {
-        super(aggregate);
-    }
+    public ViewIncreased() {}
 
-    public ViewIncreased() {
-        super();
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 }
-//>>> DDD / Domain Event
