@@ -21,6 +21,11 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: ai
+      auto-offset-reset: earliest
   security:
     oauth2:
       resourceserver:
@@ -50,7 +55,7 @@ spring:
 #          contentType: application/json
 
 fastapi:
-  url: ${FASTAPI_URL:https://8002-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io}
+  url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io}
 
 azure:
   storage:
@@ -111,7 +116,7 @@ spring:
           contentType: application/json
 
 fastapi:
-  url: ${FASTAPI_URL:https://8000-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io}
+  url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io}
 
 azure:
   storage:
