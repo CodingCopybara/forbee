@@ -1,2 +1,3 @@
 ai/src/main/java/forbee/infra/.env
 .env
+node_modules

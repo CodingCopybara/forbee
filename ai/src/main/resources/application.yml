@@ -110,4 +110,4 @@ spring:
           contentType: application/json
 
 fastapi:
-  url: http://ai-python:8003
+  url: http://fastapi:8003
