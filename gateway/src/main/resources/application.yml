@@ -1,4 +1,5 @@
-server:
+
+server:
   port: 8088
 
 ---

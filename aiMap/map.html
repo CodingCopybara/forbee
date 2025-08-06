@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>지도 탐지 테스트</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script src="https://code.jquery.com/jquery-latest.js"></script>
+    <script src="https://sgisapi.kostat.go.kr/OpenAPI3/auth/javascriptAuth?consumer_key=81e5e7f2bafc41a5a506"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.6/proj4.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+    <style>
+        /* === 기본 세팅 === */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #coordinate-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            font-size: 14px;
+            color: #555;
+            width: 70%;
+            max-width: 800px;
+        }
+        /* === 지도 영역 === */
+        #map-container {
+            height: 70%;
+            width: 70%;
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1200;
+        }
+
+        /* === 버튼 영역 === */
+        #map-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .action-button {
+            margin-top: 20px;
+            padding: 12px 24px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            z-index: 9999;
+        }
+
+        .action-button:hover {
+            background-color: #0056b3;
+        }
+
+        .action-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* === 로딩 오버레이 === */
+        #loading {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 24px;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        /* === 팝업 === */
+        #popup-container {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 11000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            padding: 20px;  
+            box-sizing: border-box;
+        }
+
+        #popup-container.show #popup-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        #popup-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 90%;
+            height: 90%;
+            position: relative;
+            transform: translateY(-50px);
+            opacity: 0;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-height: calc(100vh - 40px); 
+            overflow-y: auto;
+        }
+
+        #close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #888;
+            background: none;
+            border: none;
+        }
+
+        #close-button:hover {
+            color: #333;
+        }
+
+        /* === 팝업 내부 구조 === */
+        #image-and-ratio-container {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+        }
+        
+        .image-container {
+            flex: 7;
+        }
+
+        .ratio-container {
+            flex: 3;
+        }
+
+        #result-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            object-fit: contain;
+        }
+
+        /* === 리스트 & 텍스트 === */
+        #ratio-list-container h3 {
+            margin-top: 0;
+        }
+
+        #ratio-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        #ratio-list li {
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .recommendation-box {
+            background: #fefefe;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #333;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        /* === 등급 배지 === */
+        .grade-badge {
+            font-weight: bold;
+            font-size: 18px;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 10px;
+            background-color: #007BFF; /* 기본값 */
+        }
+
+        /* === 구분선 === */
+        hr.separator {
+            border: 0;
+            border-top: 1px solid #ccc;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="loading">분석 중... 잠시만 기다려주세요.</div>
+
+<div id="map-container">
+    <div id="map"></div>
+</div>
+<div id="map-buttons">
+    <button id="captureBtn" class="action-button" onclick="captureAndPredict()">분석</button>
+    <button id="recallBtn" class="action-button" onclick="showLastPrediction()">결과</button>
+</div>
+
+<div id="coordinate-info">
+    <p>현재 중심 좌표: <span id="coordinates">위치 정보를 로드 중...</span></p>
+</div>
+
+<div id="popup-container">
+    <div id="popup-content">
+        <button id="close-button" onclick="closePopup()">×</button>
+        
+        <div id="recommendation-container">
+            <h3>추천 지수</h3>
+            <div id="recommendation-text" class="recommendation-box">
+        </div>
+
+        <hr class="separator">
+
+        <div id="image-and-ratio-container">
+            <div class="image-container">
+                <h3>이미지</h3>
+                <img id="result-image" alt="예측 결과 이미지" />
+            </div>
+            <div class="ratio-container">
+                <h3>비율</h3>
+                <ul id="ratio-list"></ul>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<script>
+    var map;
+    
+    // 마지막 예측 이미지와 비율을 저장할 변수
+    let lastPredictionImage = null;
+    let lastPredictionRatios = null;
+
+    // 라벨 색상 매핑
+    const labelColorMapping = {
+        '무시': 'rgb(100, 100, 100)',
+        '기타': 'rgb(160, 160, 160)',
+        '건물': 'rgb(60, 60, 60)',
+        '주차장': 'rgb(220, 220, 220)',
+        '도로': 'rgb(128, 128, 128)',
+        '가로수': 'rgb(173, 255, 47)',
+        '논': 'rgb(139, 69, 19)',
+        '비닐하우스': 'rgb(135, 206, 235)',
+        '밭': 'rgb(144, 238, 144)',
+        '활엽수림': 'rgb(50, 205, 50)',
+        '침엽수림': 'rgb(165, 65, 65)',
+        '나지': 'rgb(255, 140, 0)',
+        '수역': 'rgb(0, 0, 255)'
+    };
+
+    // 비율 리스트 HTML 생성 함수
+    function generateRatioListHTML(pixelRatios) {
+        let html = '';
+        for (const [label, ratio] of Object.entries(pixelRatios)) {
+            const color = labelColorMapping[label] || 'gray';
+            html += `
+                <li>
+                    <span style="
+                        display:inline-block;
+                        width:14px; height:14px;
+                        background-color: ${color};
+                        margin-right: 8px;
+                        vertical-align: middle;
+                        border: 1px solid #ccc;
+                        border-radius: 3px;
+                    "></span>
+                    ${label}: ${(ratio * 100).toFixed(2)}%
+                </li>
+            `;
+        }
+        return html;
+    }
+
+    function wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function setResultImageSquare() {
+        const img = document.getElementById("result-image");
+        if (img) {
+            const width = img.offsetWidth;
+            img.style.height = `${width}px`;       
+            img.style.objectFit = "contain";         
+        }
+    }
+
+    function setSquareMap() {
+        const mapContainer = document.getElementById('map-container');
+        const height = mapContainer.offsetHeight;
+        if (height > 0) {
+            mapContainer.style.width = `${height}px`;
+        }
+        
+        if (map) {
+            map.invalidateSize();
+        }
+    }
+
+    window.onload = function() {
+        console.log("window.onload: 페이지 로드 완료. 지도 초기화 시작.");
+        
+        setSquareMap();
+        window.addEventListener('resize', setSquareMap);
+        
+        function createSatelliteCRS() {
+            var code = "EPSG:900913";
+            var def = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 " +
+                      "+x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs";
+            var options = {
+                resolutions: [
+                    156543.0339, 78271.51695, 39135.758475, 19567.8792375, 9783.93961875,
+                    4891.969809375, 2445.9849046875, 1222.99245234375, 611.496226171875,
+                    305.7481130859375, 152.87405654296876, 76.43702827148438,
+                    38.21851413574219, 19.109257067871095, 9.554628533935547,
+                    4.777314266967774, 2.388657133483887, 1.1943285667419434,
+                    0.5971642833709717, 0.29858214168548586, 0.14929107084274293
+                ],
+                origin: [-20037508.34, 20037508.34]
+            };
+            var crs = new sop.CRS.Proj(code, def, options);
+            crs.projection.bounds = sop.bounds(
+                [13232210.28055642, 3584827.864295762],
+                [15238748.249933105, 5575460.5658249445]
+            );
+            return crs;
+        }
+
+        function createSatelliteTileLayer() {
+            var url = "https://xdworld.vworld.kr/2d/Satellite/service/{z}/{x}/{y}.jpeg";
+            var options = {
+                maxZoom: 18,
+                minZoom: 6,
+                crossOrigin: 'anonymous'
+            };
+            return new sop.TileLayer(url, options);
+        }
+
+        var satelliteCRS = createSatelliteCRS();
+        var satelliteTileLayer = createSatelliteTileLayer();
+        
+        map = sop.map("map", {
+            crs: satelliteCRS,
+            layers: [satelliteTileLayer]
+        });
+
+        map.on('moveend', updateCoordinates);
+        map.on('zoomend', updateCoordinates);
+        map.on('baselayerchange', updateCoordinates);
+
+        map.invalidateSize();
+        console.log("지도 크기 갱신 완료.");
+            
+        proj4.defs("EPSG:5179","+proj=tmerc +lat_0=38 +lon_0=127.5 +k=1 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs");
+        function latlngToUTMK(lat, lng) {
+            return proj4('EPSG:4326', 'EPSG:5179', [lng, lat]);
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+                var utmkCoords = latlngToUTMK(lat, lng);
+                var utmkPoint = sop.utmk(utmkCoords[0], utmkCoords[1]);
+                map.setView(utmkPoint, 15);
+                console.log("GPS 위치로 지도 이동 완료.");
+                updateCoordinates();
+            }, function(error) {
+                console.error("GPS 위치를 가져올 수 없습니다. 기본 위치로 이동합니다.", error);
+                var defaultPoint = sop.utmk(953820, 1953437);
+                map.setView(defaultPoint, 15);
+                updateCoordinates();
+            });
+        } else {
+            alert("이 브라우저는 GPS 위치를 지원하지 않습니다. 기본 위치로 이동합니다.");
+            var defaultPoint = sop.utmk(953820, 1953437);
+            map.setView(defaultPoint, 15);
+            updateCoordinates();
+        }
+        
+        document.getElementById('popup-container').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closePopup();
+            }
+        });
+    };
+
+    // 팝업 닫기 함수
+    function closePopup() {
+        const popupContainer = document.getElementById("popup-container");
+        popupContainer.classList.remove('show');
+        setTimeout(() => {
+            popupContainer.style.display = 'none';
+        }, 300); // CSS transition time과 일치
+    }
+
+    // 캡처 및 예측 함수
+    async function captureAndPredict() {
+        console.log("지도 캡처 시작...");
+
+        const captureButton = document.getElementById("captureBtn");
+        const loadingDiv = document.getElementById("loading");
+
+        if (captureButton) captureButton.disabled = true;
+        if (loadingDiv) loadingDiv.style.display = 'flex';
+
+        // SOP 지도 컨트롤러 숨기기
+        const widgetElements = document.querySelectorAll('.sop-control');
+        widgetElements.forEach(el => {
+            el.dataset.prevDisplay = el.style.display;
+            el.style.display = 'none';
+        });
+        
+        // 현재 지도 상태 저장
+        const originalCenter = map.getCenter();
+        const originalZoom = map.getZoom();
+        console.log("현재 위치/줌 저장:", originalCenter, originalZoom);
+
+        const captureZoom = 18;
+        map.setZoom(captureZoom);
+        await wait(2000); // 줌 변경 후 타일이 로드될 때까지 대기
+
+        const mapElement = document.querySelector("#map");
+        const tileWidth = mapElement.offsetWidth;
+        const tileHeight = mapElement.offsetHeight;
+
+        const minTargetSize = 3000;
+        const tilesPerSide = Math.ceil(minTargetSize / tileWidth);
+        const totalTiles = tilesPerSide * tilesPerSide;
+        
+        const finalWidth = tileWidth * tilesPerSide;
+        const finalHeight = tileHeight * tilesPerSide;
+
+        console.log(`최소 목표 크기 ${minTargetSize}px. ${tilesPerSide}x${tilesPerSide} 그리드 캡처 시작. 최종 크기: ${finalWidth}x${finalHeight}`);
+        
+        const capturedImages = [];
+        
+        const startOffset = -Math.floor(tilesPerSide / 2);
+        for (let y = 0; y < tilesPerSide; y++) {
+            for (let x = 0; x < tilesPerSide; x++) {
+                const dx = (startOffset + x) * tileWidth;
+                const dy = (startOffset + y) * tileHeight;
+                
+                map.setView(originalCenter, map.getZoom(), { animate: false });
+                map.panBy([dx, dy], { animate: false });
+                await wait(1000); // 패닝 후 타일 로드 대기
+
+                const canvas = await html2canvas(mapElement, {
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true,
+                    width: tileWidth,
+                    height: tileHeight
+                });
+                capturedImages.push(canvas);
+            }
+        }
+
+        const finalCanvas = document.createElement("canvas");
+        finalCanvas.width = finalWidth;
+        finalCanvas.height = finalHeight;
+        const ctx = finalCanvas.getContext("2d");
+
+        for (let i = 0; i < totalTiles; i++) {
+            const x = (i % tilesPerSide) * tileWidth;
+            const y = Math.floor(i / tilesPerSide) * tileHeight;
+            ctx.drawImage(capturedImages[i], x, y, tileWidth, tileHeight);
+        }
+
+        const blob = await new Promise(resolve => finalCanvas.toBlob(resolve, "image/png"));
+        console.log("PNG Blob 생성 완료. 서버로 전송...");
+
+        try {
+            const response = await fetch('http://localhost:8080/predict-and-get-info', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'image/png' 
+                },
+                body: blob,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server returned an error: ${response.status} - ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('서버로부터 받은 예측 결과:', result);
+
+            // 예측 결과를 저장   
+            lastPredictionImage = result.image_data;
+            lastPredictionRatios = result.pixel_ratios;
+            
+            const resultImage = document.getElementById('result-image');
+            resultImage.onload = () => {
+                setResultImageSquare();
+            };
+            
+            resultImage.src = result.image_data;
+            
+            const ratioList = document.getElementById('ratio-list');
+            ratioList.innerHTML = generateRatioListHTML(lastPredictionRatios);
+
+            // 추천지수 표시
+            const recommendationText = document.getElementById('recommendation-text');
+            recommendationText.innerHTML = calculateRecommendation(result.pixel_ratios);
+
+            // 팝업 보이기
+            const popupContainer = document.getElementById("popup-container");
+            popupContainer.style.display = 'flex';
+            setTimeout(() => {
+                popupContainer.classList.add('show');
+                setResultImageSquare(); 
+            }, 10);
+
+        } catch (error) {
+            console.error('예측 과정에서 오류 발생:', error);
+            alert('예측에 실패했습니다. 콘솔을 확인해주세요.');
+        } finally {
+            // 지도 상태 복구
+            map.setView(originalCenter, originalZoom);
+            widgetElements.forEach(el => {
+                el.style.display = el.dataset.prevDisplay || 'block';
+            });
+            if (captureButton) captureButton.disabled = false;
+            if (loadingDiv) loadingDiv.style.display = 'none';
+            console.log("지도 상태 복구 완료.");
+        }
+    }
+
+    // 마지막 예측 결과 다시 보기
+    function showLastPrediction() {
+        if (!lastPredictionImage || !lastPredictionRatios) {
+            alert("이전 예측 결과가 없습니다.");
+            return;
+        }
+
+        const resultImage = document.getElementById('result-image');
+        resultImage.onload = () => {
+            setResultImageSquare();
+        };
+        resultImage.src = lastPredictionImage;
+
+        const ratioList = document.getElementById('ratio-list');
+        ratioList.innerHTML = generateRatioListHTML(lastPredictionRatios);
+
+        const recommendationText = document.getElementById('recommendation-text');
+        recommendationText.innerHTML = calculateRecommendation(lastPredictionRatios);
+
+        const popupContainer = document.getElementById("popup-container");
+        popupContainer.style.display = 'flex';
+        setTimeout(() => {
+            popupContainer.classList.add('show');
+            setResultImageSquare();
+        }, 10);
+    }
+
+    //추천지수 계산
+    function calculateRecommendation(ratios) {
+        // 가중치 반영: 활엽수 * 2, 논 * -2, 밭 * -2, 비닐하우스 * -1
+        const weights = {
+            '활엽수림': 2,
+            '침엽수림': 0.5,
+            '논': -3,
+            '밭': -3,
+            '비닐하우스': -1,
+            '수역': 0.5
+        };
+
+        let score = 0;
+        for (const [label, ratio] of Object.entries(ratios)) {
+            if (weights[label] !== undefined) {
+                score += ratio * weights[label];
+            }
+        }
+
+        // 점수에 따른 추천 등급(A/B/C)
+        let grade;
+        if (score >= 0.5) grade = 'A';
+        else if (score >= 0.25) grade = 'B';
+        else grade = 'C';
+
+        // 보고서 텍스트 생성
+        const lines = [
+            '예측 결과는 참고용입니다. 실제와 다를 수 있습니다.',
+            '- A/B/C 3등급으로 분류되어 있으며, 알파벳 순서대로 등급입니다.',
+            '- C 등급은 꿀벌에게 부정적인 환경으로 양봉지로 적합하지 않습니다.',
+            '- 꿀벌의 주요 활동기는 3~8월으로, 5월이 가장 활발합니다.',
+            '- 벌꿀 등급제는 농약 잔류 여부와 꿀벌이 꽃에서 채취한 자연 꿀인지, 설탕 등을 먹여 만든 꿀인지를 확인하여 등급을 매기는 제도입니다. 풍부한 밀원 주변이 좋고 논, 밭은 피하는게 좋습니다.',
+            '- 논은 꿀벌 주요활동기와 겹치는 5월부터 8월까지 농약을 주로 사용하므로, 꿀벌이 이에 노출될 위험이 있습니다.',
+            '- 비닐하우스는 꿀벌의 접근이 제한되며, 농약 사용 위험또한 존재합니다.',
+            '- 밭은 경작 작물이 다양해 농약 살포 시기를 특정하기 어렵고, 시기와 무관하게 꿀벌이 농약에 노출될 수 있습니다.',
+            '- 활엽수림은 꿀벌에게 다양한 먹이를 제공하며, 꿀 생산에 기여할 수 있는 지역입니다.',
+            '- 침엽수림은 꿀벌에게 직접적인 도움은 제한적이지만, 일부 나무는 수분이 가능합니다.',
+            '- 나지는 황무지로, 꿀벌의 먹이와 꿀이 없으며, 현재는 경작중 일 수 있어 주의가 필요합니다.',
+            '- 수역은 물이 있는 지역으로, 바다가 아니라면, 꿀벌에게 수분 공급원이 될 수 있습니다.'
+        ];
+        let gradeBadgeColor = grade === 'A' ? '#28a745' : grade === 'B' ? '#ffc107' : '#dc3545';
+
+        const badgeHtml = `<div class="grade-badge" style="background-color: ${gradeBadgeColor};">예측 등급: ${grade}</div>`;
+        const lineHtml = lines.map(line => `<p>${line}</p>`).join('\n');
+
+        return badgeHtml + lineHtml;
+    }
+
+    function updateCoordinates() {
+        if (map) {
+            const center = map.getCenter();
+            let lat, lng;
+
+            // center 객체에 getLat() 함수가 있는지 확인하여 UTMK와 LatLng를 구분합니다.
+            if (typeof center.getLat === 'function') {
+                lat = center.getLat();
+                lng = center.getLng();
+            } else {
+                const utmkX = center.x;
+                const utmkY = center.y;
+                const latlng = proj4('EPSG:5179', 'EPSG:4326', [utmkX, utmkY]);
+                lat = latlng[1];
+                lng = latlng[0];
+            }
+            document.getElementById('coordinates').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        }
+    }
+</script>
+</body>
+</html>

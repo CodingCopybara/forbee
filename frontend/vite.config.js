@@ -11,6 +11,9 @@ import vuetify from 'vite-plugin-vuetify'
 import ViteYaml from '@modyfi/vite-plugin-yaml'
 
 export default defineConfig({
+  define: {
+    '__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': 'true'
+  },
   plugins: [
     vue(),
     vueJsx(),
