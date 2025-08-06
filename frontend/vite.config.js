@@ -64,7 +64,7 @@ export default defineConfig({
     port: 8080,
     proxy: {
       '/ai': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8083',
         changeOrigin: true,
         secure: false,
       }
