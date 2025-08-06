@@ -1,92 +1,111 @@
 <template>
-  <v-container fluid class="pa-4 fill-height">
-    <v-row class="fill-height">
-      <v-col cols="12" md="8" class="d-flex flex-column" style="min-height: 60vh;">
-        <v-card class="flex-grow-1" :style="mapCardStyle" v-if="isMapLoaded"> 
-          <div id="map" ref="mapDiv" style="width: 100%; height: 100%; z-index: 1;"></div>
-        </v-card>
-        <v-card v-else class="flex-grow-1 d-flex align-center justify-center">
-          <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-        </v-card>
-      </v-col>
+  <!-- 메인 콘텐츠 -->
+  <v-main class="pa-0 app-main">
+    <v-container fluid class="pa-2 app-content">
+      <v-row class="fill-height">
+        <v-col cols="12" md="8" class="d-flex flex-column" style="min-height: 70vh;">
+          <v-card class="square-card">
+            <div class="square-inner" ref="mapDiv" id="map"></div>
+          </v-card>
+        </v-col>
 
-      <v-col cols="12" md="4" class="d-flex flex-column">
+        <v-col cols="12" md="4" class="d-flex flex-column">
+          <v-card class="px-2 pt-6 pb-6">
+            <v-card-title>환경 분석</v-card-title>
+            <v-card-text>
+              <p>지도에서 분석을 원하는 위치로 이동하세요.</p>
+              <p>현재 중심 좌표를 기준으로 반경 600~800m의 범위를 탐색해 중심 좌표가 양봉에 적합한지 분석합니다.</p>
+              <p class="font-weight-bold mt-4">현재 중심 좌표: (<span>{{ coordinates }}</span>)</p>
+            </v-card-text>
+            <v-divider></v-divider>
+            <v-card-actions class="pa-6">
+              <v-btn color="primary" @click="captureAndPredict" :loading="isLoading" block size="large">
+                <v-icon left>mdi-magnify</v-icon>
+                분석
+              </v-btn>
+            </v-card-actions>
+            <v-card-actions class="pa-4 pt-0">
+              <v-btn color="blue-grey" @click="showLastPrediction" :disabled="!lastPredictionImage" block size="large">
+                <v-icon left>mdi-history</v-icon>
+                이전 결과 보기
+              </v-btn>
+            </v-card-actions>
+            <v-card-actions class="pa-4 pt-0">
+              <v-btn color="green" @click="showMockPredictionResult" block size="large">
+                <v-icon left>mdi-eye</v-icon>
+                임시 결과 보기 (개발용)
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- 오버레이 (로딩) -->
+      <v-overlay :model-value="isLoading" class="align-center justify-center" persistent scrim="black" contained>
+        <div class="d-flex flex-column align-center">
+          <v-progress-circular indeterminate size="64" color="white" class="mb-4" />
+          <div class="text-h6 text-white">분석 중... 잠시만 기다려주세요.</div>
+        </div>
+      </v-overlay>
+
+      <!-- 결과 다이얼로그 추가 -->
+      <v-dialog v-model="showPopup" max-width="60vw" max-height="90vh">
         <v-card>
-          <v-card-title>환경 분석</v-card-title>
-          <v-card-subtitle>지도에서 원하는 위치를 선택하고 분석하세요.</v-card-subtitle>
-          <v-card-text>
-            <p class="font-weight-bold mt-4">현재 중심 좌표:</p>
-            <span>{{ coordinates }}</span>
-          </v-card-text>
+          <v-card-title class="d-flex align-center">
+            <span class="text-h5">분석 결과</span>
+            <v-spacer></v-spacer>
+            <v-btn icon="mdi-close" variant="text" @click="closePopup"></v-btn>
+          </v-card-title>
           <v-divider></v-divider>
-          <v-card-actions class="pa-4">
-            <v-btn color="primary" @click="captureAndPredict" :loading="isLoading" block size="large">
-              <v-icon left>mdi-magnify</v-icon>
-              분석
-            </v-btn>
-          </v-card-actions>
-          <v-card-actions class="pa-4 pt-0">
-            <v-btn color="blue-grey" @click="showLastPrediction" :disabled="!lastPredictionImage" block size="large">
-              <v-icon left>mdi-history</v-icon>
-              이전 결과 보기
-            </v-btn>
-          </v-card-actions>
+          <v-card-text style="overflow-y: auto;">
+            <v-container fluid>
+              <v-row>
+                <v-col cols="12">
+                  <h3 class="text-h6">추천 지수</h3>
+                  <div v-html="recommendationText" class="recommendation-box mt-2 pa-4 border rounded"></div>
+                  <v-divider class="my-4"></v-divider>
+                </v-col>
+              </v-row>
 
-          <v-card-actions class="pa-4 pt-0">
-            <v-btn color="green" @click="showMockPredictionResult" block size="large">
-              <v-icon left>mdi-eye</v-icon>
-              임시 결과 보기 (개발용)
-            </v-btn>
-          </v-card-actions>
+              <v-row>
+                <v-col cols="12" md="8">
+                  <h3 class="text-h6">
+                    분석 이미지
+                    <span style="font-weight: normal; font-size: 0.9rem; color: #555;">
+                      ({{ analysisResultCoordinates }})
+                    </span>
+                  </h3>
+                  <v-img
+                    :src="resultImageSrc"
+                    aspect-ratio="1"
+                    contain
+                    class="mt-2 border rounded"
+                  ></v-img>
+                </v-col>
+                <v-col cols="12" md="4">
+                  <h3 class="text-h6">구성 비율</h3>
+                  <v-list dense>
+                    <v-list-item v-for="(ratio, label) in pixelRatios" :key="label">
+                      <template v-slot:prepend>
+                        <v-avatar
+                          :color="labelColorMapping[label] || 'grey'"
+                          size="20"
+                          class="mr-4"
+                        ></v-avatar>
+                      </template>
+                      <v-list-item-title>{{ label }}: {{ (ratio * 100).toFixed(2) }}%</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-card-text>
         </v-card>
-      </v-col>
-    </v-row>
-
-    <!-- Loading Overlay -->
-    <v-overlay :model-value="isLoading" class="align-center justify-center" persistent>
-      <v-progress-circular indeterminate size="64" color="white" class="mb-4"></v-progress-circular>
-      <div class="text-h6">분석 중... 잠시만 기다려주세요.</div>
-    </v-overlay>
-
-    <!-- Result Dialog -->
-    <v-dialog v-model="showPopup" max-width="90vw" max-height="90vh">
-      <v-card>
-        <v-card-title class="d-flex align-center">
-          <span class="text-h5">분석 결과</span>
-          <v-spacer></v-spacer>
-          <v-btn icon="mdi-close" variant="text" @click="closePopup"></v-btn>
-        </v-card-title>
-        <v-divider></v-divider>
-        <v-card-text style="overflow-y: auto;">
-          <v-container fluid>
-            <v-row>
-              <!-- Left side: Recommendation and Ratios -->
-              <v-col cols="12" md="6">
-                <h3 class="text-h6">추천 지수</h3>
-                <div v-html="recommendationText" class="recommendation-box mt-2 pa-4 border rounded"></div>
-                <v-divider class="my-4"></v-divider>
-                <h3 class="text-h6">구성 비율</h3>
-                <v-list dense>
-                  <v-list-item v-for="(ratio, label) in pixelRatios" :key="label">
-                    <template v-slot:prepend>
-                      <v-avatar :color="labelColorMapping[label] || 'grey'" size="20" class="mr-4"></v-avatar>
-                    </template>
-                    <v-list-item-title>{{ label }}: {{ (ratio * 100).toFixed(2) }}%</v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-col>
-              <!-- Right side: Image -->
-              <v-col cols="12" md="6">
-                <h3 class="text-h6">분석 이미지</h3>
-                <v-img :src="resultImageSrc" aspect-ratio="1" contain class="mt-2 border rounded"></v-img>
-              </v-col>
-            </v-row>
-          </v-container>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
-  </v-container>
+      </v-dialog>
+    </v-container>
+  </v-main>
 </template>
+
 
 <script setup>
 import { ref, onMounted, onUnmounted, onUpdated, nextTick } from 'vue'; 
@@ -103,13 +122,12 @@ const coordinates = ref('위치 정보를 로드 중...');
 const resultImageSrc = ref('');
 const pixelRatios = ref({});
 const recommendationText = ref('');
-const mapCardStyle = ref({});
-const isMapLoaded = ref(false);
 const resizeObserver = ref(null);
 
 // 마지막 예측 결과 저장을 위한 변수
 const lastPredictionImage = ref(null);
 const lastPredictionRatios = ref(null);
+const analysisResultCoordinates = ref('');
 
 // 라벨 색상 매핑
 const labelColorMapping = {
@@ -177,31 +195,6 @@ const updateCoordinates = () => {
     }
     coordinates.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   }
-};
-
-const setSquareMap = () => {
-    if (mapDiv.value && map.value) {
-        const parentCol = mapDiv.value.closest('.v-col');
-        if (parentCol) {
-            const availableWidth = parentCol.clientWidth;
-            const availableHeight = parentCol.clientHeight;
-            const side = Math.min(availableWidth, availableHeight);
-
-            if (side > 0) {
-                mapCardStyle.value = {
-                    width: `${side}px`,
-                    height: `${side}px`,
-                    marginLeft: 'auto',
-                    marginRight: 'auto',
-                };
-                nextTick(() => {
-                    if (map.value) {
-                        map.value.invalidateSize();
-                    }
-                });
-            }
-        }
-    }
 };
 
 const captureAndPredict = async () => {
@@ -296,13 +289,30 @@ const captureAndPredict = async () => {
     console.error('예측 과정에서 오류 발생:', error);
     alert('예측에 실패했습니다. 콘솔을 확인해주세요.');
   } finally {
-    map.value.setView(originalCenter, originalZoom);
-    widgetElements.forEach(el => {
-      el.style.display = el.dataset.prevDisplay || 'block';
-    });
-    isLoading.value = false;
-    console.log("지도 상태 복구 완료.");
-  }
+    map.value.setView(originalCenter, originalZoom);
+
+    // 좌표 얻기
+    let lat, lng;
+    if (typeof originalCenter.getLat === 'function') {
+      lat = originalCenter.getLat();
+      lng = originalCenter.getLng();
+    } else {
+      const utmkX = originalCenter.x;
+      const utmkY = originalCenter.y;
+      const latlng = proj4('EPSG:5179', 'EPSG:4326', [utmkX, utmkY]);
+      lat = latlng[1];
+      lng = latlng[0];
+    }
+
+    // 문자열로 저장
+    analysisResultCoordinates.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+    widgetElements.forEach(el => {
+      el.style.display = el.dataset.prevDisplay || 'block';
+    });
+    isLoading.value = false;
+    console.log("지도 상태 복구 완료.");
+  }
 };
 
 const showLastPrediction = () => {
@@ -351,7 +361,7 @@ const calculateRecommendation = (ratios) => {
   ];
 
   let gradeBadgeColor = grade === 'A' ? '#28a745' : grade === 'B' ? '#ffc107' : '#dc3545';
-  const badgeHtml = `<div class="grade-badge" style="background-color: ${gradeBadgeColor};">예측 등급: ${grade}</div>`;
+  const badgeHtml = `<div style="background-color: ${gradeBadgeColor}; font-weight: bold; font-size: 18px; color: white; padding: 6px 12px; border-radius: 8px; display: inline-block; margin-bottom: 10px;">예측 등급: ${grade}</div>`;
   const lineHtml = lines.map(line => `<p class="mb-1">${line}</p>`).join('');
 
   return badgeHtml + lineHtml;
@@ -366,7 +376,8 @@ onMounted(() => {
       if (typeof sop !== 'undefined') {
         clearInterval(interval);
         initializeMap();
-        nextTick(() => { setSquareMap(); });
+        setTimeout(() => {
+        }, 200);
       }
     }, 100);
   }
@@ -375,7 +386,7 @@ onMounted(() => {
     const parentCol = mapDiv.value?.closest('.v-col');
     if (parentCol) {
       resizeObserver.value = new ResizeObserver(() => {
-        setSquareMap();
+        if (map.value) map.value.invalidateSize();
       });
       resizeObserver.observe(parentCol);
     }
@@ -435,13 +446,6 @@ const initializeMap = () => {
   map.value.on('zoomend', updateCoordinates);
   map.value.on('baselayerchange', updateCoordinates);
 
-  setTimeout(() => {
-    if (map.value) {
-      map.value.invalidateSize();
-      console.log("초기 로딩 후 invalidateSize() 호출");
-    }
-  }, 100);
-
   map.value.invalidateSize();
   console.log("지도 크기 갱신 완료.");
 
@@ -468,7 +472,7 @@ const initializeMap = () => {
     map.value.setView(defaultPoint, 15);
     updateCoordinates();
   }
-  setSquareMap();
+  
 };
 
 onUnmounted(() => {
@@ -486,21 +490,47 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.fill-height {
-  height: calc(100vh - 64px);
+::v-deep .v-overlay__scrim {
+  opacity: 1
 }
 
-.recommendation-box p {
-  margin-bottom: 0.5rem;
+.recommendation-box {
+  background: #fefefe;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #333;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .grade-badge {
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 18px;
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  display: inline-block;
-  margin-bottom: 1rem;
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: block; /* Changed from inline-block to block */
+  margin-bottom: 10px;
+}
+
+.app-main {
+  position: relative;
+  height: 100%;
+}
+
+.square-card {
+  position: relative;
+  width: 100%;
+}
+
+.square-inner {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: auto;
+  position: relative;
+  z-index: 1;
 }
 </style>
