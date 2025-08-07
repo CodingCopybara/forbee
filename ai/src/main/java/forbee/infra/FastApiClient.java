@@ -12,7 +12,7 @@ public class FastApiClient {
     
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${fastapi.url}") // application.yml에서 설정
+    @Value("${python-ai.url}") // application.yml에서 설정
     private String FASTAPI_URL;
 
     public String sendDiagnoseRequest(String diseaseName, double confidence, Long userId) {

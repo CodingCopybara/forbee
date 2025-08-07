@@ -26,8 +26,8 @@ spring:
         jwt:
           jwk-set-uri: ${JWK_SET_URI:http://localhost:9090/realms/master/protocol/openid-connect/certs}
 
-fastapi:
-  url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-gahotnesjfz.ws-us120.gitpod.io}
+python-ai:
+  url: ${FASTAPI_URL:http://localhost:8003}
 
 azure:
   storage:

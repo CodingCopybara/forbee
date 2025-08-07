@@ -69,11 +69,12 @@ services:
   ai:
     depends_on: 
       - kafka
-      - fastapi
+      - python-ai
     image: adoptopenjdk/maven-openjdk11:latest
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - KAFKA_BOOTSTRAP_SERVERS=my-kafka:9092
+      - FASTAPI_URL=http://python-ai:8003
     command: mvn spring-boot:run
     ports:
       - 8083:8083
@@ -82,22 +83,20 @@ services:
       - ./ai:/usr/src
       - ./maven-repo:/root/.m2
 
-  # fastapi:
-  #   depends_on: 
-  #     - kafka
-  #   build: ./fastapi
-  #   ports:
-  #     - 8003:8003
-  #   volumes:
-  #     - ./fastapi:/usr/src
-  #   environment:
-  #     - KAFKA_BOOTSTRAP_SERVERS=my-kafka:9092
-  #     - KAFKA_TOPIC=forbee
-  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
+  python-ai:
+    depends_on: 
+      - kafka
+    build: ./fastapi
+    ports:
+      - 8003:8003
+    volumes:
+      - ./fastapi:/usr/src
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=my-kafka:9092
+      - KAFKA_TOPIC=forbee
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
 
 networks:
   forbee-net:
     driver: bridge
-
-services:
   
