@@ -31,8 +31,8 @@ fastapi:
 
 azure:
   storage:
-    account-url: ${AZURE_STORAGE_ACCOUNT_URL:https://aivle26storage.blob.core.windows.net}
-    container-name: ${AZURE_CONTAINER_NAME:container}
+    account-url: ${AZURE_STORAGE_ACCOUNT_URL:https://forbee.blob.core.windows.net}
+    container-name: ${AZURE_CONTAINER_NAME:blob}
 
 logging:
   level:
