@@ -5,8 +5,6 @@
 
 ## 루트에서 docker-compose up --build라고 치기
 
-version: '3.8'
-
 services:
   frontend:
     build: ./frontend
@@ -31,7 +29,75 @@ services:
     networks:
       - forbee-net
 
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: my-kafka
+    ports:
+      - 9092:9092
+    environment:
+      # KRaft 설정
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@my-kafka:9093'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+
+      CLUSTER_ID: "dffcb5278892a996df14202a16a31bd9"
+      
+      # 리스너 설정
+      KAFKA_LISTENERS: 'INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://my-kafka:9092,EXTERNAL://localhost:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
+      
+      # 클러스터 설정
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "9099:8080"
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=my-kafka:9092
+
+  ai:
+    depends_on: 
+      - kafka
+      - fastapi
+    image: adoptopenjdk/maven-openjdk11:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - KAFKA_BOOTSTRAP_SERVERS=my-kafka:9092
+    command: mvn spring-boot:run
+    ports:
+      - 8083:8083
+    working_dir: /usr/src
+    volumes:
+      - ./ai:/usr/src
+      - ./maven-repo:/root/.m2
+
+  # fastapi:
+  #   depends_on: 
+  #     - kafka
+  #   build: ./fastapi
+  #   ports:
+  #     - 8003:8003
+  #   volumes:
+  #     - ./fastapi:/usr/src
+  #   environment:
+  #     - KAFKA_BOOTSTRAP_SERVERS=my-kafka:9092
+  #     - KAFKA_TOPIC=forbee
+  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
 
 networks:
   forbee-net:
     driver: bridge
+
+services:
+  
