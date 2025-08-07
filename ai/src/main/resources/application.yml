@@ -1,12 +1,7 @@
 server:
   port: 8083
 
----
-
 spring:
-  config:
-    activate:
-      on-profile: default
   main:
     allow-bean-definition-overriding: true
   datasource:
@@ -16,43 +11,20 @@ spring:
     password:
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: none  # validate 
     properties:
       hibernate:
         show_sql: true
         format_sql: true
-  kafka:
-    bootstrap-servers: localhost:9092
-    consumer:
-      group-id: ai
-      auto-offset-reset: earliest
+  # 기본적으로 Kafka Auto-Configuration 제외
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
   security:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
-# -- 로컬 개발시 Kafka 관련 옵션 필요하다면 아래 주석 해제 --
-#  cloud:
-#    stream:
-#      kafka:
-#        binder:
-#          brokers: localhost:9092
-#        streams:
-#          binder:
-#            configuration:
-#              default:
-#                key:
-#                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-#                value:
-#                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-#      bindings:
-#        event-in:
-#          group: ai
-#          destination: forbee
-#          contentType: application/json
-#        event-out:
-#          destination: forbee
-#          contentType: application/json
+          jwk-set-uri: ${JWK_SET_URI:http://localhost:9090/realms/master/protocol/openid-connect/certs}
 
 fastapi:
   url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io}
@@ -73,26 +45,26 @@ logging:
 spring:
   config:
     activate:
+      on-profile: local
+  kafka:
+    bootstrap-servers: localhost:9092
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+---
+
+spring:
+  config:
+    activate:
       on-profile: docker
-  main:
-    allow-bean-definition-overriding: true
-  datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:testdb
-    username: sa
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: none
-    properties:
-      hibernate:
-        show_sql: true
-        format_sql: true
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
+  autoconfigure:
+    exclude: []
+  kafka:
+    bootstrap-servers: my-kafka:9092
+    consumer:
+      group-id: ai
+      auto-offset-reset: earliest
   cloud:
     stream:
       kafka:
@@ -114,17 +86,3 @@ spring:
         event-out:
           destination: forbee
           contentType: application/json
-
-fastapi:
-  url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io}
-
-azure:
-  storage:
-    account-url: ${AZURE_STORAGE_ACCOUNT_URL:https://aivle26storage.blob.core.windows.net}
-    container-name: ${AZURE_CONTAINER_NAME:container}
-
-logging:
-  level:
-    root: INFO
-    org.hibernate.type: trace
-    org.springframework.cloud: debug
