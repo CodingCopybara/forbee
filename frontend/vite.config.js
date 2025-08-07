@@ -11,71 +11,84 @@ import Layouts from 'vite-plugin-vue-layouts'
 import vuetify from 'vite-plugin-vuetify'
 import ViteYaml from '@modyfi/vite-plugin-yaml'
 
-export default defineConfig({
-  plugins: [
-    vue(),
-    vueJsx(),
-    vuetify({
-      styles: {
-        configFile: 'src/styles/variables/_vuetify.scss',
-      },
-    }),
-    Pages({}),
-    Layouts(),
-    Components({
-      dirs: ['src/@core/components', 'src/components'],
-      extensions: ['vue'],
-      dts: true,
-    }),
-    AutoImport({
-      eslintrc: {
-        enabled: true,
-        filepath: './.eslintrc-auto-import.json',
-      },
-      imports: ['vue', 'vue-router', '@vueuse/core', 'vue-i18n', 'pinia'],
-      vueTemplate: true,
-    }),
-    DefineOptions(),
-    ViteYaml(),
-  ],
-  define: {
-    global: 'globalThis',
-  },
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '@core': fileURLToPath(new URL('./src/@core', import.meta.url)),
-      '@layouts': fileURLToPath(new URL('./src/@layouts', import.meta.url)),
-      '@configured-variables': fileURLToPath(new URL('./src/styles/variables/_template.scss', import.meta.url)),
-      '@axios': fileURLToPath(new URL('./src/plugins/axios', import.meta.url)),
-      'apexcharts': fileURLToPath(new URL('node_modules/apexcharts-clevision', import.meta.url)),
-    },
-  },
-  build: {
-    chunkSizeWarningLimit: 5000,
-  },
-  optimizeDeps: {
-    exclude: ['vuetify'],
-    entries: [
-      './src/**/*.vue',
+export default defineConfig(({ mode }) => {
+  // 환경 변수 로드
+  const env = loadEnv(mode, process.cwd())
+
+  return {
+    plugins: [
+      vue(),
+      vueJsx(),
+      vuetify({
+        styles: {
+          configFile: 'src/styles/variables/_vuetify.scss',
+        },
+      }),
+      Pages({}),
+      Layouts(),
+      Components({
+        dirs: ['src/@core/components', 'src/components'],
+        extensions: ['vue'],
+        dts: true,
+      }),
+      AutoImport({
+        eslintrc: {
+          enabled: true,
+          filepath: './.eslintrc-auto-import.json',
+        },
+        imports: ['vue', 'vue-router', '@vueuse/core', 'vue-i18n', 'pinia'],
+        vueTemplate: true,
+      }),
+      DefineOptions(),
+      ViteYaml(),
     ],
-  },
-  server: {
-    host: '0.0.0.0',
-    port: 8080,
-    proxy: {
-      '/ai': {
-        target: 'http://localhost:8083',
-        changeOrigin: true,
-        secure: false,
-      }
-    }
-  },
-  css: {
-    preprocessorOptions: {
-      scss: {
-        api: 'modern'
-      }
-    }
+    define: {
+      global: 'globalThis',
+    },
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        '@core': fileURLToPath(new URL('./src/@core', import.meta.url)),
+        '@layouts': fileURLToPath(new URL('./src/@layouts', import.meta.url)),
+        '@configured-variables': fileURLToPath(new URL('./src/styles/variables/_template.scss', import.meta.url)),
+        '@axios': fileURLToPath(new URL('./src/plugins/axios', import.meta.url)),
+        'apexcharts': fileURLToPath(new URL('node_modules/apexcharts-clevision', import.meta.url)),
+      },
+    },
+    build: {
+      chunkSizeWarningLimit: 5000,
+    },
+    optimizeDeps: {
+      exclude: ['vuetify'],
+      entries: ['./src/**/*.vue'],
+    },
+    server: {
+      host: '0.0.0.0',
+      port: 8080,
+      proxy: {
+        '/posts': {
+          target: env.VITE_API_URL || 'http://localhost:8085',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/comments': {
+          target: env.VITE_API_URL || 'http://localhost:8085',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/ai': {
+          target: 'http://localhost:8083',
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: 'modern',
+        },
+      },
+    },
   }
 })
