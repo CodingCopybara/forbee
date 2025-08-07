@@ -1,10 +1,8 @@
 package forbee.domain;
 
-import forbee.domain.*;
-import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
 
-//<<< PoEAA / Repository
-@RepositoryRestResource(collectionResourceRel = "posts", path = "posts")
-public interface PostRepository
-    extends PagingAndSortingRepository<Post, Long> {}
+public interface PostRepository extends JpaRepository<Post, Long> {
+    List<Post> findByCategory(String category);
+}

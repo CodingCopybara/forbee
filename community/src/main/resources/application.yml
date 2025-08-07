@@ -1,11 +1,20 @@
 server:
-  port: 8080
+  port: 8085
 
 spring:
   application:
     name: community
----
 
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+---
 spring:
   profiles: default
   jpa:
@@ -30,31 +39,27 @@ spring:
       bindings:
         event-in:
           group: community
-#<<< EDA / Topic Name
           destination: forbee
-#>>> EDA / Topic Name
           contentType: application/json
         event-out:
-#<<< EDA / Topic Name
           destination: forbee
-#>>> EDA / Topic Name
           contentType: application/json
 
 logging:
   level:
     org.hibernate.type: trace
     org.springframework.cloud: debug
+    org.springframework.web: DEBUG
+    org.springframework.http.converter: TRACE
 
 api:
-  url: 
-    community: localhost:8082 
-    
+  url:
+    community: localhost:8082
 
 server:
-  port: 8082
+  port: 8085
 
 ---
-
 spring:
   profiles: docker
   jpa:
@@ -86,7 +91,5 @@ spring:
           contentType: application/json
 
 api:
-  url: 
-    community: community:8080 
-    
-
+  url:
+    community: community:8080

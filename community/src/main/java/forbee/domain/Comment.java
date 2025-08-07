@@ -1,162 +1,43 @@
 package forbee.domain;
 
-import forbee.CommunityApplication;
 import javax.persistence.*;
-import java.util.List;
-import lombok.Data;
-import java.util.Date;
-import java.time.LocalDate;
-import java.util.Map;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Collections;
-
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name="Comment_table")
-@Data
-
-//<<< DDD / Aggregate Root
-public class Comment  {
-
+public class Comment {
     @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
-    
-    
-    
-private Long id;    
-    
-    
-private Long postId;    
-    
-    
-private Long userId;    
-    
-    
-private String content;    
-    
-    
-private Date createdAt;    
-    
-    
-private Date updatedAt;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
+    private Long postId;
+    private String content;
+    private String author;
+    private LocalDateTime createdAt;
 
-    public static CommentRepository repository(){
-        CommentRepository commentRepository = CommunityApplication.applicationContext.getBean(CommentRepository.class);
-        return commentRepository;
+    public Comment() {}
+
+    public Long getId() { return id; }
+    public Long getPostId() { return postId; }
+    public void setPostId(Long postId) { this.postId = postId; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public String getAuthor() { return author; }
+    public void setAuthor(String author) { this.author = author; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public void writeComment(WritePostCommentCommand cmd) {
+        this.postId = cmd.getPostId();
+        this.content = cmd.getContent();
+        this.author = cmd.getAuthor();
+        this.createdAt = LocalDateTime.now();
     }
 
-    public void writeComment(){
-        //
+    public void editComment(EditPostCommentCommand cmd) {
+        this.content = cmd.getContent();
     }
 
-
-//<<< Clean Arch / Port Method
-    public void writePostComment(WritePostCommentCommand writePostCommentCommand){
-        
-        //implement business logic here:
-        
-
-
-        WritedPostComment writedPostComment = new WritedPostComment(this);
-        writedPostComment.publishAfterCommit();
+    public void deleteComment(DeletePostCommentCommand cmd) {
+        // deletion logic
     }
-//>>> Clean Arch / Port Method
-//<<< Clean Arch / Port Method
-    public void deletePostComment(DeletePostCommentCommand deletePostCommentCommand){
-        
-        //implement business logic here:
-        
-
-
-        DeletedPostComment deletedPostComment = new DeletedPostComment(this);
-        deletedPostComment.publishAfterCommit();
-    }
-//>>> Clean Arch / Port Method
-//<<< Clean Arch / Port Method
-    public void editPostComment(EditPostCommentCommand editPostCommentCommand){
-        
-        //implement business logic here:
-        
-
-
-        EditedPostComment editedPostComment = new EditedPostComment(this);
-        editedPostComment.publishAfterCommit();
-    }
-//>>> Clean Arch / Port Method
-//<<< Clean Arch / Port Method
-    public void writeQnAComment(WriteQnACommentCommand writeQnACommentCommand){
-        
-        //implement business logic here:
-        
-
-        forbee.external.CommentQuery commentQuery = new forbee.external.CommentQuery();
-        // commentQuery.set??()        
-          = CommentApplication.applicationContext
-            .getBean(forbee.external.Service.class)
-            .comment(commentQuery);
-
-        WritedQnAComment writedQnAComment = new WritedQnAComment(this);
-        writedQnAComment.publishAfterCommit();
-    }
-//>>> Clean Arch / Port Method
-//<<< Clean Arch / Port Method
-    public void deleteQnAComment(DeleteQnACommentCommand deleteQnACommentCommand){
-        
-        //implement business logic here:
-        
-
-
-        DeletedQnAComment deletedQnAComment = new DeletedQnAComment(this);
-        deletedQnAComment.publishAfterCommit();
-    }
-//>>> Clean Arch / Port Method
-//<<< Clean Arch / Port Method
-    public void editQnAComment(EditQnACommentCommand editQnACommentCommand){
-        
-        //implement business logic here:
-        
-
-
-        EditedQnAComment editedQnAComment = new EditedQnAComment(this);
-        editedQnAComment.publishAfterCommit();
-    }
-//>>> Clean Arch / Port Method
-//<<< Clean Arch / Port Method
-    public void writeNotificationComment(WriteNotificationCommentCommand writeNotificationCommentCommand){
-        
-        //implement business logic here:
-        
-
-
-        WritedNotificationComment writedNotificationComment = new WritedNotificationComment(this);
-        writedNotificationComment.publishAfterCommit();
-    }
-//>>> Clean Arch / Port Method
-//<<< Clean Arch / Port Method
-    public void deleteNotificationComment(DeleteNotificationCommentCommand deleteNotificationCommentCommand){
-        
-        //implement business logic here:
-        
-
-
-        DeletedNotificationComment deletedNotificationComment = new DeletedNotificationComment(this);
-        deletedNotificationComment.publishAfterCommit();
-    }
-//>>> Clean Arch / Port Method
-//<<< Clean Arch / Port Method
-    public void editNotificationComment(EditNotificationCommentCommand editNotificationCommentCommand){
-        
-        //implement business logic here:
-        
-
-
-        EditedNotificationComment editedNotificationComment = new EditedNotificationComment(this);
-        editedNotificationComment.publishAfterCommit();
-    }
-//>>> Clean Arch / Port Method
-
-
-
 }
-//>>> DDD / Aggregate Root

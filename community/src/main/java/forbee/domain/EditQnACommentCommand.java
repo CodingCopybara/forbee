@@ -1,14 +1,4 @@
 package forbee.domain;
 
-import java.time.LocalDate;
-import java.util.*;
-import lombok.Data;
-
-@Data
-public class EditQnACommentCommand {
-
-    private Long id;
-    private Long postId;
-    private Long userId;
-    private String content;
+public class EditQnACommentCommand extends EditPostCommentCommand {
 }

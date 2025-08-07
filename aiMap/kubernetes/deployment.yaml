@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiMap
+  labels:
+    app: aiMap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aiMap
+  template:
+    metadata:
+      labels:
+        app: aiMap
+    spec:
+      containers:
+        - name: aiMap
+          image: "username/aimap:latest"
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+          readinessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8081
+            initialDelaySeconds: 15
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8081
+            initialDelaySeconds: 15
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 5

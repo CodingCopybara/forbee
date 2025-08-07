@@ -1,11 +1,10 @@
 package forbee.domain;
 
-import java.time.LocalDate;
-import java.util.*;
-import lombok.Data;
-
-@Data
 public class DeletePostCommand {
+    private Long id;
 
-    private Long userId;
+    public DeletePostCommand() {}
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 }

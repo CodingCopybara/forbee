@@ -7,6 +7,8 @@
           alt="logo"
           max-width="40"
           class="me-4"
+          style="cursor: pointer;"
+          @click="$router.push('/')"
         ></v-img>
 
         <v-btn
@@ -41,10 +43,15 @@
       </v-container>
     </v-app-bar>
 
-    <v-main class="d-flex align-center justify-center" style="min-height: 300px; background-color: #F8F4E1;">
-      <router-view />
+    <v-main class="bg-amber-lighten-1">
+      <v-container style="background: transparent;">
+        <v-row>
+          <v-col>
+              <router-view />
+          </v-col>
+        </v-row>
+      </v-container>
     </v-main>
-
 
     <v-footer class="footer" height="auto">
       <v-container>
@@ -67,7 +74,7 @@
     </v-footer>
 
     <router-link to="/chatbot" class="chatbot-btn">
-      <img src="/bee.png" alt="chatbot" class="chatbot-img" />
+      <img src="bee.png" alt="chatbot" class="chatbot-img" />
     </router-link>
 
   </v-app>

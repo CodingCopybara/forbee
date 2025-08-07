@@ -1,77 +1,56 @@
+// File: /workspace/forbee/community/src/main/java/forbee/domain/Post.java
 package forbee.domain;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import forbee.CommunityApplication;
-import java.time.LocalDate;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import javax.persistence.*;
-import lombok.Data;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Post_table")
-@Data
-//<<< DDD / Aggregate Root
 public class Post {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
-
-    private PostType category;
-
     private String title;
-
     private String content;
+    private String category;
+    private String author;
+    private Integer views = 0;
+    private LocalDateTime createdAt;
 
-    private Long view;
+    public Post() {}
 
-    private String image;
+    public Long getId() { return id; }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+    public String getAuthor() { return author; }
+    public void setAuthor(String author) { this.author = author; }
+    public Integer getViews() { return views; }
+    public void setViews(Integer views) { this.views = views; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    private Date createdAt;
-
-    private Date updatedAt;
-
-    public static PostRepository repository() {
-        PostRepository postRepository = CommunityApplication.applicationContext.getBean(
-            PostRepository.class
-        );
-        return postRepository;
+    public void writePost(WritePostCommand cmd) {
+        this.title     = cmd.getTitle();
+        this.content   = cmd.getContent();
+        this.category  = cmd.getCategory();
+        this.author    = cmd.getAuthor();
+        this.createdAt = LocalDateTime.now();
     }
 
-    //<<< Clean Arch / Port Method
-    public void writePost(WritePostCommand writePostCommand) {
-        //implement business logic here:
-
+    public void editPost(EditPostCommand cmd) {
+        this.title   = cmd.getTitle();
+        this.content = cmd.getContent();
     }
 
-    //>>> Clean Arch / Port Method
-    //<<< Clean Arch / Port Method
-    public void editPost(EditPostCommand editPostCommand) {
-        //implement business logic here:
-
+    public void deletePost(DeletePostCommand cmd) {
+        // 필요 시 삭제 로직
     }
 
-    //>>> Clean Arch / Port Method
-    //<<< Clean Arch / Port Method
-    public void deletePost(DeletePostCommand deletePostCommand) {
-        //implement business logic here:
-
+    public void increaseView(IncreaseViewCommand cmd) {
+        this.views = this.views + 1;
     }
-
-    //>>> Clean Arch / Port Method
-    //<<< Clean Arch / Port Method
-    public void increaseView() {
-        //implement business logic here:
-
-        ViewIncreased viewIncreased = new ViewIncreased(this);
-        viewIncreased.publishAfterCommit();
-    }
-    //>>> Clean Arch / Port Method
-
 }
-//>>> DDD / Aggregate Root
