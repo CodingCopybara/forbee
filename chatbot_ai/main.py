@@ -1,0 +1,131 @@
+# main.py
+import os
+from datetime import datetime
+from dotenv import load_dotenv
+from fastapi import FastAPI, Form, Request
+from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+from pydantic import BaseModel
+from openai import OpenAI
+import asyncio
+
+load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Pydantic 모델
+class ChatRequest(BaseModel):
+    question: str
+
+class ChatResponse(BaseModel):
+    answer: str
+
+app = FastAPI()
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8080"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 템플릿 & 정적파일 설정
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "chg"))
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+# 시스템 프롬프트
+SYSTEM_PROMPT = (
+    "당신은 양봉 전문가이자 꿀벌의 시점에서 모든 질문에 답변하는 챗봇입니다. "
+    "사용자가 묻는 질문을 꿀벌과 양봉 관점에서 창의적이고 재미있게 답변하세요."
+)
+
+# ✅ 전체 메시지를 받아 GPT 호출
+async def get_answer_from_openai(messages: list[dict]) -> str:
+    resp = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        SYSTEM_PROMPT = (
+            "당신은 감정이 없는 전문 양봉 데이터 분석가입니다. "
+            "모든 질문에 대해 감정 없이, 수치와 과학적 근거에 기반한 간결하고 사실적인 답변만 제공합니다. "
+            "서론, 후속 설명, 감탄사, 감성적 문구, 비유, 유머는 일절 금지입니다. "
+            "필요한 데이터만 직접적으로 제시하세요. "
+            "짧게 대답하세요."
+            "간략하게 대답하세요."
+            "추가적인 정보는 주지 마세요."
+            "답변은 3문장 안으로 끝내세요."
+            "예: '하나의 벌통은 연간 20~30kg의 꿀을 생산합니다.'"
+        ),
+        messages=messages
+    )
+    return resp.choices[0].message.content
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8002, reload=True)
+
+
+# ✅ 스트리밍 응답
+async def stream_openai_answer(messages: list[dict]):
+    stream = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=messages,
+        stream=True
+    )
+    for chunk in stream:
+        content = chunk.choices[0].delta.content
+        if content:
+            yield content
+            await asyncio.sleep(0.02)
+
+# ✅ (A) JSON API: 히스토리 기반 답변
+@app.post("/chat", response_model=ChatResponse)
+async def chat_api(req: ChatRequest, request: Request):
+    session_history = request.session.setdefault("history", [])
+    session_history.append({"role": "user", "content": req.question})
+
+    full_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + session_history
+    answer = await get_answer_from_openai(full_messages)
+
+    session_history.append({"role": "assistant", "content": answer})
+    request.session["history"] = session_history
+
+    return ChatResponse(answer=answer)
+
+# ✅ (A-2) 스트리밍 API
+@app.post("/chat/stream")
+async def chat_stream(req: ChatRequest, request: Request):
+    session_history = request.session.setdefault("history", [])
+    session_history.append({"role": "user", "content": req.question})
+
+    full_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + session_history
+    async def response_stream():
+        async for chunk in stream_openai_answer(full_messages):
+            yield chunk
+
+    return StreamingResponse(response_stream(), media_type="text/plain")
+
+# ✅ (B) HTML GET
+@app.get("/", response_class=HTMLResponse)
+async def get_form(request: Request):
+    history = request.session.get("history", [])
+    return templates.TemplateResponse("chat.html", {"request": request, "history": history})
+
+# ✅ (B-2) HTML POST
+@app.post("/", response_class=HTMLResponse)
+async def post_form(request: Request, question: str = Form(...)):
+    session_history = request.session.setdefault("history", [])
+    session_history.append({"role": "user", "content": question, "time": datetime.now().strftime("%H:%M")})
+
+    full_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + [
+        {k: v for k, v in m.items() if k in ["role", "content"]} for m in session_history
+    ]
+    answer = await get_answer_from_openai(full_messages)
+
+    session_history.append({"role": "assistant", "content": answer, "time": datetime.now().strftime("%H:%M")})
+    request.session["history"] = session_history
+
+    return templates.TemplateResponse("chat.html", {"request": request, "history": session_history})
