@@ -1,3 +1,5 @@
+```html
+<!-- src/components/ui/CommunityGrid.vue -->
 <template>
   <div class="community-board">
     <h2 class="board-title">커뮤니티</h2>
@@ -39,6 +41,7 @@
       <thead>
         <tr>
           <th>번호</th>
+          <th>제목</th>
           <th>작성자</th>
           <th>작성일</th>
           <th>조회수</th>
@@ -53,12 +56,13 @@
           style="cursor: pointer;"
         >
           <td>{{ index + 1 }}</td>
+          <td>{{ post.title }}</td>
           <td>{{ maskId(post.author) }}</td>
           <td>{{ formatDate(post.createdAt) }}</td>
           <td>{{ post.views }}</td>
         </tr>
         <tr v-if="filteredPosts.length === 0">
-          <td colspan="4" class="no-posts">게시글이 없습니다.</td>
+          <td colspan="5" class="no-posts">게시글이 없습니다.</td>
         </tr>
       </tbody>
     </table>
