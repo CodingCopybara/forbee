@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>🐝 양봉 전문가 챗봇</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    body {
+      background-color:transparent;
+      margin: 0;
+      padding: 40px 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .chat-container {
+      width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      overflow: hidden;
+      background-color: #ffeca5;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    .header {
+      background: #ffe066;
+      padding: 12px;
+      font-weight: bold;
+      font-size: 20px;
+    }
+
+    .messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      height: 400px;
+      background: #fafafa;
+    }
+
+    .message {
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      max-width: 80%;
+      line-height: 1.5;
+    }
+
+    .user {
+      align-self: flex-end;
+      background: #dff4ff;
+      text-align: right;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background: #fff7d1;
+      text-align: left;
+    }
+
+    .footer {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ccc;
+      background-color: #fff7d7;
+    }
+
+    textarea {
+      flex: 1;
+      resize: none;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: #ffffff;
+    }
+
+    button {
+      margin-left: 10px;
+      padding: 10px 16px;
+      background-color: #ffe066;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #ffdd55;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="header">🐝 양봉 전문가 챗봇</div>
+
+    <div class="messages" id="chat-box">
+      {% for msg in history %}
+        <div class="message {{ 'user' if msg.role == 'user' else 'bot' }}">
+          <strong>{{ '나' if msg.role == 'user' else '챗봇' }}:</strong>
+          {{ msg.content }}
+        </div>
+      {% endfor %}
+      <div class="message bot" id="answer"></div> <!-- 스트리밍용 -->
+    </div>
+
+    <div class="footer">
+      <form id="chat-form" style="display: flex; width: 100%; gap: 10px; align-items: stretch;">
+        <textarea
+          id="question"
+          name="question"
+          rows="2"
+          placeholder="질문을 입력하세요..."
+          required
+          style="flex: 1; padding: 10px; resize: none; border-radius: 6px; border: 1px solid #ccc;"
+        ></textarea>
+        <button
+          type="submit"
+          style="width: 80px; background-color: #ffe066; border: none; border-radius: 6px; cursor: pointer; padding: 10px;"
+        >
+          전송
+        </button>
+      </form>
+    </div>
+
+
+  </div>
+
+  <script>
+    async function streamChat(question) {
+      const chatBox = document.getElementById("chat-box");
+
+      const userMsg = document.createElement("div");
+      userMsg.className = "message user";
+      userMsg.innerHTML = `<strong>나:</strong> ${question}`;
+      chatBox.appendChild(userMsg);
+
+      const botMsg = document.createElement("div");
+      botMsg.className = "message bot";
+      chatBox.appendChild(botMsg);
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      const response = await fetch("/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      let text = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (let char of chunk) {
+          text += char;
+          botMsg.textContent = `챗봇: ${text}`;
+          chatBox.scrollTop = chatBox.scrollHeight;
+          await new Promise(r => setTimeout(r, 20));
+        }
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("chat-form");
+      const textarea = document.getElementById("question");
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const question = textarea.value.trim();
+        if (question) {
+          textarea.value = "";
+          streamChat(question);
+        }
+      });
+
+      textarea.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          form.requestSubmit();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

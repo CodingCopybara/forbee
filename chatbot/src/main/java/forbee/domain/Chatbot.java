@@ -11,22 +11,40 @@ import javax.persistence.*;
 import lombok.Data;
 
 @Entity
-@Table(name = "Chatbot_table")
+@Table(name = "chatbot_table")
 @Data
-//<<< DDD / Aggregate Root
 public class Chatbot {
-
-    @Id
+    @Id 
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+
+    private String userId;
 
     private Date requestTime;
 
     @Embedded
+    @AttributeOverrides({
+      @AttributeOverride(name="message", column=@Column(name="request_message")),
+      @AttributeOverride(name="time",    column=@Column(name="request_comment_time"))
+    })
     private Comment request;
 
     @Embedded
+    @AttributeOverrides({
+      @AttributeOverride(name="message", column=@Column(name="response_message")),
+      @AttributeOverride(name="time",    column=@Column(name="response_comment_time"))
+    })
     private Comment response;
+
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
 
     public static ChatbotRepository repository() {
         ChatbotRepository chatbotRepository = ChatbotApplication.applicationContext.getBean(
@@ -35,4 +53,7 @@ public class Chatbot {
         return chatbotRepository;
     }
 }
+
+
+
 //>>> DDD / Aggregate Root

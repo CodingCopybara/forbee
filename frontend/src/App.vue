@@ -24,22 +24,17 @@
         <v-btn 
           text
           color="text-black"
-          :to="isLoggedIn ? '/mypage' : '/login'">
-          {{ isLoggedIn ? '마이페이지' : '로그인' }}
+          :to="authStore.isLoggedIn ? '/mypage' : '/login'">
+          {{ authStore.isLoggedIn ? '마이페이지' : '로그인' }}
         </v-btn>
 
       </v-container>
     </v-app-bar>
 
-    <v-main class="bg-amber-lighten-1">
-      <v-container style="background: transparent;">
-        <v-row>
-          <v-col>
-              <router-view />
-          </v-col>
-        </v-row>
-      </v-container>
+    <v-main class="d-flex align-center justify-center" style="min-height: 300px; background-color: #F8F4E1;">
+      <router-view />
     </v-main>
+
 
     <v-footer class="footer" height="auto">
       <v-container>
@@ -62,16 +57,16 @@
     </v-footer>
 
     <router-link to="/chatbot" class="chatbot-btn">
-      <img src="bee.png" alt="chatbot" class="chatbot-img" />
+      <img src="/bee.png" alt="chatbot" class="chatbot-img" />
     </router-link>
 
   </v-app>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const isLoggedIn = ref(false)
-// import { useAuth } from "@/composables/useAuth"
+import { useAuthStore } from '@/stores/auth' // Pinia 스토어 import
+
+const authStore = useAuthStore() // 스토어 인스턴스 생성
 
   const links = [
     { label: '조합원', path: '/member'},

@@ -19,13 +19,16 @@ public class SecurityConfiguration {
             .csrf()
             .disable()
             .authorizeExchange()
-            .pathMatchers("/login/**", "/logout**", "/products/**")
+            .pathMatchers("/login/**", "/logout**", "/products/**", "/api/users/register", "/oauth/token")
             .permitAll()
             .anyExchange()
             .authenticated()
             .and()
-            .oauth2Login(); // to redirect to oauth2 login page.
+            .oauth2ResourceServer() // Add this line
+            .jwt(); // Add this line
 
         return http.build();
     }
+
+    
 }

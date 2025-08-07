@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>양봉 챗봇</title>
+  <style>
+    textarea { width: 100%; height: 120px; }
+    .container { max-width: 600px; margin: 2rem auto; }
+    .btn { padding: .5rem 1rem; background: #28a745; color: white; border: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>양봉 전문가 챗봇</h1>
+    <form th:action="@{/ask}" method="post">
+      <textarea name="question" placeholder="양봉에 대해 궁금한 점을 입력하세요…"
+                th:text="${question}"></textarea>
+      <br/><br/>
+      <button type="submit" class="btn">질문하기</button>
+    </form>
+
+    <div th:if="${answer}">
+      <h3>질문:</h3>
+      <p th:text="${question}"></p>
+      <h3>답변:</h3>
+      <p th:text="${answer}"></p>
+    </div>
+  </div>
+</body>
+</html>

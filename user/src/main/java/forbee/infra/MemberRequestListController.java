@@ -34,7 +34,7 @@ public class MemberRequestListController {
     @RequestMapping(value = "/memberRequestLists/{id}/requestapproval",
         method = RequestMethod.PUT,
         produces = "application/json;charset=UTF-8")
-    public MemberRequestList requestApproval(@PathVariable(value = "id")  id, @RequestBody RequestApprovalCommand requestApprovalCommand, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public MemberRequestList requestApproval(@PathVariable(value = "id") Long id, @RequestBody RequestApprovalCommand requestApprovalCommand, HttpServletRequest request, HttpServletResponse response) throws Exception {
             System.out.println("##### /memberRequestList/requestApproval  called #####");
             Optional<MemberRequestList> optionalMemberRequestList = memberRequestListRepository.findById(id);
             
@@ -49,7 +49,7 @@ public class MemberRequestListController {
     @RequestMapping(value = "/memberRequestLists/{id}/requestdeny",
         method = RequestMethod.PUT,
         produces = "application/json;charset=UTF-8")
-    public MemberRequestList requestDeny(@PathVariable(value = "id")  id, @RequestBody RequestDenyCommand requestDenyCommand, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public MemberRequestList requestDeny(@PathVariable(value = "id") Long id, @RequestBody RequestDenyCommand requestDenyCommand, HttpServletRequest request, HttpServletResponse response) throws Exception {
             System.out.println("##### /memberRequestList/requestDeny  called #####");
             Optional<MemberRequestList> optionalMemberRequestList = memberRequestListRepository.findById(id);
             

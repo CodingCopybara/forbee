@@ -1,12 +1,17 @@
 package forbee.domain;
 
-import javax.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Embeddable
+import javax.persistence.Embeddable;
+import java.util.Date;
+
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
+@Embeddable
 public class Comment {
-    private String text;
+    private String message;
+    private Date time;
 }

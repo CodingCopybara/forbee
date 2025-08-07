@@ -19,24 +19,22 @@ import java.util.Collections;
 public class User  {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
-    
-    
-    
-private Long id;    
-    
-    
-private String email;    
-    
-    
-private String name;    
-    
-    
-private String password;    
-    
-    
-private role role;
+    private Long userIdentifier; // oauth 서비스와 동일한 식별자
 
+    @Column(unique = true)
+    private String username; // oauth 서비스의 username과 동일
+
+    private String name; // 사용자 이름 (프로필 정보)
+
+    @Column(nullable = false)
+    private String role; // oauth 서비스의 role과 동일
+
+    @PrePersist
+    public void prePersist() {
+        if (this.role == null) {
+            this.role = "USER";
+        }
+    }
 
     public static UserRepository repository(){
         UserRepository userRepository = UserApplication.applicationContext.getBean(UserRepository.class);
@@ -84,16 +82,15 @@ private role role;
         //implement business logic here:
         
 
-        forbee.external.UserQuery userQuery = new forbee.external.UserQuery();
-        // userQuery.set??()        
-          = UserApplication.applicationContext
-            .getBean(forbee.external.Service.class)
-            .user(userQuery);
+        // forbee.external.UserQuery userQuery = new forbee.external.UserQuery();
+        // // userQuery.set??()        
+        //   = UserApplication.applicationContext
+        //     .getBean(forbee.external.Service.class)
+        //     .user(userQuery);
 
         SignedIn signedIn = new SignedIn(this);
         signedIn.publishAfterCommit();
     }
-//>>> Clean Arch / Port Method
 
 
 

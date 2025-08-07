@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
+import Chatbot from '@/components/ui/Chatbot.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -34,6 +35,10 @@ const router = createRouter({
     {
       path: '/mypage',
       component: () => import('../components/ui/MyPageGrid.vue'),
+    },
+    {
+      path: '/register',
+      component: () => import('../components/ui/Register.vue'),
     },
     {
       path: '/member/disease',

@@ -1,51 +1,38 @@
-# src/main/resources/application.yml
+server:
+  port: 8082
 
-##
-## 1) 공통(default) 프로필
-##
 spring:
-  config:
-    activate:
-      on-profile: default
+  application:
+    name: chatbot
+---
 
-  # --- 데이터베이스 & JPA
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+spring:
+  profiles: default
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: update   # ✅ 여기 추가!
     properties:
       hibernate:
         show_sql: true
         format_sql: true
-
-  # --- Thymeleaf (UI 렌더링)
-  thymeleaf:
-    prefix: classpath:/templates/
-    suffix: .html
-    cache: false
-
-  # --- OpenAI API 키
-openai:
-  api-key: ${OPENAI_API_KEY}
-
-  # --- 웹서버 포트 (로컬 테스트용)
-server:
-  port: 8080
-
-  # --- Spring Cloud Stream Kafka (기존 설정)
+        implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     stream:
       kafka:
         binder:
           brokers: localhost:9092
+        streams:
+          binder:
+            configuration:
+              default:
+                key:
+                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+                value:
+                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
       bindings:
         event-in:
-          destination: forbee
           group: chatbot
+          destination: forbee
           contentType: application/json
         event-out:
           destination: forbee
@@ -56,49 +43,36 @@ logging:
     org.hibernate.type: trace
     org.springframework.cloud: debug
 
-##
-## 2) docker 프로필
-##
 ---
-spring:
-  config:
-    activate:
-      on-profile: docker
 
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+spring:
+  profiles: docker
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: update   # ✅ 여기도 추가!
     properties:
       hibernate:
         show_sql: true
         format_sql: true
-
-  thymeleaf:
-    prefix: classpath:/templates/
-    suffix: .html
-    cache: true        # 도커용은 캐시 켜기
-
+        implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     stream:
       kafka:
         binder:
           brokers: my-kafka:9092
+        streams:
+          binder:
+            configuration:
+              default:
+                key:
+                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+                value:
+                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
       bindings:
         event-in:
-          destination: forbee
           group: chatbot
+          destination: forbee
           contentType: application/json
         event-out:
           destination: forbee
           contentType: application/json
-
-server:
-  port: 8080         # 도커 컨테이너도 8080
-
-openai:
-  api-key: ${OPENAI_API_KEY}
