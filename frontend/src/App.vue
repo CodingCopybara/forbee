@@ -7,6 +7,8 @@
           alt="logo"
           max-width="40"
           class="me-4"
+          style="cursor: pointer;"
+          @click="$router.push('/')"
         ></v-img>
 
         <v-btn
