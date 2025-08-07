@@ -39,11 +39,7 @@ const router = createRouter({
     },
     {
       path: '/chatbot',
-<<<<<<< HEAD
-      component: () => import('../components/ui/Chatbot.vue'),
-=======
       component: () => import('@/components/ui/Chatbot.vue'),
->>>>>>> origin/feat/frontend/community
     },
     {
       path: '/mypage',
