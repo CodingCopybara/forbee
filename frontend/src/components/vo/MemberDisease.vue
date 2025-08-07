@@ -103,14 +103,18 @@ export default {
         return
       }
       try {
+        const accessToken = localStorage.getItem('accessToken');
         // Agent API 호출 (엔드포인트 맞춰서)
-        const res = await axios.post('https://8080-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io/api/diagnose', {
+        const res = await axios.post('https://8088-dlafhr789-forbee-gahotnesjfz.ws-us120.gitpod.io/api/diagnose', {
           disease_name,
           confidence: Number(confidence),
           //userId
          },
          {
-          headers: { userId }
+          headers: { 
+            userId,
+            Authorization: `Bearer ${accessToken}`
+          }
           }
         );
 

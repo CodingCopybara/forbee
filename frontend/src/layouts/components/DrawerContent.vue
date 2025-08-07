@@ -22,8 +22,8 @@ import {
         />
         <VerticalNavLink
             :item="{
-                title: '',
-                to: '/',
+                title: '이미지 분석',
+                                    to: '/ai',
             }"
         />
         <VerticalNavLink

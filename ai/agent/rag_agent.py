@@ -28,10 +28,11 @@ from dotenv import load_dotenv
 import pandas as pd
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
+from pathlib import Path
 from langchain.docstore.document import Document
 
 # openAI key
-def load_api_keys(env_path="/workspace/forbee/ai/src/main/java/forbee/infra/.env"):
+def load_api_keys(env_path=Path(__file__).parent / ".env"):
     """
         env_path (str): .env 파일의 경로 (기본값: 현재 폴더의 .env)
     """
@@ -68,7 +69,8 @@ class DiseaseState(TypedDict, total=False):
 # RAG
 # csv -> vector DB
 # CSV 로드
-df = pd.read_csv("/workspace/forbee/ai/agent/bee_disease_with_severity.csv")
+# df = pd.read_csv("/workspace/forbee/ai/agent/bee_disease_with_severity.csv")
+df = pd.read_csv(Path(__file__).parent / "bee_disease_with_severity.csv")
 
 # Document 리스트 생성 (RAG 검색용)
 docs = []

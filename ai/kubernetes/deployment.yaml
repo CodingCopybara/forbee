@@ -14,16 +14,32 @@ spec:
       labels:
         app: ai
     spec:
+      serviceAccountName: ai-service-account
       containers:
         - name: ai
           image: "username/ai:latest"
           ports:
             - containerPort: 8080
+          env:
+            - name: AZURE_STORAGE_ACCOUNT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: azure-config
+                  key: storage-account-url
+            - name: AZURE_STORAGE_CONTAINER_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: azure-config
+                  key: container-name
+            - name: FASTAPI_URL
+              value: "http://fastapi:8000"
+            - name: KAFKA_BROKERS
+              value: "kafka:9092"
           readinessProbe:
             httpGet:
               path: '/actuator/health'
               port: 8080
-            initialDelaySeconds: 15
+            initialDelaySeconds: 10
             timeoutSeconds: 2
             periodSeconds: 5
             failureThreshold: 10
@@ -31,7 +47,7 @@ spec:
             httpGet:
               path: '/actuator/health'
               port: 8080
-            initialDelaySeconds: 15
+            initialDelaySeconds: 120
             timeoutSeconds: 2
             periodSeconds: 5
             failureThreshold: 5

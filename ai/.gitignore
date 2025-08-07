@@ -44,3 +44,9 @@ secrets.yml
 node_modules
 .dist/
 .pem
+
+.venv/
+.env
+src/main/python/results/
+kafka_consumer_test.py
+src/main/python/__pycache__/

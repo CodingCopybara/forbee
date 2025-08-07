@@ -92,7 +92,7 @@ spring:
         - id: ai
           uri: http://ai:8080
           predicates:
-            - Path=//**//** 
+            - Path=/ai/** 
       globalcors:
         corsConfigurations:
           '[/**]':
