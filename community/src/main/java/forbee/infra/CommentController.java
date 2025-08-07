@@ -18,7 +18,17 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/comments")
-@CrossOrigin(origins = "*")
+@CrossOrigin(
+    origins = "*",
+    allowedHeaders = "*",   // Role, Content-Type 등 모든 헤더 허용
+    methods = {            // CORS preflight 에서 허용할 HTTP 메서드
+        RequestMethod.GET,
+        RequestMethod.POST,
+        RequestMethod.OPTIONS,
+        RequestMethod.PUT,
+        RequestMethod.DELETE
+    }
+)
 public class CommentController {
     private final CommentRepository repo;
     private final PostRepository postRepository;
