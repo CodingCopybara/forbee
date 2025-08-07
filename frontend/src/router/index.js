@@ -7,14 +7,21 @@ const router = createRouter({
       path: '/',
       component: () => import('@/components/pages/Index.vue'),
     },
-    // 게시글 상세 보기 라우트 (CommunityGrid.vue 클릭 시 이동)
+    // 커뮤니티 1) 글쓰기
     {
-      path: '/community/:category/:id',
+      path: '/community/:category/write',
+      name: 'CommunityWrite',
+      component: () => import('@/components/ui/CommunityWrite.vue'),
+      props: true,
+    },
+    // 커뮤니티 2) 상세 보기
+    {
+      path: '/community/:category/:id(\\d+)',
       name: 'PostDetail',
       component: () => import('@/components/ui/PostDetail.vue'),
       props: true,
     },
-    // 커뮤니티 보드 목록 (카테고리 옵션)
+    // 커뮤니티 3) 게시판 목록
     {
       path: '/community/:category?',
       name: 'CommunityBoard',

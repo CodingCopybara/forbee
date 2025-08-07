@@ -19,6 +19,29 @@ axios.defaults.baseURL = ''
 axios.defaults.headers.common['Content-Type'] = 'application/json'
 axios.interceptors.request.use(cfg => { cfg.headers['Role'] = 'USER'; return cfg })
 
+// Axios 인터셉터 설정
+axios.interceptors.request.use(req => {
+  console.log('➡️ Request:', {
+    url: req.url,
+    method: req.method,
+    headers: req.headers,
+    data: req.data
+  })
+  return req
+})
+
+axios.interceptors.response.use(
+  res => {
+    console.log('✅ Response:', res.status, res.headers)
+    return res
+  },
+  err => {
+    console.error('❌ Error response:', err.response?.status, err.response?.data, err.response?.headers)
+    return Promise.reject(err)
+  }
+)
+
+
 // Vue 앱 생성
 const app = createApp(App)
 

@@ -26,10 +26,11 @@
       </div>
       <!-- 글 작성 페이지로 이동 -->
       <button
+        v-if="canWrite"
         class="write-button"
         @click="goWritePage"
       >
-        글 작성
+        게시글 작성
       </button>
     </div>
 
@@ -38,7 +39,6 @@
       <thead>
         <tr>
           <th>번호</th>
-          <th>제목</th>
           <th>작성자</th>
           <th>작성일</th>
           <th>조회수</th>
@@ -53,13 +53,12 @@
           style="cursor: pointer;"
         >
           <td>{{ index + 1 }}</td>
-          <td>{{ post.title }}</td>
-          <td>{{ post.author }}</td>
-          <td>{{ post.date }}</td>
+          <td>{{ maskId(post.author) }}</td>
+          <td>{{ formatDate(post.createdAt) }}</td>
           <td>{{ post.views }}</td>
         </tr>
         <tr v-if="filteredPosts.length === 0">
-          <td colspan="5" class="no-posts">게시글이 없습니다.</td>
+          <td colspan="4" class="no-posts">게시글이 없습니다.</td>
         </tr>
       </tbody>
     </table>
@@ -70,35 +69,45 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import { maskId } from '@/utils/mask'
 
+// 탭 리스트
 const tabs = ['자유게시판', '공지사항', 'QnA']
 const route = useRoute()
 const router = useRouter()
 
+// 선택된 탭
 const selectedTab = ref('자유게시판')
+// 검색/필터
 const filter = ref('title')
 const search = ref('')
+// 글 목록
 const posts = ref([])
-const userRole = 'user'
 
-const mapParamToTab = param => {
-  if (param === 'free') return '자유게시판'
-  if (param === 'notice') return '공지사항'
-  if (param === 'qna') return 'QnA'
-  return '자유게시판'
-}
-const mapTabToParam = tab => {
-  if (tab === '자유게시판') return 'free'
-  if (tab === '공지사항') return 'notice'
-  if (tab === 'QnA') return 'qna'
-  return 'free'
-}
+// 임시 권한
+const userRole = ref('user')
 
+// 쓰기 권한 계산
+const canWrite = computed(() => {
+  switch (selectedTab.value) {
+    case '자유게시판': return ['user', 'member', 'veterinarian', 'admin'].includes(userRole.value)
+    case 'QnA':      return userRole.value === 'member'
+    case '공지사항':   return userRole.value === 'admin'
+    default:          return false
+  }
+})
+
+// URL 파라미터 ↔ 탭 매핑
+const mapParamToTab = param => ({ free: '자유게시판', notice: '공지사항', qna: 'QnA' }[param] || '자유게시판')
+const mapTabToParam = tab   => ({ '자유게시판': 'free', '공지사항': 'notice', 'QnA': 'qna' }[tab] || 'free')
+
+// 데이터 로드
 async function loadPosts() {
   try {
+    const param = mapTabToParam(selectedTab.value)
     const res = await axios.get(
-      `/posts?category=${encodeURIComponent(selectedTab.value)}`,
-      { headers: { Role: userRole } }
+      `/posts?category=${encodeURIComponent(param)}`,
+      { headers: { Role: userRole.value } }
     )
     posts.value = res.data
   } catch (err) {
@@ -106,29 +115,23 @@ async function loadPosts() {
   }
 }
 
-function goDetail(id) {
+// 상세 이동 + 조회수 증가
+async function goDetail(id) {
   const cat = mapTabToParam(selectedTab.value)
+  try {
+    await axios.post(`/posts/${id}/view`, null, { headers: { Role: userRole.value } })
+  } catch {}
   router.push({ name: 'PostDetail', params: { category: cat, id } })
 }
 
 function changeTab(tab) {
   selectedTab.value = tab
-  const param = mapTabToParam(tab)
-  router.push({ path: `/community/${param}` })
+  router.push({ path: `/community/${mapTabToParam(tab)}` })
 }
-
-// 글 작성 페이지로 이동
 function goWritePage() {
-  const cat = mapTabToParam(selectedTab.value)
-  router.push({ name: 'PostWrite', params: { category: cat } })
+  router.push({ name: 'CommunityWrite', params: { category: mapTabToParam(selectedTab.value) } })
 }
-
-const filteredPosts = computed(() =>
-  posts.value.filter(p => {
-    return !search.value ||
-      p[filter.value]?.toLowerCase().includes(search.value.toLowerCase())
-  })
-)
+function onSearch() {}
 
 onMounted(() => {
   selectedTab.value = mapParamToTab(route.params.category)
@@ -138,10 +141,18 @@ watch(() => route.params.category, val => {
   selectedTab.value = mapParamToTab(val)
   loadPosts()
 })
+
+const filteredPosts = computed(() =>
+  posts.value.filter(p => !search.value || p[filter.value]?.toLowerCase().includes(search.value.toLowerCase()))
+)
+
+function formatDate(raw) {
+  return raw ? new Date(raw).toISOString().slice(0,10) : ''
+}
 </script>
 
 <style scoped>
-/* 기존 스타일 유지 */
+/* 기존 CSS 유지 */
 .community-board { background-color: transparent; padding: 2rem; font-family: 'Noto Sans KR', sans-serif; color: #3b3b3b; }
 .board-title { font-size: 24px; font-weight: bold; margin-bottom: 1.5rem; }
 .tab-list { display: flex; gap: 1rem; margin-bottom: 1.5rem; }

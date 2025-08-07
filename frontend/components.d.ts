@@ -21,6 +21,7 @@ declare module '@vue/runtime-core' {
     Chatbot: typeof import('./src/components/Chatbot.vue')['default']
     Comment: typeof import('./src/components/Comment.vue')['default']
     CommunityGrid: typeof import('./src/components/ui/CommunityGrid.vue')['default']
+    CommunityWrite: typeof import('./src/components/ui/CommunityWrite.vue')['default']
     Date: typeof import('./src/components/primitives/Date.vue')['default']
     DeleteNotification: typeof import('./src/components/DeleteNotification.vue')['default']
     DeleteNotificationComment: typeof import('./src/components/DeleteNotificationComment.vue')['default']

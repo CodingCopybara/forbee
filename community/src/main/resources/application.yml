@@ -14,6 +14,20 @@ spring:
       enabled: true
       force: true
 
+# 공통 로깅 설정: CORS 필터 DEBUG
+logging:
+  level:
+    org.hibernate.type: trace
+    org.springframework.cloud: debug
+    org.springframework.web: DEBUG
+    org.springframework.http.converter: TRACE
+    org.springframework.web.filter.CorsFilter: DEBUG
+    org.springframework.web.servlet.handler.SimpleUrlHandlerMapping: DEBUG
+
+api:
+  url:
+    community: localhost:8082
+
 ---
 spring:
   profiles: default
@@ -44,20 +58,6 @@ spring:
         event-out:
           destination: forbee
           contentType: application/json
-
-logging:
-  level:
-    org.hibernate.type: trace
-    org.springframework.cloud: debug
-    org.springframework.web: DEBUG
-    org.springframework.http.converter: TRACE
-
-api:
-  url:
-    community: localhost:8082
-
-server:
-  port: 8085
 
 ---
 spring:
