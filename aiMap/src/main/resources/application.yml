@@ -1,3 +1,4 @@
+<<<<<<< HEAD:aiMap/src/main/resources/application.yml
 spring:
   config:
     activate:
@@ -7,6 +8,27 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
+=======
+server:
+  port: 8085
+
+spring:
+  application:
+    name: community
+
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+---
+spring:
+  profiles: default
+>>>>>>> origin/feat/frontend/community:community/src/main/resources/application.yml
   jpa:
     properties:
       hibernate:
@@ -31,7 +53,11 @@ spring:
                   serde: org.apache.kafka.common.serialization.Serdes$StringSerde
       bindings:
         event-in:
+<<<<<<< HEAD:aiMap/src/main/resources/application.yml
           group: aiMap
+=======
+          group: community
+>>>>>>> origin/feat/frontend/community:community/src/main/resources/application.yml
           destination: forbee
           contentType: application/json
         event-out:
@@ -42,12 +68,22 @@ logging:
   level:
     org.hibernate.type: trace
     org.springframework.cloud: debug
+    org.springframework.web: DEBUG
+    org.springframework.http.converter: TRACE
 
+<<<<<<< HEAD:aiMap/src/main/resources/application.yml
 server:
   port: 8081
+=======
+api:
+  url:
+    community: localhost:8082
+
+server:
+  port: 8085
+>>>>>>> origin/feat/frontend/community:community/src/main/resources/application.yml
 
 ---
-
 spring:
   config:
     activate:
@@ -86,4 +122,12 @@ spring:
           contentType: application/json
         event-out:
           destination: forbee
+<<<<<<< HEAD:aiMap/src/main/resources/application.yml
           contentType: application/json
+=======
+          contentType: application/json
+
+api:
+  url:
+    community: community:8080
+>>>>>>> origin/feat/frontend/community:community/src/main/resources/application.yml

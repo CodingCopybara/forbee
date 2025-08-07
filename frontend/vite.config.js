@@ -1,19 +1,17 @@
+// vite.config.js
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import DefineOptions from 'unplugin-vue-define-options/vite'
 import { fileURLToPath } from 'url'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import Pages from 'vite-plugin-pages'
 import Layouts from 'vite-plugin-vue-layouts'
 import vuetify from 'vite-plugin-vuetify'
 import ViteYaml from '@modyfi/vite-plugin-yaml'
 
 export default defineConfig({
-  define: {
-    '__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': 'true'
-  },
   plugins: [
     vue(),
     vueJsx(),
