@@ -160,13 +160,18 @@ public class OAuth2AuthorizationServerConfig
                 Map<String, Object> additionalInfo = new HashMap<>();
                 additionalInfo.put("company", "Uengine");
                 if (
-                    !CLIENT_CREDENTIALS.equals(
+                    !"client_credentials".equals( // GRANT_TYPE_PASSWORD 대신 "client_credentials" 사용
                         authentication.getOAuth2Request().getGrantType()
                     )
                 ) {
-                    // User user = (User) authentication.getPrincipal(); // 이 부분 제거
-                    // additionalInfo.put("nickname", user.getNickName()); // 이 부분 제거
-                    // additionalInfo.put("address", user.getAddress()); // 이 부분 제거
+                    // User 객체에서 userIdentifier를 가져와 추가
+                    if (authentication.getPrincipal() instanceof User) {
+                        User user = (User) authentication.getPrincipal();
+                        additionalInfo.put("userIdentifier", user.getUserIdentifier());
+                        additionalInfo.put("username", user.getUsername());
+                        // additionalInfo.put("name", user.getName());
+                        // additionalInfo.put("role", user.getRole());
+                    }
                 }
 
                 //                String clientId = authentication.getOAuth2Request().getClientId();

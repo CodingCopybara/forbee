@@ -21,6 +21,16 @@
 
         <v-spacer></v-spacer>
 
+        <!-- 로그인 상태일 때만 로그아웃 버튼 표시 -->
+        <v-btn
+          v-if="authStore.isLoggedIn"
+          text
+          color="text-black"
+          @click="logout"
+        >
+          로그아웃
+        </v-btn>
+
         <v-btn 
           text
           color="text-black"
@@ -64,16 +74,23 @@
 </template>
 
 <script setup>
-import { useAuthStore } from '@/stores/auth' // Pinia 스토어 import
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router' // useRouter import 추가
 
-const authStore = useAuthStore() // 스토어 인스턴스 생성
+const authStore = useAuthStore()
+const router = useRouter() // useRouter 인스턴스 생성
 
-  const links = [
-    { label: '조합원', path: '/member'},
-    { label: '커뮤니티', path: '/community'},
-    { label: '농협은행', path: 'bank'},
-    { label: '허니몰', path: '/honeymall'}
-  ]
+const links = [
+  { label: '조합원', path: '/member'},
+  { label: '커뮤니티', path: '/community'},
+  { label: '농협은행', path: 'bank'},
+  { label: '허니몰', path: '/honeymall'}
+]
+
+const logout = () => {
+  authStore.logout() // Pinia 스토어의 logout 액션 호출
+  router.push('/login') // 로그아웃 후 로그인 페이지로 리다이렉트
+}
 </script>
 
 <style scoped>
