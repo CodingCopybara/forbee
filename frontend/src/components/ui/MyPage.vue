@@ -80,7 +80,7 @@ onMounted(async () => {
     const accessToken = localStorage.getItem('accessToken'); // localStorage에서 accessToken 가져오기
     try {
       const response = await axios.get(
-        `https://8088-dlafhr789-forbee-hagbxtfzmyl.ws-us120.gitpod.io/users/${authStore.userIdentifier}`,
+        `https://8088-dlafhr789-forbee-gahotnesjfz.ws-us120.gitpod.io/users/${authStore.userIdentifier}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`, // Authorization 헤더에 JWT 추가

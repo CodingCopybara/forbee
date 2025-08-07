@@ -48,6 +48,7 @@ declare module '@vue/runtime-core' {
     MemberGrid: typeof import('./src/components/ui/MemberGrid.vue')['default']
     MemberRequestList: typeof import('./src/components/MemberRequestList.vue')['default']
     Money: typeof import('./src/components/vo/Money.vue')['default']
+    MyPage: typeof import('./src/components/ui/MyPage.vue')['default']
     MyPageGrid: typeof import('./src/components/ui/MyPageGrid.vue')['default']
     Number: typeof import('./src/components/primitives/Number.vue')['default']
     Payment: typeof import('./src/components/vo/Payment.vue')['default']
