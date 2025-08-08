@@ -66,21 +66,21 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 8080,
       proxy: {
-        '/posts': {
-          target: env.VITE_API_URL || 'http://localhost:8085',
-          changeOrigin: true,
-          secure: false,
-        },
-        '/comments': {
-          target: env.VITE_API_URL || 'http://localhost:8085',
-          changeOrigin: true,
-          secure: false,
-        },
-        '/ai': {
-          target: 'http://localhost:8083',
-          changeOrigin: true,
-          secure: false,
-        },
+        // '/posts': {
+        //   target: env.VITE_API_URL || 'http://localhost:8085',
+        //   changeOrigin: true,
+        //   secure: false,
+        // },
+        // '/comments': {
+        //   target: env.VITE_API_URL || 'http://localhost:8085',
+        //   changeOrigin: true,
+        //   secure: false,
+        // },
+        // '/ai': {
+        //   target: 'http://localhost:8083',
+        //   changeOrigin: true,
+        //   secure: false,
+        // },
       },
     },
     css: {

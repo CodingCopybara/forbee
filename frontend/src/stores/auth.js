@@ -17,7 +17,7 @@ export const useAuthStore = defineStore('auth', {
     async login(email, password) {
       try {
         const response = await axios.post(
-          'https://8088-dlafhr789-forbee-gahotnesjfz.ws-us120.gitpod.io/oauth/token',
+          import.meta.env.VITE_GW_URL+'/oauth/token',
           new URLSearchParams({
             grant_type: 'password',
             username: email,
@@ -42,8 +42,18 @@ export const useAuthStore = defineStore('auth', {
 
         localStorage.setItem('userIdentifier', decodedToken.userIdentifier);
         localStorage.setItem('username', decodedToken.username);
-        localStorage.setItem('name', decodedToken.name);
-        localStorage.setItem('role', decodedToken.role);
+
+
+        const response2 = await axios.get(
+          import.meta.env.VITE_GW_URL+`/users/${decodedToken.userIdentifier}`,
+          {
+            headers: {
+              Authorization: `Bearer ${response.data.access_token}`, // Authorization 헤더에 JWT 추가
+            },
+          }
+        );
+        localStorage.setItem('name', response2.data.name);
+        localStorage.setItem('role', response2.data.role);
 
         return true
       } catch (error) {

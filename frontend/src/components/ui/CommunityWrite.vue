@@ -33,15 +33,15 @@ const form = ref({
   title: '',
   content: '',
   category: categoryParam,
-  author: 'alsjfhals08392747'// 여기 임시로 붙여 놓은 곳
+  author: localStorage.getItem("username").split("@")[0]
 })
 
 async function submitPost() {
   try {
     await axios.post(
-      '/posts/writepost',
+      import.meta.env.VITE_GW_URL+'/posts/writepost',
       form.value,
-      { headers: { Role: 'user' } }
+      { headers: { Role: localStorage.getItem("role"), Authorization:"Bearer " + localStorage.getItem("accessToken") } }
     )
     alert('작성 완료!')
     router.push({ name: 'CommunityBoard', params: { category: categoryParam } })

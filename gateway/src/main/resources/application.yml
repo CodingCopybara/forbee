@@ -13,10 +13,14 @@ spring:
   cloud:
     gateway:
       routes:
-         - id: community
-           uri: http://localhost:8082
+         - id: community-posts
+           uri: http://localhost:8085
            predicates:
-            - Path=/posts/**/comments/**//**//** 
+            - Path=/posts/**
+         - id: community-comments
+           uri: http://localhost:8085
+           predicates:
+            - Path=/comments/**
          - id: tree
            uri: http://localhost:0
            predicates:

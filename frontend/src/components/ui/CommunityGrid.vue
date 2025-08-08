@@ -89,14 +89,14 @@ const search = ref('')
 const posts = ref([])
 
 // 임시 권한
-const userRole = ref('user')
+const userRole = ref(localStorage.getItem("role"))
 
 // 쓰기 권한 계산
 const canWrite = computed(() => {
   switch (selectedTab.value) {
-    case '자유게시판': return ['user', 'member', 'veterinarian', 'admin'].includes(userRole.value)
-    case 'QnA':      return userRole.value === 'member'
-    case '공지사항':   return userRole.value === 'admin'
+    case '자유게시판': return ['USER', 'MEMBER', 'VETERINARIAN', 'ADMIN'].includes(userRole.value)
+    case 'QnA':      return userRole.value === 'MEMBER'
+    case '공지사항':   return userRole.value === 'ADMIN'
     default:          return false
   }
 })
@@ -109,9 +109,11 @@ const mapTabToParam = tab   => ({ '자유게시판': 'free', '공지사항': 'no
 async function loadPosts() {
   try {
     const param = mapTabToParam(selectedTab.value)
+    console.log(localStorage.getItem("role"))
+    console.log(localStorage.getItem("accessToken"))
     const res = await axios.get(
-      `/posts?category=${encodeURIComponent(param)}`,
-      { headers: { Role: userRole.value } }
+      import.meta.env.VITE_GW_URL+`/posts?category=${encodeURIComponent(param)}`,
+      { headers: {Role: localStorage.getItem("role") , Authorization:"Bearer " + localStorage.getItem("accessToken")} }
     )
     posts.value = res.data
   } catch (err) {
@@ -123,7 +125,7 @@ async function loadPosts() {
 async function goDetail(id) {
   const cat = mapTabToParam(selectedTab.value)
   try {
-    await axios.post(`/posts/${id}/view`, null, { headers: { Role: userRole.value } })
+    await axios.post(import.meta.env.VITE_GW_URL+`/posts/${id}/view`, null, { headers: { Role: userRole.value } })
   } catch {}
   router.push({ name: 'PostDetail', params: { category: cat, id } })
 }

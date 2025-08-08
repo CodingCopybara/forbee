@@ -98,7 +98,7 @@ function formatDate(raw) {
 async function loadPost() {
   try {
     const res = await axios.get(
-      `/posts/${postId}`,
+      import.meta.env.VITE_GW_URL+`/posts/${postId}`,
       { headers: { Role: userRole } }
     )
     post.value = res.data
@@ -111,7 +111,7 @@ async function loadPost() {
 async function loadComments() {
   try {
     const res = await axios.get(
-      `/comments/post/${postId}`,
+      import.meta.env.VITE_GW_URL+`/comments/post/${postId}`,
       { headers: { Role: userRole } }
     )
     comments.value = res.data
@@ -125,8 +125,8 @@ async function writeComment() {
   if (!newComment.value.trim()) return
   try {
     await axios.post(
-      '/comments/write',
-      { postId, content: newComment.value, author: 'PostDetail139' },
+      import.meta.env.VITE_GW_URL+'/comments/write',
+      { postId, content: newComment.value, author: localStorage.getItem("username").split("@")[0] },
       { headers: { Role: userRole } }
     )
     newComment.value = ''

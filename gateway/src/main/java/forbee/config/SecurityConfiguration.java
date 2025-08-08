@@ -35,7 +35,7 @@ public class SecurityConfiguration {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*")); // 프론트엔드 Origin 추가
+        configuration.setAllowedOrigins(Arrays.asList("*", "https://8080-dlafhr789-forbee-szo3i9tben4.ws-us120.gitpod.io")); // 프론트엔드 Origin 추가
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
