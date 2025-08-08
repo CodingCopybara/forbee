@@ -17,17 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
-@CrossOrigin(
-    origins = "*",
-    allowedHeaders = "*",   // Role, Content-Type 등 모든 헤더 허용
-    methods = {            // CORS preflight 에서 허용할 HTTP 메서드
-        RequestMethod.GET,
-        RequestMethod.POST,
-        RequestMethod.OPTIONS,
-        RequestMethod.PUT,
-        RequestMethod.DELETE
-    }
-)
+
 @RestController
 @RequestMapping("/posts")
 public class PostController {

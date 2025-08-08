@@ -18,10 +18,9 @@ public class SecurityConfiguration {
         ServerHttpSecurity http
     ) {
         http
-            .cors().and() // CORS 활성화
             .csrf().disable()
             .authorizeExchange()
-            .pathMatchers("/login/**", "/logout**", "/products/**", "/api/users/register", "/oauth/token", "/users/**") // /users/** 경로 추가
+            .pathMatchers("/login/**", "/logout**", "/products/**", "/api/users/register", "/oauth/token", "/users/**", "/posts/**")
             .permitAll()
             .anyExchange()
             .authenticated()
@@ -30,17 +29,5 @@ public class SecurityConfiguration {
             .jwt();
 
         return http.build();
-    }
-
-    @Bean
-    CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*", "https://8080-dlafhr789-forbee-szo3i9tben4.ws-us120.gitpod.io")); // 프론트엔드 Origin 추가
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
     }
 }
