@@ -2,8 +2,6 @@ import pandas as pd
 import numpy as np
 import os
 import ast
-import fitz  # PyMuPDF
-from docx import Document
 import random
 import openai
 import warnings
