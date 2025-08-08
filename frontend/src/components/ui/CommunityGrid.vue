@@ -125,7 +125,7 @@ async function loadPosts() {
 async function goDetail(id) {
   const cat = mapTabToParam(selectedTab.value)
   try {
-    await axios.post(import.meta.env.VITE_GW_URL+`/posts/${id}/view`, null, { headers: { Role: userRole.value } })
+    await axios.post(import.meta.env.VITE_GW_URL+`/posts/${id}/view`, null, { headers: { Role: userRole.value, Authorization: "Bearer " + localStorage.getItem("accessToken") } })
   } catch {}
   router.push({ name: 'PostDetail', params: { category: cat, id } })
 }

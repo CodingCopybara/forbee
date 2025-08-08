@@ -99,7 +99,7 @@ async function loadPost() {
   try {
     const res = await axios.get(
       import.meta.env.VITE_GW_URL+`/posts/${postId}`,
-      { headers: { Role: userRole } }
+      { headers: { Role: userRole, Authorization: "Bearer " + localStorage.getItem("accessToken") } }
     )
     post.value = res.data
   } catch (err) {
@@ -112,7 +112,7 @@ async function loadComments() {
   try {
     const res = await axios.get(
       import.meta.env.VITE_GW_URL+`/comments/post/${postId}`,
-      { headers: { Role: userRole } }
+      { headers: { Role: userRole, Authorization: "Bearer " + localStorage.getItem("accessToken") } }
     )
     comments.value = res.data
   } catch (err) {
@@ -127,7 +127,7 @@ async function writeComment() {
     await axios.post(
       import.meta.env.VITE_GW_URL+'/comments/write',
       { postId, content: newComment.value, author: localStorage.getItem("username").split("@")[0] },
-      { headers: { Role: userRole } }
+      { headers: { Role: userRole, Authorization: "Bearer " + localStorage.getItem("accessToken") } }
     )
     newComment.value = ''
     loadComments()
