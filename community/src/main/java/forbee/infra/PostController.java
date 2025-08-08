@@ -105,10 +105,10 @@ public class PostController {
             : postRepository.findByCategory(category);
 
         List<Post> allowed = posts.stream()
-            .filter(post -> {
-                BoardType board = BoardType.fromCategory(post.getCategory());
-                return permissionService.canRead(board, user);
-            })
+            // .filter(post -> {
+            //     BoardType board = BoardType.fromCategory(post.getCategory());
+            //     return permissionService.canRead(board, user);
+            // })
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(allowed);

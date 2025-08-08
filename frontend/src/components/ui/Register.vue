@@ -121,7 +121,7 @@ const register = async () => {
 
   try {
     const response = await axios.post(
-      'https://8088-dlafhr789-forbee-hagbxtfzmyl.ws-us120.gitpod.io/api/users/register',
+      import.meta.env.VITE_GW_URL+'/api/users/register',
       {
         email: email.value,
         password: password.value,

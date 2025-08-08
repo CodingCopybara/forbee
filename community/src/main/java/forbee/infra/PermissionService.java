@@ -9,6 +9,7 @@ public class PermissionService {
 
     // 읽기 권한 검사
     public boolean canRead(BoardType board, Category user) {
+        System.out.println("읽기 권한 요청받음!!! board : " + board + " / user : " + user);
         switch (board) {
             case GENERAL: return true;                                         // 자유게시판: 모두 읽기 가능
             case QNA:     return user != null;

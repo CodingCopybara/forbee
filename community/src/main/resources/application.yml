@@ -5,6 +5,10 @@ spring:
   application:
     name: community
 
+# community:
+#   cors:
+#     enabled: false
+
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
