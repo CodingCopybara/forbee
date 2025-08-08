@@ -34,9 +34,9 @@ spring:
            predicates:
             - Path= /maps/**
          - id: chatbot
-           uri: http://localhost:0
+           uri: http://localhost:8082
            predicates:
-            - Path=/chatbots/** 
+            - Path=/chatbot/** 
          - id: ai
            uri: http://localhost:0
            predicates:
@@ -92,7 +92,7 @@ spring:
         - id: chatbot
           uri: http://chatbot:8080
           predicates:
-            - Path=/chatbots/** 
+            - Path=/chatbot/** 
         - id: ai
           uri: http://ai:8080
           predicates:

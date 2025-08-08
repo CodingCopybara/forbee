@@ -1,7 +1,7 @@
 <template>
   <v-container class="pa-0 ma-0 d-flex justify-center" style="background: none;">
     <iframe
-      src="https://8002-dlafhr789-forbee-gahotnesjfz.ws-us120.gitpod.io/"
+      :src="iframeSrc"
       width="1600"
       height="800"
       frameborder="0"
@@ -11,8 +11,11 @@
   </v-container>
 </template>
 
-<script>
-export default {
-  name: "Chatbot"
-};
+<script setup>
+import { computed } from 'vue'
+
+const iframeSrc = computed(() => {
+  const base = import.meta.env.VITE_GW_URL
+  return `${base}/chatbot/`
+})
 </script>

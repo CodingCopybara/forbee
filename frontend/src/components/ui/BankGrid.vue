@@ -136,7 +136,7 @@ export default {
     components:{
     },
     data: () => ({
-        path: 'chatbots',
+        path: 'chatbot',
     }),
     watch: {
     },

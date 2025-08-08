@@ -39,7 +39,7 @@ export default {
     },
     
     data: () => ({
-        path: "chatbots",
+        path: "chatbot",
         value: {
         }
     }),
