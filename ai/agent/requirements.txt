@@ -1,0 +1,12 @@
+langchain==0.3.24
+langgraph
+typing
+langchain_openai
+langchain_core
+langchain-community
+wikipedia
+chromadb
+google-search-results
+pymupdf
+python-docx
+gradio
