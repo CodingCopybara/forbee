@@ -37,6 +37,7 @@
 <script>
 import axios from 'axios'
 import { analyzeYolo, sendDiagnose, sendAnswer } from '@/api/agent'
+// import { sendDiagnose, sendAnswer } from '@/api/agent'
 
 export default {
   data() {
@@ -66,8 +67,37 @@ export default {
 
       try {
         // YOLO 분석
-        const yoloRes = await analyzeYolo(file)
-        this.messages.push({ sender: "bot", type: "text", text: `YOLO 분석결과: ${yoloRes.data.result}` })
+        // const yoloRes = await analyzeYolo(file)
+        // this.messages.push({ sender: "bot", type: "text", text: `YOLO 분석결과: ${yoloRes.data.result}` })
+        const base = import.meta.env.VITE_GW_URL || window.location.origin
+        // 1) 업로드 SAS 발급
+        const wsasRes = await fetch(`${base}/ai/wsas?fileName=${encodeURIComponent(file.name)}`)
+        if (!wsasRes.ok) throw new Error(`SAS 발급 실패: ${wsasRes.status}`)
+        const { uploadUrl, fileName } = await wsasRes.json()
+
+        // 2) Blob 업로드
+        const putRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'x-ms-blob-type': 'BlockBlob',
+            'Content-Type': file.type,
+          },
+        })
+        if (!putRes.ok) throw new Error(`이미지 업로드 실패: ${putRes.status}`)
+
+        // 3) 읽기 SAS 발급
+        const rsasRes = await fetch(`${base}/ai/rsas?fileName=${encodeURIComponent(fileName)}`)
+        if (!rsasRes.ok) throw new Error(`읽기 SAS 발급 실패: ${rsasRes.status}`)
+        const { readOnlyUrl } = await rsasRes.json()
+
+        // 4) 분석 요청
+        const analysisRes = await fetch(`${base}/ai/analysis`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, imageUrl: readOnlyUrl })
+        })
+        if (!analysisRes.ok) throw new Error(`분석 요청 실패: ${analysisRes.status}`)
 
         // Agent 진단
         const agentRes = await sendDiagnose(yoloRes.data.result)

@@ -1,7 +1,8 @@
 import axios from 'axios'
 
 // API 서버 주소
-const AGENT_API_URL = 'https://8000-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io'
+// const AGENT_API_URL = 'https://8000-dlafhr789-forbee-o89zkhw5v8c.ws-us120.gitpod.io'
+const AGENT_API_URL = import.meta.env.VITE_GW_URL
 
 // YOLO 분석 호출 함수 (엔드포인트 맞춰 수정)
 export function analyzeYolo(file) {

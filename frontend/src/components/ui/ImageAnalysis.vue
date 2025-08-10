@@ -144,7 +144,7 @@ export default {
   async mounted() {
     this.loadAnalysisHistory()
     try {
-      await webSocketService.connect()
+      await webSocketService.connect(this.userId)
       this.subscribeToAnalysisResults()
     } catch (error) {
       console.error('WebSocket 연결 실패:', error)
@@ -221,7 +221,7 @@ export default {
         const blobUrl = await this.uploadToAzureBlob(this.selectedFile)
         
         // 2. 분석 요청
-        const response = await fetch('/ai/analysis', {
+        const response = await fetch(`${import.meta.env.VITE_GW_URL}/ai/analysis`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -262,7 +262,7 @@ export default {
     async uploadToAzureBlob(file) {
       try {
         console.log('SAS 토큰 요청 중...')
-        const sasResponse = await fetch(`/ai/wsas?fileName=${encodeURIComponent(file.name)}`)
+        const sasResponse = await fetch(`${import.meta.env.VITE_GW_URL}/ai/wsas?fileName=${encodeURIComponent(file.name)}`)
         
         if (!sasResponse.ok) {
           let errorMessage = 'SAS 토큰 요청 실패'
@@ -286,7 +286,7 @@ export default {
         const sasData = await sasResponse.json()
         console.log('SAS 토큰 수신:', sasData)
         
-        const { uploadUrl, blobUrl, mode } = sasData
+        const { uploadUrl, blobUrl, fileName, mode } = sasData
         
         // Mock 환경 감지 (로컬 개발용)
         if (mode === 'mock' || uploadUrl.includes('mock-storage')) {
@@ -312,7 +312,14 @@ export default {
         }
         
         console.log('이미지 업로드 완료:', blobUrl)
-        return blobUrl
+        // 업로드 완료 후 읽기 전용 SAS URL 발급
+        const rsasResp = await fetch(`${import.meta.env.VITE_GW_URL}/ai/rsas?fileName=${encodeURIComponent(fileName)}`)
+        if (!rsasResp.ok) {
+          const errText = await rsasResp.text()
+          throw new Error(`읽기 SAS URL 발급 실패: ${rsasResp.status} ${errText}`)
+        }
+        const { readOnlyUrl } = await rsasResp.json()
+        return readOnlyUrl || blobUrl
         
       } catch (error) {
         console.error('Azure Blob 업로드 오류:', error)

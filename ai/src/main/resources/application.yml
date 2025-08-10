@@ -55,7 +55,7 @@ spring:
   #         contentType: application/json
 
 fastapi:
-  url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-zz46g74qo20.ws-us120.gitpod.io}
+  url: ${FASTAPI_URL:http://localhost:8003}
 
 azure:
   storage:
@@ -116,7 +116,7 @@ spring:
   #         contentType: application/json
 
 fastapi:
-  url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-zz46g74qo20.ws-us120.gitpod.io}
+  url: ${FASTAPI_URL:http://localhost:8003}
 
 azure:
   storage:
