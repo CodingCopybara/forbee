@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import forbee.web.dto.Attachment;
+
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -62,6 +66,25 @@ public class PostController {
         // 글 저장
         Post p = new Post();
         p.writePost(cmd);
+
+
+        ObjectMapper om = new ObjectMapper();
+        try {
+            if (cmd.getAttachments() != null) {
+                String json = om.writeValueAsString(cmd.getAttachments());
+                p.setAttachmentsJson(json);
+            } else {
+                p.setAttachmentsJson(null);
+            }
+        } catch (JsonProcessingException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "첨부파일 정보를 JSON으로 변환할 수 없습니다.",
+                    e
+            );
+        }
+
+
         Post saved = postRepository.save(p);
 
         // Location 헤더 설정
