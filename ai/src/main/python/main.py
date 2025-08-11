@@ -152,3 +152,4 @@ def process(request: ImageAnalysisRequest):
 def analyze_image(request: ImageAnalysisRequest, background_tasks: BackgroundTasks):
     background_tasks.add_task(process, request)
     return {"status": "accepted"}
+

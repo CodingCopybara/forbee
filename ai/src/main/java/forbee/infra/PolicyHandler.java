@@ -1,6 +1,9 @@
 package forbee.infra;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import forbee.domain.AgentResponse;
+import forbee.domain.AgentResultStore;
+import forbee.domain.AgentResultStream;
 import org.springframework.kafka.annotation.KafkaListener;
 import javax.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -14,8 +17,15 @@ public class PolicyHandler {
     private final FastApiClient fastApiClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public PolicyHandler(FastApiClient fastApiClient) {
+    private final AgentResultStore<AgentResponse> store;
+    private final AgentResultStream<AgentResponse> stream;
+
+    public PolicyHandler(FastApiClient fastApiClient,
+                         AgentResultStore<AgentResponse> store,
+                         AgentResultStream<AgentResponse> stream) {
         this.fastApiClient = fastApiClient;
+        this.store = store;
+        this.stream = stream;
     }
 
     @KafkaListener(topics = "forbee", groupId = "ai")
@@ -96,6 +106,12 @@ public class PolicyHandler {
                 // 6. FastAPI 호출
                 String result = fastApiClient.sendDiagnoseRequest(diseaseNameKor, topConfidence, userId);
                 System.out.println("FastAPI 응답: " + result);
+
+                if (userId != null && result != null) {
+                AgentResponse res = objectMapper.readValue(result, AgentResponse.class);
+                store.put(userId, res);
+                stream.emit(userId, res); 
+                }
             }
 
 
