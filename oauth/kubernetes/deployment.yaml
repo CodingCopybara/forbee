@@ -1,27 +1,26 @@
----
-
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: oauth
   labels:
-    app: frontend
+    app: oauth
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: frontend
+      app: oauth
   template:
     metadata:
       labels:
-        app: frontend
+        app: oauth
     spec:
       containers:
-        - name: frontend
-          image: forbeeregistry.azurecr.io/frontend:v3
+        - name: oauth
+          image: forbeeregistry.azurecr.io/oauth:v4
           ports:
             - containerPort: 8080
           envFrom:
             - configMapRef:
                 name: app-config
+            - secretRef:
+                name: db-secret

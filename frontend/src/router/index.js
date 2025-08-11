@@ -51,7 +51,7 @@ const router = createRouter({
       component: () => import('@/components/ui/Login.vue'),
     },
     {
-      path: '/chatbot',
+      path: '/chatbot_ai',
       component: () => import('@/components/ui/Chatbot.vue'),
     },
     {

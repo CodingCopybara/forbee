@@ -63,7 +63,7 @@ import {
         <VerticalNavLink
             :item="{
                 title: 'Chatbot',
-                to: '/chatbot',
+                to: '/chatbot_ai',
             }"
         />
         <VerticalNavSectionTitle :item="{ heading: 'AI' }" />

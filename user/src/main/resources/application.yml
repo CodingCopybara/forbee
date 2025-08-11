@@ -106,3 +106,7 @@ api:
     user: user:8080 
     
 
+server:
+  port: 8084 
+    
+

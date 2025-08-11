@@ -43,7 +43,7 @@ export default defineConfig(({ mode }) => {
       ViteYaml(),
     ],
     define: {
-      global: 'globalThis',
+      // global: 'globalThis',
     },
     resolve: {
       alias: {

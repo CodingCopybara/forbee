@@ -41,6 +41,16 @@ spring:
            uri: http://localhost:8082
            predicates:
             - Path=/chatbot/** 
+         - id: chatbot_ai
+           uri: http://localhost:8002
+           predicates:
+            - Path=/chatbot_ai/**
+           filters:
+            - StripPrefix=1 
+         - id: chatbot_ai_api
+           uri: http://localhost:8002
+           predicates:
+            - Path=/chat, /chat/stream 
          - id: ai
            uri: http://localhost:0
            predicates:
@@ -101,6 +111,10 @@ spring:
           uri: http://ai:8080
           predicates:
             - Path=/ai/** 
+        - id: frontend
+          uri: http://frontend:8080
+          predicates:
+            - Path=/** 
       globalcors:
         corsConfigurations:
           '[/**]':

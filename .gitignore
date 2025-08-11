@@ -82,3 +82,6 @@ secrets.yaml
 *.jpg
 
 GEMINI.md
+
+# Python cache
+**/__pycache__/
