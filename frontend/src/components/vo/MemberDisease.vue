@@ -5,78 +5,149 @@
     elevation="3"
     rounded="lg"
     max-width="800"
-    >
+  >
     <div class="chat-container">
-        <div class="chat-box">
+      <div class="chat-box">
         <div v-for="(msg, index) in messages" :key="index" :class="msg.sender">
-            <div v-if="msg.type === 'text'" class="bubble">{{ msg.text }}</div>
-            <img v-else-if="msg.type === 'image'" :src="msg.url" class="chat-img" />
+          <div v-if="msg.type === 'text'" class="bubble">{{ msg.text }}</div>
+
+          <!-- 로딩 말풍선 -->
+          <div v-else-if="msg.type === 'loading'" class="bubble loading-bubble">
+            <div class="loading-dots"><span></span><span></span><span></span></div>
+          </div>
+
+          <img v-else-if="msg.type === 'image'" :src="msg.url" class="chat-img" />
         </div>
-    </div>
+      </div>
 
-    <div class="manual-diagnose-section">
-      <input v-model="diagnoseForm.disease_name" placeholder="병명(예: 응애)">
-      <input v-model="diagnoseForm.confidence" type="number" placeholder="신뢰도(0~1)">
-      <input v-model="diagnoseForm.userId" placeholder="userId">
-      <v-btn color="#74512D" @click="onSendDiagnose">진단 시작</v-btn>
-    </div>
+      <div class="upload-section">
+        <input type="file" ref="fileInput" @change="handleFileUpload" hidden />
+        <v-btn color="warning" @click="$refs.fileInput.click()" :loading="isLoading">사진업로드</v-btn>
+      </div>
 
-    <div class="upload-section">
-      <input type="file" ref="fileInput" @change="handleFileUpload" hidden />
-      <v-btn color="warning" @click="$refs.fileInput.click()">사진업로드</v-btn>
+      <div class="input-section">
+        <input type="text" v-model="userInput" placeholder="답변을 입력해주세요" @keyup.enter="sendMessage" />
+        <v-btn @click="sendMessage">보내기</v-btn>
+      </div>
     </div>
-
-    <div class="input-section">
-      <input type="text" v-model="userInput" placeholder="답변을 입력해주세요" @keyup.enter="sendMessage" />
-      <v-btn @click="sendMessage">보내기</v-btn>
-    </div>
-  </div>
   </v-sheet>
 </template>
 
 <script>
 import axios from 'axios'
-import { analyzeYolo, sendDiagnose, sendAnswer } from '@/api/agent'
+axios.defaults.baseURL = "https://8083-dlafhr789-forbee-zz46g74qo20.ws-us120.gitpod.io"
 
 export default {
   data() {
     return {
-      // userInput: "",
+      userInput: "",
+      isLoading: false,     // 파일 업로드 버튼 로딩
+      userId: "102",
       messages: [
         { sender: "bot", type: "text", text: "꿀벌 질병/해충 탐지 서비스에 오신걸 환영합니다~! 분석을 원하는 사진을 올려주세요 🤓✨" }
       ],
-      // uploadedFile: null,
-      // isLoading: false,
-      diagnoseForm: {
-      disease_name: '',
-      confidence: 0.9,
-      userId: ''
-      }
+      es: null,
     };
   },
+
+  mounted() {
+    // 에이전트 결과 실시간 구독
+    const streamUrl = `${axios.defaults.baseURL}/ai/stream?userId=${encodeURIComponent(this.userId)}`
+    this.es = new EventSource(streamUrl)
+
+    this.es.addEventListener("agent", (evt) => {
+      // 봇 응답 도착 → 로딩 말풍선 제거
+      this._removeBotLoadingMessage()
+
+      try {
+        const payload = JSON.parse(evt.data)
+
+        // 1) 처방문/응답 우선 표시
+        const mainText = payload.prescription || payload.response
+        if (mainText) {
+          this.messages.push({ sender: "bot", type: "text", text: mainText })
+        }
+
+        // 2) 추가 질문이 있으면 별도로 렌더
+        if (Array.isArray(payload.questions) && payload.questions.length > 0) {
+          this.messages.push({
+            sender: "bot",
+            type: "text",
+            text: "추가 질문이 있어요. 아래에 답변해 주세요🤗\n답변 형식은 1. \"1번 답입니다 2. 2번 답입니다 3. 3번 답입니다\"처럼\n한 번에 보내주세요:"
+          })
+          payload.questions.forEach((q, idx) => {
+            this.messages.push({ sender: "bot", type: "text", text: `${idx + 1}. ${q}` })
+          })
+        }
+
+        // 3) 혹시 아무 키도 못 찾으면 raw 데이터
+        if (!mainText && !(payload.questions?.length)) {
+          this.messages.push({ sender: "bot", type: "text", text: evt.data })
+        }
+      } catch {
+        this.messages.push({ sender: "bot", type: "text", text: evt.data })
+      }
+    })
+
+    this.es.onerror = () => {
+      console.warn("SSE 연결 오류")
+      this._removeBotLoadingMessage()
+    }
+  },
+
+  beforeUnmount() {
+    if (this.es) this.es.close()
+  },
+
   methods: {
     async handleFileUpload(event) {
       const file = event.target.files[0]
       if (!file) return
 
       // 사용자 업로드 메시지
-      const imgUrl = URL.createObjectURL(file)
-      this.messages.push({ sender: "user", type: "image", url: imgUrl })
+      const localPreview = URL.createObjectURL(file)
+      this.messages.push({ sender: "user", type: "image", url: localPreview })
       this.isLoading = true
 
       try {
-        // YOLO 분석
-        const yoloRes = await analyzeYolo(file)
-        this.messages.push({ sender: "bot", type: "text", text: `YOLO 분석결과: ${yoloRes.data.result}` })
+        // 봇 로딩 말풍선 추가
+        this._addBotLoadingMessage()
 
-        // Agent 진단
-        const agentRes = await sendDiagnose(yoloRes.data.result)
-        this.messages.push({ sender: "bot", type: "text", text: agentRes.data.prescription })
+        // 1) 업로드용 SAS 발급
+        const { data: sas } = await axios.get("/ai/wsas", {
+          params: { fileName: file.name },
+        })
+        const { uploadUrl, blobUrl, fileName } = sas
+        if (!uploadUrl || !fileName) throw new Error("업로드용 SAS 또는 파일명이 없습니다.")
 
+        // 2) Azure Blob에 파일 PUT 업로드
+        await axios.put(uploadUrl, file, {
+          headers: {
+            "x-ms-blob-type": "BlockBlob",
+            "Content-Type": file.type || "application/octet-stream",
+          },
+          onUploadProgress: (evt) => {
+            const percent = Math.round((evt.loaded * 100) / (evt.total ?? 1))
+            this._setOrAppendProgress(`업로드 진행률: ${percent}%`)
+          },
+        })
+        this.messages.push({ sender: "bot", type: "text", text: "업로드 완료! 분석을 시작할게요 🔎" })
+
+        // 3) 읽기 URL 확보
+        const { data: ro } = await axios.get("/ai/rsas", { params: { fileName } })
+        const imageUrl = ro?.readOnlyUrl ?? blobUrl
+
+        // 4) 분석 요청
+        await axios.post("/ai/analysis", { userId: this.userId, imageUrl })
+
+        this.messages.push({ sender: "bot", type: "text", text: "분석 요청 접수 완료! 결과가 준비되면 알려드릴게요 🐝" })
       } catch (err) {
-        this.messages.push({ sender: "bot", type: "text", text: "⚠️ 분석 중 오류가 발생했습니다. 다시 시도해주세요." })
+        console.error(err)
+        this._removeBotLoadingMessage()
+        this.messages.push({ sender: "bot", type: "text", text: "⚠️ 업로드/분석 중 오류가 발생했습니다. 다시 시도해주세요." })
       } finally {
         this.isLoading = false
+        if (this.$refs.fileInput) this.$refs.fileInput.value = ""
       }
     },
 
@@ -87,81 +158,54 @@ export default {
       this.messages.push({ sender: "user", type: "text", text: message })
       this.userInput = ""
 
+      // 봇 로딩 말풍선 추가
+      this._addBotLoadingMessage()
+
       try {
-        const res = await sendAnswer(message)
-        this.messages.push({ sender: "bot", type: "text", text: res.data.reply })
+        await axios.post(
+          "/api/answer",
+          { answers: [message] },
+          { headers: { userId: this.userId } }
+        )
       } catch (err) {
-        this.messages.push({ sender: "bot", type: "text", text: "⚠️ 답변 중 오류가 발생했습니다." })
+        console.error("답변 전송 오류", err)
+        this._removeBotLoadingMessage()
+        this.messages.push({ sender: "bot", type: "text", text: "⚠️ 답변 전송 실패" })
       }
     },
 
-    async onSendDiagnose() {
-      console.log("진단 버튼 눌림!");
-      const { disease_name, confidence, userId } = this.diagnoseForm
-      if (!disease_name || !userId) {
-        alert('병명, userId 모두 입력해 주세요!')
-        return
-      }
-      try {
-        const accessToken = localStorage.getItem('accessToken');
-        // Agent API 호출 (엔드포인트 맞춰서)
-        const res = await axios.post('https://8088-dlafhr789-forbee-gahotnesjfz.ws-us120.gitpod.io/api/diagnose', {
-          disease_name,
-          confidence: Number(confidence),
-          //userId
-         },
-         {
-          headers: { 
-            userId,
-            Authorization: `Bearer ${accessToken}`
-          }
-          }
-        );
-
-        const { prescription, questions, response } = res.data;
-        if (questions && questions.length > 0) {
-            this.messages.push({
-            sender: "bot",
-            type: "text",
-            text: `📝 추가 질문: ${questions.join('\n')}`
-        });
-      } else if (prescription) {
-          this.messages.push({
-          sender: "bot",
-          type: "text",
-          text: `🏥🐝 ${prescription}`
-      });
-      }
-        // 결과 표시 (메시지 추가)
-        //this.messages.push({ sender: "bot", type: "text", text: `처방 결과: ${res.data.prescription || JSON.stringify(res.data)}` })
-      } catch (err) {
-        this.messages.push({ sender: "bot", type: "text", text: "⚠️ 에이전트 호출 오류!" })
+    _addBotLoadingMessage() {
+      if (!this.messages.some(m => m.type === 'loading')) {
+        this.messages.push({ sender: 'bot', type: 'loading' })
       }
     },
+    _removeBotLoadingMessage() {
+      const i = this.messages.findIndex(m => m.type === 'loading')
+      if (i !== -1) this.messages.splice(i, 1)
+    },
+
+    _setOrAppendProgress(text) {
+      const idx = [...this.messages].reverse().findIndex(
+        m => m.sender === "bot" && typeof m.text === "string" && m.text.startsWith("업로드 진행률:")
+      )
+      if (idx === -1) {
+        this.messages.push({ sender: "bot", type: "text", text })
+      } else {
+        const realIdx = this.messages.length - 1 - idx
+        // Vue2 옵션 API: this.$set 사용, Vue3는 반응형이라 직접 대입으로도 OK
+        this.$set ? this.$set(this.messages, realIdx, { ...this.messages[realIdx], text }) :
+          (this.messages[realIdx] = { ...this.messages[realIdx], text })
+      }
+    }
   }
 }
 </script>
 
 <style scoped>
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.chat-box {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-}
-
-.bot {
-  text-align: left;
-}
-
-.user {
-  text-align: right;
-}
+.chat-container { display: flex; flex-direction: column; height: 100%; }
+.chat-box { flex: 1; overflow-y: auto; padding: 1rem; }
+.bot { text-align: left; }
+.user { text-align: right; }
 
 .bubble {
   display: inline-block;
@@ -170,28 +214,25 @@ export default {
   margin: 5px;
   border-radius: 10px;
   background: #f5f5f5;
+  white-space: pre-wrap;      /* \n 줄바꿈 표시 */
+  word-break: break-word;
+  line-height: 1.6;
 }
+.user .bubble { background: #ffe082; }
 
-.user .bubble {
-  background: #ffe082;
-}
+.chat-img { max-width: 200px; border-radius: 8px; margin: 5px; }
 
-.chat-img {
-  max-width: 200px;
-  border-radius: 8px;
-  margin: 5px;
-}
+.upload-section, .input-section { display: flex; justify-content: center; padding: 10px; }
+input[type="text"] { flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
 
-.upload-section, .input-section {
-  display: flex;
-  justify-content: center;
-  padding: 10px;
+/* 로딩 말풍선 */
+.loading-bubble { padding: 10px; margin: 5px; border-radius: 10px; background: #f5f5f5; }
+.loading-dots { display: flex; gap: 4px; }
+.loading-dots span {
+  width: 6px; height: 6px; background: #999; border-radius: 50%;
+  animation: blink 1.4s infinite both;
 }
-
-input[type="text"] {
-  flex: 1;
-  padding: 8px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
 </style>
