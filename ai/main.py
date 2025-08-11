@@ -59,7 +59,7 @@ def analyze_image(request: ImageAnalysisRequest, background_tasks: BackgroundTas
 
 # 2. 에이전트 - 진단 (diagnose)
 @app.post("/diagnose")
-def diagnose(req: DiagnoseRequest, userId: int = Header(None)):
+def diagnose(req: DiagnoseRequest, userId: str = Header(alias="userId")):
     if not userId:
         raise HTTPException(status_code=400, detail="Missing userId in headers")
     memory = get_user_memory(str(userId))
@@ -68,7 +68,7 @@ def diagnose(req: DiagnoseRequest, userId: int = Header(None)):
 
 # 3. 에이전트 - 추가 질문 답변 (answer)
 @app.post("/answer")
-def answer(req: AnswerRequest, userId: int = Header(None)):
+def answer(req: AnswerRequest, userId: str = Header(alias="userId")):
     if not userId:
         raise HTTPException(status_code=400, detail="Missing userId in headers")
     memory = get_user_memory(str(userId))

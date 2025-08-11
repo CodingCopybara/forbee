@@ -42,7 +42,7 @@ export default {
     return {
       userInput: "",
       isLoading: false,     // 파일 업로드 버튼 로딩
-      userId: "102",
+      userId: "",
       messages: [
         { sender: "bot", type: "text", text: "꿀벌 질병/해충 탐지 서비스에 오신걸 환영합니다~! 분석을 원하는 사진을 올려주세요 🤓✨" }
       ],
@@ -52,11 +52,14 @@ export default {
 
   mounted() {
     // 에이전트 결과 실시간 구독
+    const email = localStorage.getItem('username') || '';
+    this.userId = email.includes('@') ? email.split('@')[0] : email;
+
     const streamUrl = `${axios.defaults.baseURL}/ai/stream?userId=${encodeURIComponent(this.userId)}`
     this.es = new EventSource(streamUrl)
 
     this.es.addEventListener("agent", (evt) => {
-      // 봇 응답 도착 → 로딩 말풍선 제거
+      this.isBotLoading = false;
       this._removeBotLoadingMessage()
 
       try {
@@ -108,11 +111,10 @@ export default {
       const localPreview = URL.createObjectURL(file)
       this.messages.push({ sender: "user", type: "image", url: localPreview })
       this.isLoading = true
+      this.isBotLoading = true;
+      this._addBotLoadingMessage()
 
-      try {
-        // 봇 로딩 말풍선 추가
-        this._addBotLoadingMessage()
-
+      try {     
         // 1) 업로드용 SAS 발급
         const { data: sas } = await axios.get("/ai/wsas", {
           params: { fileName: file.name },
@@ -157,9 +159,8 @@ export default {
       const message = this.userInput
       this.messages.push({ sender: "user", type: "text", text: message })
       this.userInput = ""
-
-      // 봇 로딩 말풍선 추가
-      this._addBotLoadingMessage()
+      this.isBotLoading = true;
+      this._addBotLoadingMessage();
 
       try {
         await axios.post(
