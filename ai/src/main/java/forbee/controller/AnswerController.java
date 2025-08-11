@@ -7,8 +7,10 @@ import forbee.domain.AgentResultStream;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api")
@@ -40,10 +42,10 @@ public class AnswerController {
         }
     }
 
-    @PostMapping("/answer")
-    public ResponseEntity<String> handleUserAnswer(
-            @RequestHeader("userId") Long userId,
-            @RequestBody AnswerRequest request) {
+@PostMapping("/answer")
+public ResponseEntity<String> handleUserAnswer(
+        @RequestHeader("userId") Long userId,
+        @RequestBody AnswerRequest request) {
 
         List<String> answers = request.getAnswers();
         String result = fastApiClient.sendAnswerRequest(answers, userId);
@@ -58,4 +60,5 @@ public class AnswerController {
 
         return ResponseEntity.ok(result);
     }
+
 }

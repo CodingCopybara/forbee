@@ -79,6 +79,22 @@ def generate_prescription_user(state: dict, userId: int) -> dict:
     질병 {state['disease_name']} 에 대한 정보 {state['disease_info']['raw']} 를 활용해
     심각도가 {state['severity']}인 경우 최적의 처방전을 작성하세요.
     심각도가 3 이상이면 병원 정보를 포함하세요.
+    
+    대답 형식은 아래처럼 []를 꼭 포함하고 한 문장이 끝날때마다 줄바꿈을 해줘 처방/대처방안에서 각각 한줄씩 쓰고 공손한 말투를 유지해주면 좋겠어 마지막 병원 정보를 쓸 땐 한국양봉농협 동물병원 031-677-6521 을 항상 포함해줘
+    심각도는 1=낮음, 2=중간, 3=중~높음, 4=매우 높음으로 심각도 숫자를 매칭해 한국어로 표현해주세요
+    
+    안녕하세요! 응애에 대한 정보를 바탕으로 심각도를 평가하고 최적의 처방전을 작성해 보겠습니다. \n
+    [✅심각도] \n
+    최종 심각도: \n
+    [💊처방/대처 방안] \n
+    1. 진단: \n
+    2. 강군 유지: \n
+    3. 소비 내검 및 응애 제거: \n
+    4. 화학제 사용: \n
+    5. 봉군 위생 강화:  \n
+    [🏥병원 정보] \n
+    병원 정보: 한국양봉농협 동물병원 031-677-6521
+    
     """
     response = chain.run(prompt)
     state["prescription"] = response
@@ -95,7 +111,22 @@ def generate_final_prescription_user(state: dict, userId: int) -> dict:
     사용자 응답: {"; ".join(state.get("user_answers", []))}
     질병 정보: {state['disease_info']['raw']}
     기존 심각도: {state['severity']}
-    최종 심각도를 재평가하고, 처방전을 작성하세요.
+    최종 심각도를 재평가하고, 처방전을 작성하세요. 심각도가 3 이상이면 병원 정보를 포함하세요.
+
+    대답 형식은 아래처럼 []를 꼭 포함하고 한 문장이 끝날때마다 줄바꿈을 해줘 처방/대처방안에서 각각 한줄씩 쓰고 공손한 말투를 유지해주면 좋겠어 마지막 병원 정보를 쓸 땐 한국양봉농협 동물병원 031-677-6521 을 항상 포함해줘
+    심각도는 1=낮음, 2=중간, 3=중~높음, 4=매우 높음으로 심각도 숫자를 매칭해 한국어로 표현해주세요
+
+    안녕하세요! 응애에 대한 정보를 바탕으로 심각도를 평가하고 최적의 처방전을 작성해 보겠습니다. \n
+    [✅심각도] \n
+    최종 심각도: \n
+    [💊처방/대처 방안] \n
+    1. 진단: \n
+    2. 강군 유지: \n
+    3. 소비 내검 및 응애 제거: \n
+    4. 화학제 사용: \n
+    5. 봉군 위생 강화:  \n
+    [🏥병원 정보] \n
+    병원 정보: 한국양봉농협 동물병원 031-677-6521
     """
     response = chain.run(prompt)
 
@@ -119,6 +150,7 @@ def generate_question_user(state: DiseaseState, userId: int) -> DiseaseState:
     - 질문 내용만 출력하세요.
     - 똑같은 질문을 반복하지 마세요.
     - 질문은 간결하게 하세요.
+    - 번호나 기호(-, ., ))를 붙이지 마세요.
     """
 
     response = chain.run(prompt)
@@ -171,8 +203,7 @@ def run_agent(userId: int, disease_name: str, confidence: float, memory: Convers
     set_state(userId, state)
 
     if state.get("questions"):
-        memory.chat_memory.add_ai_message("추가 질문:\n" + "\n".join(state["questions"]))
-        return {"questions": state["questions"], "response": "추가 질문이 있습니다."}
+        return {"questions": state["questions"]}
 
     state = generate_final_prescription_user(state, userId)
     set_state(userId, state)
