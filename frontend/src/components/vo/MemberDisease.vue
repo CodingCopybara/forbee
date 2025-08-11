@@ -22,7 +22,7 @@
 
       <div class="upload-section">
         <input type="file" ref="fileInput" @change="handleFileUpload" hidden />
-        <v-btn color="warning" @click="$refs.fileInput.click()" :loading="isLoading">사진업로드</v-btn>
+        <v-btn color="warning" @click="$refs.fileInput.click()" :loading="isLoading">사진 업로드</v-btn>
       </div>
 
       <div class="input-section">

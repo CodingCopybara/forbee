@@ -38,9 +38,9 @@ spring:
            predicates:
             - Path=/chatbots/** 
          - id: ai
-           uri: http://localhost:0
+           uri: http://localhost:8083
            predicates:
-            - Path=//**//** 
+            - Path=/ai/** 
          - id: oauth-register
            uri: http://localhost:8090
            predicates:
