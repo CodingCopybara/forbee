@@ -62,6 +62,7 @@ declare module '@vue/runtime-core' {
     Plant: typeof import('./src/components/Plant.vue')['default']
     Post: typeof import('./src/components/Post.vue')['default']
     PostDetail: typeof import('./src/components/ui/PostDetail.vue')['default']
+    PostEdit: typeof import('./src/components/ui/PostEdit.vue')['default']
     Rating: typeof import('./src/components/vo/Rating.vue')['default']
     Register: typeof import('./src/components/ui/Register.vue')['default']
     RequestApproval: typeof import('./src/components/RequestApproval.vue')['default']

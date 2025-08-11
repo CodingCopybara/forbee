@@ -28,6 +28,12 @@ const router = createRouter({
       component: () => import('../components/ui/CommunityGrid.vue'),
       props: route => ({ category: route.params.category })
     },
+    { 
+      path:'/community/:category/:id/edit',
+      name:'CommunityPostEdit',  
+      component: () => import('../components/ui/PostEdit.vue'),
+
+    },
     {
       path: '/honeymall',
       component: () => import('@/components/ui/HoneyMallGrid.vue'),

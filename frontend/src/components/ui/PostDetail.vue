@@ -15,6 +15,15 @@
     <section class="detail-content">
       <div class="back-only">
         <button @click="$router.back()" class="back-button">← 뒤로</button>
+
+        <!-- ✅ 액션 버튼: 권한에 따라 노출 -->
+        <div class="action-group">
+          <button v-if="isOwner" class="btn" @click="goEdit">수정하기</button>
+          <button v-if="isOwner || isAdmin" class="btn" @click="toggleRevisions">
+            {{ showRevisions ? '이력 닫기' : '이력 보기' }}
+          </button>
+          <button v-if="isAdmin" class="btn danger" @click="deletePost">삭제하기</button>
+        </div>
       </div>
 
       <div class="content-container">
@@ -33,7 +42,7 @@
               <td>{{ post.views }}</td>
             </tr>
 
-            <!-- ✅ 첨부파일 표시: attachmentsJson 파싱 포함 -->
+            <!-- 첨부파일: 상단에만 표시 -->
             <tr class="attach-row">
               <th>첨부파일</th>
               <td colspan="5">
@@ -41,13 +50,7 @@
                   <ul class="attach-inline">
                     <li v-for="(att, i) in attachments" :key="att.url + i">
                       <span class="clip">📎</span>
-                      <a
-                        class="attach-link"            
-                        :href="att.url"
-                        :download="att.name"
-                        target="_blank"
-                        rel="noopener"
-                      >
+                      <a class="attach-link" :href="att.url" :download="att.name" target="_blank" rel="noopener">
                         {{ att.name || att.url }}
                       </a>
                     </li>
@@ -64,7 +67,26 @@
         <!-- 본문 -->
         <div class="content-body" v-html="renderedHtml"></div>
 
-        
+        <!-- ✅ 수정 이력 뷰어 (작성자/ADMIN) -->
+        <div v-if="showRevisions" class="revisions">
+          <h3>수정 이력</h3>
+          <ul v-if="revisions.length">
+            <li v-for="rev in revisions" :key="rev.id">
+              <div class="rev-head">
+                <strong>{{ rev.editedAt }}</strong>
+                <span>by {{ rev.editedBy }}</span>
+              </div>
+              <div class="rev-diff">
+                <div><b>제목</b>: {{ rev.titleBefore }}</div>
+                <details>
+                  <summary>본문 보기</summary>
+                  <pre>{{ rev.contentBefore }}</pre>
+                </details>
+              </div>
+            </li>
+          </ul>
+          <div v-else class="no-rev">이력이 없습니다.</div>
+        </div>
 
         <!-- 댓글 섹션 -->
         <div class="comments-section">
@@ -92,39 +114,61 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { maskId } from '@/utils/mask'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 
-const userRole = 'USER' // ✅ 서버 요구값에 맞춤(대문자)
 const route = useRoute()
+const router = useRouter()
 const postId = route.params.id
 
 const post = ref({ title: '', content: '', author: '', createdAt: '', views: 0 })
 const comments = ref([])
 const newComment = ref('')
 
-// 절대 URL 보정
-const base = (import.meta.env.VITE_GW_URL || '').replace(/\/+$/, '')
-const abs = (u) => {
-  if (!u) return u
-  return /^https?:\/\//i.test(u) ? u : `${base}${u.startsWith('/') ? u : `/${u}`}`
+// ===== 권한 유틸 =====
+function decodeJwt(token) {
+  try {
+    const base = token.split('.')[1]
+    const json = decodeURIComponent(atob(base.replace(/-/g, '+').replace(/_/g, '/')).split('').map(c =>
+      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+    ).join(''))
+    return JSON.parse(json)
+  } catch { return null }
 }
+function currentUsername() {
+  const local = localStorage.getItem('username')
+  if (local) return local.split('@')[0]
+  const jwt = decodeJwt(localStorage.getItem('accessToken') || '')
+  const claim = jwt?.user_name || jwt?.username
+  return claim ? String(claim).split('@')[0] : ''
+}
+const jwtPayload = decodeJwt(localStorage.getItem('accessToken') || '')
+const isAdmin = computed(() => Array.isArray(jwtPayload?.authorities) && jwtPayload.authorities.includes('ROLE_ADMIN'))
+const isOwner = computed(() => {
+  const me = currentUsername()
+  return !!me && me.toLowerCase() === String(post.value?.author || '').toLowerCase()
+})
+const roleHeader = computed(() => (isAdmin.value ? 'ADMIN' : 'USER'))
+const authHeaders = () => ({
+  Role: roleHeader.value,
+  Authorization: 'Bearer ' + localStorage.getItem('accessToken')
+})
 
-// 안전 JSON 파서(attachmentsJson 처리용)
+// ===== 본문/첨부 렌더링 =====
+const base = (import.meta.env.VITE_GW_URL || '').replace(/\/+$/, '')
+const abs = (u) => (!u ? u : /^https?:\/\//i.test(u) ? u : `${base}${u.startsWith('/') ? u : `/${u}`}`)
+
 function safeParseJSON(s, fallback = []) {
   try {
     if (!s) return fallback
     const v = typeof s === 'string' ? JSON.parse(s) : s
     return Array.isArray(v) ? v : fallback
-  } catch {
-    return fallback
-  }
+  } catch { return fallback }
 }
 
-// 본문 마크다운 → HTML(+상대경로 보정)
 marked.setOptions({ breaks: true })
 const renderedHtml = computed(() => {
   const raw = post.value?.content || ''
@@ -133,51 +177,22 @@ const renderedHtml = computed(() => {
   return DOMPurify.sanitize(html)
 })
 
-// ✅ 첨부파일(attachments, attachmentsJson, 본문 내 PDF 링크까지 모두 수집)
 const attachments = computed(() => {
   const list = []
   const seen = new Set()
-
-  // 1) 배열 형태로 온 경우
   if (Array.isArray(post.value?.attachments)) {
     for (const a of post.value.attachments) {
-      const url = abs(a.url)
-      if (!url || seen.has(url)) continue
-      seen.add(url)
-      list.push({
-        name: a.name || (url ? decodeURIComponent(url.split('/').pop()) : '첨부'),
-        url,
-        type: a.type || (url?.toLowerCase().endsWith('.pdf') ? 'pdf' : 'file')
-      })
+      const url = abs(a.url); if (!url || seen.has(url)) continue; seen.add(url)
+      list.push({ name: a.name || decodeURIComponent(url.split('/').pop()), url, type: a.type || 'file' })
     }
   }
-
-  // 2) 문자열(JSON)로 온 경우(현재 백엔드 응답)
   const jsonArr = safeParseJSON(post.value?.attachmentsJson)
   if (jsonArr.length) {
     for (const a of jsonArr) {
-      const url = abs(a.url)
-      if (!url || seen.has(url)) continue
-      seen.add(url)
-      list.push({
-        name: a.name || (url ? decodeURIComponent(url.split('/').pop()) : '첨부'),
-        url,
-        type: a.type || (url?.toLowerCase().endsWith('.pdf') ? 'pdf' : 'file')
-      })
+      const url = abs(a.url); if (!url || seen.has(url)) continue; seen.add(url)
+      list.push({ name: a.name || decodeURIComponent(url.split('/').pop()), url, type: a.type || 'file' })
     }
   }
-
-  // 3) 본문 안의 PDF 링크 추출(백업)
-  if (!list.length) {
-    const content = post.value?.content || ''
-    for (const m of content.matchAll(/\((https?:\/\/[^\s)]+\.pdf)\)/ig)) {
-      const url = abs(m[1])
-      if (!url || seen.has(url)) continue
-      seen.add(url)
-      list.push({ name: decodeURIComponent(url.split('/').pop() || '첨부.pdf'), url, type: 'pdf' })
-    }
-  }
-
   return list
 })
 
@@ -185,29 +200,53 @@ const attachments = computed(() => {
 function formatDate(raw) { return raw ? new Date(raw).toLocaleString('ko-KR') : '' }
 const formattedDate = computed(() => formatDate(post.value.createdAt))
 
-// 게시글 로드
+// 데이터 로드
 async function loadPost() {
   try {
-    const res = await axios.get(
-      import.meta.env.VITE_GW_URL + `/posts/${postId}`,
-      { headers: { Role: userRole, Authorization: 'Bearer ' + localStorage.getItem('accessToken') } }
-    )
+    const res = await axios.get(`${base}/posts/${postId}`, { headers: authHeaders() })
     post.value = res.data
-  } catch (err) {
-    console.error('상세 조회 실패', err)
-  }
+  } catch (err) { console.error('상세 조회 실패', err) }
 }
-
-// 댓글 목록 로드
 async function loadComments() {
   try {
-    const res = await axios.get(
-      import.meta.env.VITE_GW_URL + `/comments/post/${postId}`,
-      { headers: { Role: userRole, Authorization: 'Bearer ' + localStorage.getItem('accessToken') } }
-    )
+    const res = await axios.get(`${base}/comments/post/${postId}`, { headers: authHeaders() })
     comments.value = res.data
-  } catch (err) {
-    console.error('댓글 조회 실패', err)
+  } catch (err) { console.error('댓글 조회 실패', err) }
+}
+
+// ✅ 수정 페이지로 이동 (/edit)
+function goEdit() {
+  const basePath = route.fullPath.replace(/\/+$/, '')
+  router.push(basePath.endsWith('/edit') ? basePath : `${basePath}/edit`)
+}
+
+// ===== 수정 이력 (작성자/ADMIN) =====
+const showRevisions = ref(false)
+const revisions = ref([])
+async function toggleRevisions() {
+  if (!showRevisions.value) {
+    try {
+      const { data } = await axios.get(`${base}/posts/${postId}/revisions`, { headers: authHeaders() })
+      revisions.value = (data || []).map(r => ({ ...r, editedAt: formatDate(r.editedAt) }))
+    } catch (e) {
+      console.error('이력 조회 실패', e); alert('이력을 가져오지 못했습니다.')
+      return
+    }
+  }
+  showRevisions.value = !showRevisions.value
+}
+
+// ===== 삭제(ADMIN) =====
+async function deletePost() {
+  if (!isAdmin.value) return
+  if (!confirm('정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return
+  try {
+    await axios.delete(`${base}/posts/${postId}`, { headers: authHeaders() })
+    alert('삭제되었습니다.')
+    router.back()
+  } catch (e) {
+    console.error('삭제 실패', e)
+    alert('삭제에 실패했습니다.')
   }
 }
 
@@ -216,25 +255,16 @@ async function writeComment() {
   if (!newComment.value.trim()) return
   try {
     await axios.post(
-      import.meta.env.VITE_GW_URL + '/comments/write',
-      {
-        postId,
-        content: newComment.value,
-        author: (localStorage.getItem('username')?.split('@')[0]) || '익명'
-      },
-      { headers: { Role: userRole, Authorization: 'Bearer ' + localStorage.getItem('accessToken') } }
+      `${base}/comments/write`,
+      { postId, content: newComment.value, author: currentUsername() || '익명' },
+      { headers: authHeaders() }
     )
     newComment.value = ''
     loadComments()
-  } catch (err) {
-    console.error('댓글 작성 실패', err)
-  }
+  } catch (err) { console.error('댓글 작성 실패', err) }
 }
 
-onMounted(() => {
-  loadPost()
-  loadComments()
-})
+onMounted(() => { loadPost(); loadComments() })
 </script>
 
 <style scoped>
@@ -250,7 +280,15 @@ onMounted(() => {
 
 .detail-content { flex: 1; padding: 2rem; overflow-y: auto; }
 
-.back-button { background: none; border: none; color: #000; font-size: 0.95rem; margin-bottom: 1rem; cursor: pointer; }
+.back-only { display:flex; align-items:center; justify-content: space-between; gap: 1rem; }
+.action-group { display:flex; gap:.5rem; }
+.btn { padding:6px 10px; border:1px solid #ccc; background:#fff; border-radius:6px; cursor:pointer; }
+.btn:hover { background:#f7f7f7; }
+.btn.ghost { background:transparent; }
+.btn.danger { border-color:#d33; color:#d33; }
+.btn.danger:hover { background:#ffecec; }
+
+.back-button { background: none; border: none; color: #000; font-size: 0.95rem; cursor: pointer; }
 
 .content-container { background: #fff; padding: 1.5rem; border: 2px solid #ccc; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
 
@@ -261,24 +299,23 @@ onMounted(() => {
 .content-body { line-height: 1.7; margin-bottom: 2rem; }
 .content-body :deep(img) { width: 90%; max-width: 90%; height: auto; display: block; margin: 0.75rem 0 0.75rem 5%; }
 
-.attach-inline .attach-link {
-  color: #000; /* 글씨 검은색 */
-  text-decoration: none; /* 밑줄 제거(선택 사항) */
-}
-
-.attach-inline .attach-link:hover {
-  text-decoration: underline; /* 마우스 올렸을 때만 밑줄 */
-}
 .attach-inline { list-style:none; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:.5rem 1rem; }
 .attach-inline li { display:flex; align-items:center; gap:.35rem; }
+.attach-inline .attach-link,
+.attach-inline .attach-link:visited,
+.attach-inline .attach-link:hover,
+.attach-inline .attach-link:active,
+.attach-inline .attach-link:focus { color:#000; text-decoration:none; }
+.attach-inline .attach-link:hover { text-decoration:underline; }
 .clip { opacity:.85; }
 .attach-empty { color:#999; }
-.attachments-view { margin-bottom: 2rem; }
-.attachments-view h3 { margin: 0 0 0.5rem; }
-.attachments-view ul { list-style: none; padding: 0; margin: 0; }
-.attachments-view li { display: flex; gap: .5rem; align-items: center; padding: .35rem 0; }
-.attachments-view a { text-decoration: underline; }
 
+.revisions { border-top:1px dashed #ddd; padding-top:1rem; margin-top:1rem; }
+.revisions h3 { margin:0 0 .5rem; }
+.revisions ul { list-style:none; padding:0; margin:0; }
+.revisions li { padding:.5rem 0; border-bottom:1px solid #f2f2f2; }
+.rev-head { display:flex; gap:.5rem; color:#666; font-size:.9rem; }
+.rev-diff pre { white-space:pre-wrap; background:#f7f7f7; padding:.5rem; border-radius:6px; }
 
 .comments-section { border-top: 1px solid #ddd; padding-top: 2rem; }
 .comments-list { list-style: none; padding: 0; margin: 0; }
