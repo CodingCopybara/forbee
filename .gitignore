@@ -79,3 +79,6 @@ secrets.yml
 secrets.yaml
 
 GEMINI.md
+
+# Python cache
+**/__pycache__/

@@ -73,7 +73,7 @@
       </v-container>
     </v-footer>
 
-    <router-link to="/chatbot" class="chatbot-btn">
+    <router-link to="/chatbot_ai" class="chatbot-btn">
       <img src="bee.png" alt="chatbot" class="chatbot-img" />
     </router-link>
 

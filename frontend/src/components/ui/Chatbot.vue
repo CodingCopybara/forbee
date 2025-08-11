@@ -16,6 +16,6 @@ import { computed } from 'vue'
 
 const iframeSrc = computed(() => {
   const base = import.meta.env.VITE_GW_URL
-  return `${base}/chatbot/`
+  return `${base}/chatbot_ai/`
 })
 </script>
