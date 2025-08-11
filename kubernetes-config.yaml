@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  # Spring Boot 애플리케이션을 위한 설정
+  # 쿠버네티스 서비스 DNS 이름을 사용하여 내부 서비스 주소 지정
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://oauth:8080/.well-known/jwks.json"
+  USER_SERVICE_URL: "http://user:8084"
+
+  # Vue(frontend) 애플리케이션을 위한 설정
+  # Ingress 생성 후 할당되는 고정 IP로 교체해야 합니다.
+  VITE_GW_URL: "http://20.249.193.12"
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: forbee-ingress
+  annotations:
+    # 일부 Ingress 컨트롤러는 이 annotation이 필요할 수 있습니다.
+    # nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            # 모든 외부 요청을 gateway 서비스로 라우팅합니다.
+            name: gateway
+            port:
+              # gateway 서비스의 포트
+              number: 8080

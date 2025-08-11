@@ -3,7 +3,7 @@
     "version": "0.0.0",
     "scripts": {
         "dev": "npm run build:icons && vite --host",
-        "build": "npm run build:icons && vite build",
+        "build": "npm run build:icons && VITE_GW_URL=http://20.249.193.12 vite build",
         "preview": "vite preview --port 5050",
         "lint": "eslint . -c .eslintrc.js --fix --ext .ts,.js,.vue,.tsx,.jsx",
         "build:icons": "node src/@iconify/build-icons.js"
