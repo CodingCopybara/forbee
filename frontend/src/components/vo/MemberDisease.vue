@@ -38,7 +38,6 @@
 
 <script>
 import axios from 'axios'
-axios.defaults.baseURL = "https://8083-dlafhr789-forbee-zz46g74qo20.ws-us121.gitpod.io"
 
 export default {
   data() {
@@ -62,7 +61,7 @@ export default {
     const email = localStorage.getItem('username') || '';
     this.userId = email.includes('@') ? email.split('@')[0] : email;
 
-    const streamUrl = `${axios.defaults.baseURL}/ai/stream?userId=${encodeURIComponent(this.userId)}`
+    const streamUrl = `${import.meta.env.VITE_GW_URL}/ai/stream?userId=${encodeURIComponent(this.userId)}`
     this.es = new EventSource(streamUrl)
 
     this.es.addEventListener("agent", (evt) => {
@@ -130,8 +129,11 @@ export default {
 
       try {     
         // 1) 업로드용 SAS 발급
-        const { data: sas } = await axios.get("/ai/wsas", {
+        const { data: sas } = await axios.get(import.meta.env.VITE_GW_URL + "/ai/wsas", {
           params: { fileName: file.name },
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("accessToken")
+          }
         })
         const { uploadUrl, blobUrl, fileName } = sas
         if (!uploadUrl || !fileName) throw new Error("업로드용 SAS 또는 파일명이 없습니다.")
@@ -150,11 +152,20 @@ export default {
         this.messages.push({ sender: "bot", type: "text", text: "업로드 완료! 분석을 시작할게요 🔎" })
 
         // 3) 읽기 URL 확보
-        const { data: ro } = await axios.get("/ai/rsas", { params: { fileName } })
+        const { data: ro } = await axios.get( import.meta.env.VITE_GW_URL + "/ai/rsas", { 
+          params: { fileName },
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("accessToken")
+          } 
+        })
         const imageUrl = ro?.readOnlyUrl ?? blobUrl
 
         // 4) 분석 요청
-        await axios.post("/ai/analysis", { userId: this.userId, imageUrl })
+        await axios.post( import.meta.env.VITE_GW_URL + "/ai/analysis", { userId: this.userId, imageUrl },{
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("accessToken")
+          }}
+        )
 
         this.messages.push({ sender: "bot", type: "text", text: "분석 요청 접수 완료! 결과가 준비되면 알려드릴게요 🐝" })
       } catch (err) {
@@ -178,9 +189,9 @@ export default {
 
       try {
         await axios.post(
-          "/api/answer",
+          import.meta.env.VITE_GW_URL + "/api/answer",
           { answers: [message] },
-          { headers: { userId: this.userId } }
+          { headers: { userId: this.userId, Authorization: "Bearer " + localStorage.getItem("accessToken") } }
         )
       } catch (err) {
         console.error("답변 전송 오류", err)
@@ -230,7 +241,7 @@ export default {
               ts: Date.now() + i
             }))
         }
-        await axios.post('/api/chat-sessions', payload, { headers: { userId: this.userId } })
+        await axios.post( import.meta.env.VITE_GW_URL + '/api/chat-sessions', payload, { headers: { userId: this.userId, Authorization: "Bearer " + localStorage.getItem("accessToken") } })
         this.$router.push({ path: '/community/qna/write' });
 
       } catch (e) {

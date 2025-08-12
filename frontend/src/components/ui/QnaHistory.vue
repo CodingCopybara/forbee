@@ -35,7 +35,6 @@
 import axios from 'axios'
 import { ref, onMounted } from 'vue'
 
-const API = 'https://8083-dlafhr789-forbee-zz46g74qo20.ws-us121.gitpod.io'
 const loading = ref(false)
 const error = ref('')
 const messages = ref([])
@@ -49,8 +48,8 @@ async function loadLatest() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await axios.get(`${API}/api/chat-sessions/latest`, {
-      headers: { userId: currentUserId() },
+    const { data } = await axios.get(`${import.meta.env.VITE_GW_URL}/api/chat-sessions/latest`, {
+      headers: { userId: currentUserId(), Authorization: "Bearer " + localStorage.getItem("accessToken")},
       withCredentials: false
     })
     messages.value = Array.isArray(data?.messages) ? data.messages : []

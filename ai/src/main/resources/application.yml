@@ -55,9 +55,6 @@ spring:
   #         destination: forbee
   #         contentType: application/json
 
-  fastapi:
-    url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-zz46g74qo20.ws-us121.gitpod.io}
-
 azure:
   storage:
     account-url: ${AZURE_STORAGE_ACCOUNT_URL:https://forbee.blob.core.windows.net}
@@ -118,7 +115,7 @@ spring:
   #         contentType: application/json
 
 fastapi:
-  url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-zz46g74qo20.ws-us121.gitpod.io}
+  url: ${FASTAPI_URL:http://localhost:8003}
 
 azure:
   storage:
