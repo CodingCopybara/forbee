@@ -1,92 +1,111 @@
 <!-- ✅ 파일 경로: src/components/ui/CommunityWrite.vue -->
 <template>
-  <div class="community-write">
-    <h2>{{ tabName }} 글 작성</h2>
+  <div class="write-layout">
+    <!-- 사이드바 (요청한 마크업 그대로) -->
+    <aside class="sidebar" style="background: transparent; border: none; box-shadow: none;">
+      <div class="sidebar-title">COMMUNITY</div>
+      <ul class="board-list">
+        <li><router-link to="/community/free"   active-class="active" exact-active-class="active">자유게시판</router-link></li>
+        <li><router-link to="/community/notice" active-class="active" exact-active-class="active">공지사항</router-link></li>
+        <li><router-link to="/community/qna"    active-class="active" exact-active-class="active">Q&amp;A</router-link></li>
+      </ul>
+    </aside>
 
-    <form @submit.prevent="submitPost">
-      <input
-        v-model="form.title"
-        placeholder="제목"
-        required
-        @keyup.enter.prevent="submitPost"
-      />
 
-      <!-- 본문 입력 -->
-      <div
-        ref="editorRef"
-        class="editor"
-        contenteditable="true"
-        :placeholder="'내용을 입력하세요...'"
-        @input="syncFromEditor"
-        @paste="onPaste"
-      ></div>
+    <!-- 글쓰기 영역 (기존 내용 그대로) -->
+    <div class="write-content" style="transform: translateX(-16px);">
+      <div class="community-write" style="background: transparent; border: none; box-shadow: none;">
+        <h2 style="transform: translateY(-16px);">{{ tabName }} 글 작성</h2>
 
-      <!-- 업로드 툴바 -->
-      <div class="upload-toolbar">
-        <button type="button" class="btn" @click="triggerImagePicker" :disabled="uploading">
-          {{ uploading && pendingType === 'image' ? '이미지 업로드 중...' : '이미지 추가(PNG, JPG)' }}
-        </button>
-        <button type="button" class="btn outline" @click="triggerPdfPicker" :disabled="uploading">
-          {{ uploading && pendingType === 'pdf' ? 'PDF 업로드 중...' : '첨부파일 추가(PDF)' }}
-        </button>
+        <form @submit.prevent="submitPost">
+          <input
+            v-model="form.title"
+            placeholder="제목"
+            required
+            @keyup.enter.prevent="submitPost"
+            style="background: white;"
+          />
 
-        <!-- ✅ QnA 전용: 대화내역 보기 -->
-        <button
-          v-if="isQnA"
-          type="button"
-          class="btn outline"
-          @click="viewChatHistory"
-          :disabled="uploading"
-        >
-          대화내역보기
-        </button>
+          <!-- 본문 입력 -->
+          <div
+            ref="editorRef"
+            class="editor content-body"
+            contenteditable="true"
+            :placeholder="'내용을 입력하세요...'"
+            @input="syncFromEditor"
+            @paste="onPaste"
+            style="background: white;"
+          ></div>
 
-        <!-- 숨겨진 파일 입력 -->
-        <input
-          ref="imageInput"
-          type="file"
-          accept="image/png, image/jpeg"
-          multiple
-          class="hidden-input"
-          @change="onPickImages"
-        />
-        <input
-          ref="pdfInput"
-          type="file"
-          accept="application/pdf"
-          class="hidden-input"
-          @change="onPickPdf"
-        />
+          <!-- 업로드 툴바 -->
+          <div class="upload-toolbar">
+            <!-- ✅ 이미지/PD​F 둘 다 같은 버튼 스타일(.btn) -->
+            <button type="button" class="btn" @click="triggerImagePicker" :disabled="uploading">
+              {{ uploading && pendingType === 'image' ? '이미지 업로드 중...' : '이미지 추가(PNG, JPG)' }}
+            </button>
+            <button type="button" class="btn" @click="triggerPdfPicker" :disabled="uploading">
+              {{ uploading && pendingType === 'pdf' ? 'PDF 업로드 중...' : '첨부파일 추가(PDF)' }}
+            </button>
+
+            <!-- ✅ QnA 전용: 대화내역 보기 (그대로 유지) -->
+            <button
+              v-if="isQnA"
+              type="button"
+              class="btn outline"
+              @click="viewChatHistory"
+              :disabled="uploading"
+            >
+              대화내역보기
+            </button>
+
+            <!-- 숨겨진 파일 입력 -->
+            <input
+              ref="imageInput"
+              type="file"
+              accept="image/png, image/jpeg"
+              multiple
+              class="hidden-input"
+              @change="onPickImages"
+            />
+            <input
+              ref="pdfInput"
+              type="file"
+              accept="application/pdf"
+              class="hidden-input"
+              @change="onPickPdf"
+            />
+          </div>
+
+          <!-- 첨부목록 (PDF) -->
+          <div v-if="form.attachments.length" class="attachments">
+            <h4>첨부파일</h4>
+            <ul>
+              <li v-for="(att, idx) in form.attachments" :key="att.url" class="attachment-item">
+                <span class="name">📎 {{ att.name }}</span>
+                <a v-if="att.url" :href="att.url" target="_blank" rel="noopener" class="link">열기</a>
+                <button type="button" class="mini" @click="removeAttachment(idx)">삭제</button>
+              </li>
+            </ul>
+          </div>
+
+          <div class="actions">
+            <button type="submit" :disabled="uploading">등록</button>
+            <button type="button" @click="goBack">뒤로가기</button>
+          </div>
+        </form>
       </div>
 
-      <!-- 첨부목록 (PDF) -->
-      <div v-if="form.attachments.length" class="attachments">
-        <h4>첨부파일</h4>
-        <ul>
-          <li v-for="(att, idx) in form.attachments" :key="att.url" class="attachment-item">
-            <span class="name">📎 {{ att.name }}</span>
-            <a v-if="att.url" :href="att.url" target="_blank" rel="noopener" class="link">열기</a>
-            <button type="button" class="mini" @click="removeAttachment(idx)">삭제</button>
-          </li>
-        </ul>
-      </div>
-
-      <div class="actions">
-        <button type="submit" :disabled="uploading">등록</button>
-        <button type="button" @click="goBack">뒤로가기</button>
-      </div>
-    </form>
-
-    <!-- ✅ 팝업 차단 시 대체: 오른쪽 도킹 패널 -->
-    <div v-if="showChatDock && isQnA" class="chat-dock">
-      <div class="dock-header">
-        <strong>대화내역</strong>
-        <div class="dock-actions">
-          <button class="mini" @click="popOut">팝업으로</button>
-          <button class="mini danger" @click="showChatDock = false">닫기</button>
+      <!-- ✅ 팝업 차단 시 대체: 오른쪽 도킹 패널 (그대로) -->
+      <div v-if="showChatDock && isQnA" class="chat-dock">
+        <div class="dock-header">
+          <strong>대화내역</strong>
+          <div class="dock-actions">
+            <button class="mini" @click="popOut">팝업으로</button>
+            <button class="mini danger" @click="showChatDock = false">닫기</button>
+          </div>
         </div>
+        <iframe class="dock-frame" :src="chatUrl" referrerpolicy="no-referrer" />
       </div>
-      <iframe class="dock-frame" :src="chatUrl" referrerpolicy="no-referrer" />
     </div>
   </div>
 </template>
@@ -109,7 +128,6 @@ const isQnA = computed(() => (route.params.category || '').toLowerCase() === 'qn
 // ✅ 대화내역 URL (원하는 링크를 .env에 설정: VITE_QNA_CHAT_URL)
 const chatUrl = computed(() => {
   const v = import.meta.env.VITE_QNA_CHAT_URL || '/#/member/disease'
-  // v가 "http"로 시작하면 그대로 사용, 아니면 현재 origin을 붙여서 완전한 URL 생성
   if (/^https?:\/\//i.test(v)) return v
   const prefix = v.startsWith('/') ? '' : '/'
   return `${window.location.origin}${prefix}${v}`
@@ -175,7 +193,6 @@ function triggerPdfPicker() { pdfInput.value?.click() }
 
 // ✅ 팝업 열기 시도 → 차단되면 도킹으로
 function viewChatHistory() {
-  // 팝업 위치/크기 계산(가운데)
   const W = Math.min(920, window.screen.availWidth - 120)
   const H = Math.min(800, window.screen.availHeight - 120)
   const left = window.screenX + Math.max(0, (window.outerWidth - W) / 2)
@@ -201,7 +218,6 @@ function viewChatHistory() {
     try { win.focus() } catch {}
     showChatDock.value = false
   } else {
-    // 팝업 차단 시 도킹으로 표시
     showChatDock.value = true
   }
 }
@@ -276,7 +292,7 @@ async function submitPost() {
         }
       }
     )
-    alert('작성 완료!')
+  alert('작성 완료!')
     router.push({ name: 'CommunityBoard', params: { category: categoryParam } })
   } catch (err) {
     console.error(err)
@@ -288,7 +304,52 @@ function goBack() { router.back() }
 </script>
 
 <style scoped>
-.community-write { padding: 2rem; }
+/* ===== 레이아웃 (사이드바 + 본문) ===== */
+.write-layout{
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 960px){
+  .write-layout{ grid-template-columns: 1fr; }
+}
+.write-content{ min-width: 0; }
+
+/* ===== 사이드바 ===== */
+.sidebar{
+  position: sticky; top: 88px;
+  align-self: start;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 1rem;
+}
+.sidebar-title{
+  font-size: 14px;
+  font-weight: 800;
+  color:#a17a2e;
+  letter-spacing:.08em;
+  margin-bottom:.75rem;
+}
+.board-list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.25rem; }
+/* router-link 내부 a 태그까지 스코프 침투 */
+.board-list :deep(a){
+  display:block;
+  padding:.55rem .65rem;
+  border-radius:8px;
+  color:#444;
+  text-decoration:none;
+}
+.board-list :deep(a:hover){ background:#faf3e1; }
+.board-list :deep(a.active){
+  background:#f5e2b6;
+  color:#3a2b00;
+  font-weight:700;
+}
+
+/* ===== 기존 스타일 유지 ===== */
+.community-write { padding: 2rem; background:#fff; border:1px solid #eee; border-radius:10px; }
 input { display: block; width: 100%; margin-bottom: 1rem; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; }
 
 /* 에디터 */
@@ -306,32 +367,34 @@ input { display: block; width: 100%; margin-bottom: 1rem; padding: 0.6rem; borde
   word-break: break-word;
 }
 .editor:empty:before { content: attr(placeholder); color: #999; }
-.editor img {
+
+/* ✅ 에디터 본문 이미지 스타일 (스코프 적용) */
+.content-body :deep(img) {
   width: 90%;
   max-width: 90%;
   height: auto;
   display: block;
-  margin: .75rem auto;
+  margin: 0.75rem 0 0.75rem 5%;
 }
 
 /* 툴바/버튼 */
-.upload-toolbar { display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0 1rem; flex-wrap: wrap; }
-.btn { padding: 0.5rem 0.9rem; border-radius: 6px; border: none; background: #c99c3c; color: #fff; cursor: pointer; }
-.btn.outline { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
-.hidden-input { display: none; }
+.upload-toolbar { display:flex; align-items:center; gap:0.5rem; margin:0.75rem 0 1rem; flex-wrap:wrap; }
+.btn { padding: 0.5rem 0.9rem; border-radius: 6px; border: none; background: #c99c3c; color:#fff; cursor:pointer; }
+.btn.outline { background:#f5f5f5; color:#333; border:1px solid #ddd; }
+.hidden-input { display:none; }
 
 /* 첨부 목록 */
-.attachments { background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem; }
-.attachments h4 { margin: 0 0 0.5rem; font-size: 1rem; }
-.attachment-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; }
-.attachment-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attachments { background:#fafafa; border:1px solid #eee; border-radius:8px; padding:0.75rem; margin-bottom:1rem; }
+.attachments h4 { margin:0 0 0.5rem; font-size:1rem; }
+.attachment-item { display:flex; align-items:center; gap:0.5rem; padding:0.25rem 0; }
+.attachment-item .name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .attachment-item .link { text-decoration: underline; }
-.attachment-item .mini { padding: 0.3rem 0.6rem; font-size: 0.85rem; background: #e0e0e0; color: #333; border: none; border-radius: 4px; cursor: pointer; }
+.attachment-item .mini { padding:0.3rem 0.6rem; font-size:0.85rem; background:#e0e0e0; color:#333; border:none; border-radius:4px; cursor:pointer; }
 
 /* 액션 */
-.actions { display: flex; gap: 0.5rem; }
-button { padding: 0.6rem 1.2rem; border: none; border-radius: 4px; cursor: pointer; background-color: #c99c3c; color: #fff; }
-button[type="button"] { background-color: #e0e0e0; color: #333; }
+.actions { display:flex; gap:0.5rem; }
+button { padding:0.6rem 1.2rem; border:none; border-radius:4px; cursor:pointer; background-color:#c99c3c; color:#fff; }
+button[type="button"] { background-color:#e0e0e0; color:#333; }
 
 /* ✅ 도킹 패널 */
 .chat-dock {
@@ -340,29 +403,24 @@ button[type="button"] { background-color: #e0e0e0; color: #333; }
   width: min(42vw, 600px);
   min-width: 360px;
   height: 100vh;
-  background: #fff;
-  border-left: 1px solid #e6e6e6;
+  background:#fff;
+  border-left:1px solid #e6e6e6;
   box-shadow: -8px 0 24px rgba(0,0,0,0.08);
   z-index: 2000;
-  display: flex;
-  flex-direction: column;
+  display:flex; flex-direction:column;
 }
 .dock-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: .6rem .8rem;
-  border-bottom: 1px solid #eee;
-  background: #f8f8f8;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.6rem .8rem; border-bottom:1px solid #eee; background:#f8f8f8;
 }
-.dock-actions { display: flex; gap: .4rem; }
+.dock-actions { display:flex; gap:.4rem; }
 .dock-actions .mini {
-  padding: .3rem .6rem; font-size: .85rem; border: 1px solid #ddd;
-  background: #fafafa; border-radius: 6px; color: #333; cursor: pointer;
+  padding:.3rem .6rem; font-size:.85rem; border:1px solid #ddd;
+  background:#fafafa; border-radius:6px; color:#333; cursor:pointer;
 }
-.dock-actions .mini.danger { background: #ffecec; border-color: #ffc8c8; color: #c0392b; }
-.dock-frame { width: 100%; height: calc(100% - 42px); border: 0; }
-@media (max-width: 920px) {
-  .chat-dock { width: 100vw; min-width: 0; }
+.dock-actions .mini.danger { background:#ffecec; border-color:#ffc8c8; color:#c0392b; }
+.dock-frame { width:100%; height:calc(100% - 42px); border:0; }
+@media (max-width: 920px){
+  .chat-dock { width:100vw; min-width:0; }
 }
 </style>

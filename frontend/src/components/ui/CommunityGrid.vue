@@ -1,4 +1,4 @@
-<!-- ✅ 파일 경로: src/components/ui/CommunityGrid.vue -->
+<!-- ✅ 파일: src/components/ui/CommunityGrid.vue -->
 <template>
   <div class="community-board">
     <h2 class="board-title">커뮤니티</h2>
@@ -76,8 +76,9 @@
           v-for="(post, index) in filteredPosts"
           :key="post.id"
           class="post-row"
-          @click="goDetail(post.id)"
-          style="cursor: pointer;"
+          :class="{ locked: isLockedRow(post), clickable: !isLockedRow(post) }"
+          :style="{ cursor: isLockedRow(post) ? 'not-allowed' : 'pointer' }"
+          @click="onRowClick(post)"
         >
           <!-- 행 개별 선택(ADMIN 전용) -->
           <td v-if="isAdmin" @click.stop>
@@ -90,11 +91,22 @@
             />
           </td>
           <td>{{ index + 1 }}</td>
-          <td>{{ post.title }}</td>
+
+          <!-- 🔒 잠금 표시/노출 -->
+          <td>
+            <template v-if="isLockedRow(post)">
+              🔒 잠긴 글입니다.
+            </template>
+            <template v-else>
+              {{ post.title }}
+            </template>
+          </td>
+
           <td>{{ maskId(post.author) }}</td>
           <td>{{ formatDate(post.createdAt) }}</td>
           <td>{{ post.views }}</td>
         </tr>
+
         <tr v-if="filteredPosts.length === 0">
           <!-- ADMIN일 때는 컬럼 수가 +1 -->
           <td :colspan="isAdmin ? 6 : 5" class="no-posts">게시글이 없습니다.</td>
@@ -110,29 +122,32 @@ import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { maskId } from '@/utils/mask'
 
-// 탭 리스트
+/* ------------------------------------
+ * 상태
+ * ------------------------------------ */
 const tabs = ['자유게시판', '공지사항', 'QnA']
 const route = useRoute()
 const router = useRouter()
 
-// 선택된 탭
 const selectedTab = ref('자유게시판')
-// 검색/필터
 const filter = ref('title')
 const search = ref('')
-// 글 목록
 const posts = ref([])
 
-// 선택된 게시글 ID 목록(ADMIN 전용)
+// ADMIN만: 행 선택 삭제
 const selectedIds = ref([])
 
-// ---- 권한/헤더 유틸 ----
+// 로그인/권한
 const userRole = ref(localStorage.getItem('role') || '')
+const accessToken = ref(localStorage.getItem('accessToken') || '')
 
-function refreshRole() {
-  userRole.value = localStorage.getItem('role') || ''
+function refreshAuth() {
+  userRole.value   = localStorage.getItem('role') || ''
+  accessToken.value = localStorage.getItem('accessToken') || ''
 }
+
 const role = computed(() => (userRole.value || '').toUpperCase())
+const loggedIn = computed(() => !!accessToken.value)
 const isAdmin = computed(() => role.value === 'ADMIN')
 
 function authHeaders() {
@@ -140,48 +155,92 @@ function authHeaders() {
   const t = localStorage.getItem('accessToken') || ''
   return {
     Role: r,
-    'X-Role': r, // 프록시/게이트웨이에서 Role 헤더 드랍 대비
+    'X-Role': r,
     ...(t ? { Authorization: 'Bearer ' + t } : {})
   }
 }
 
-// ✅ 같은 참조로 등록/해제되도록 수정
+// storage 이벤트로 로그인/로그아웃 반영
 function onStorage(e) {
-  if (e.key === 'role') refreshRole()
+  if (e.key === 'role' || e.key === 'accessToken') refreshAuth()
 }
 window.addEventListener('storage', onStorage)
 
-// 쓰기 권한 계산
+/* ------------------------------------
+ * 탭별 쓰기 권한
+ * ------------------------------------ */
 const canWrite = computed(() => {
   switch (selectedTab.value) {
-    case '자유게시판': return ['USER','MEMBER','VETERINARIAN','ADMIN'].includes(role.value)
-    case 'QnA':        return role.value === 'MEMBER'
-    case '공지사항':     return role.value === 'ADMIN'
-    default:            return false
+    case '자유게시판':
+      return ['USER','MEMBER','VETERINARIAN','ADMIN'].includes(role.value)
+    case 'QnA':
+      return role.value === 'MEMBER'
+    case '공지사항':
+      return role.value === 'ADMIN'
+    default:
+      return false
   }
 })
 
-// URL 파라미터 ↔ 탭 매핑
+/* ------------------------------------
+ * 탭 ↔ 라우트 매핑
+ * ------------------------------------ */
 const mapParamToTab = param => ({ free: '자유게시판', notice: '공지사항', qna: 'QnA' }[param] || '자유게시판')
 const mapTabToParam = tab   => ({ '자유게시판': 'free', '공지사항': 'notice', 'QnA': 'qna' }[tab] || 'free')
 
-// 데이터 로드
+/* ------------------------------------
+ * 데이터 로드
+ * ------------------------------------ */
 async function loadPosts() {
   try {
-    refreshRole()
+    refreshAuth()
     const param = mapTabToParam(selectedTab.value)
     const res = await axios.get(
       import.meta.env.VITE_GW_URL + `/posts?category=${encodeURIComponent(param)}`,
       { headers: authHeaders() }
     )
     posts.value = res.data
-    selectedIds.value = [] // 목록 갱신 시 선택 초기화
+    selectedIds.value = []
   } catch (err) {
     console.error('포스트 불러오기 실패', err)
   }
 }
 
-// 상세 이동 + 조회수 증가
+/* ------------------------------------
+ * 접근 권한 규칙
+ * 1) 자유게시판: 누구나 열람 가능
+ * 2) QnA: MEMBER, ADMIN, VETERINARIAN만 열람 가능
+ * 3) 공지사항: "로그인 사용자"만 열람 가능
+ * ------------------------------------ */
+const QNA_ALLOWED = new Set(['MEMBER', 'ADMIN', 'VETERINARIAN'])
+
+function isLockedRow(_post) {
+  if (selectedTab.value === '자유게시판') return false
+  if (selectedTab.value === 'QnA') {
+    return !QNA_ALLOWED.has(role.value) // USER 또는 비로그인 → 잠김
+  }
+  if (selectedTab.value === '공지사항') {
+    return !loggedIn.value // 비로그인 → 잠김
+  }
+  return false
+}
+
+async function onRowClick(post) {
+  if (isLockedRow(post)) {
+    // 잠금 안내만
+    if (selectedTab.value === 'QnA') {
+      alert('해당 글은 권한이 있는 회원만 볼 수 있어요. (MEMBER / VETERINARIAN / ADMIN)')
+    } else if (selectedTab.value === '공지사항') {
+      alert('로그인 후 확인하실 수 있어요.')
+    }
+    return
+  }
+  await goDetail(post.id)
+}
+
+/* ------------------------------------
+ * 상세 이동 + 조회수 증가(가능한 경우)
+ * ------------------------------------ */
 async function goDetail(id) {
   const cat = mapTabToParam(selectedTab.value)
   try {
@@ -194,6 +253,9 @@ async function goDetail(id) {
   router.push({ name: 'PostDetail', params: { category: cat, id } })
 }
 
+/* ------------------------------------
+ * 기타 UI 핸들러
+ * ------------------------------------ */
 function changeTab(tab) {
   selectedTab.value = tab
   router.push({ path: `/community/${mapTabToParam(tab)}` })
@@ -203,8 +265,11 @@ function goWritePage() {
 }
 function onSearch() { /* TODO: 서버 검색 붙이면 여기에서 호출 */ }
 
+/* ------------------------------------
+ * 생명주기
+ * ------------------------------------ */
 onMounted(() => {
-  refreshRole()
+  refreshAuth()
   selectedTab.value = mapParamToTab(route.params.category)
   loadPosts()
 })
@@ -216,17 +281,18 @@ watch(() => route.params.category, val => {
   loadPosts()
 })
 
+/* ------------------------------------
+ * 파생값
+ * ------------------------------------ */
 const filteredPosts = computed(() =>
   posts.value.filter(p => !search.value || p[filter.value]?.toLowerCase().includes(search.value.toLowerCase()))
 )
 
-// 전체 선택 체크 상태
 const allSelected = computed(() =>
   filteredPosts.value.length > 0 &&
   selectedIds.value.length === filteredPosts.value.map(p => p.id).filter(Boolean).length
 )
 
-// 헤더 체크박스 토글
 function toggleSelectAll(e) {
   if (e.target.checked) {
     selectedIds.value = filteredPosts.value.map(p => p.id).filter(Boolean)
@@ -235,7 +301,9 @@ function toggleSelectAll(e) {
   }
 }
 
-// 선택 삭제(ADMIN 전용)
+/* ------------------------------------
+ * ADMIN: 선택 삭제
+ * ------------------------------------ */
 async function confirmBulkDelete() {
   if (!isAdmin.value || selectedIds.value.length === 0) return
   const yes = confirm(`선택한 ${selectedIds.value.length}건을 삭제할까요?`)
@@ -244,7 +312,6 @@ async function confirmBulkDelete() {
   const base = (import.meta.env.VITE_GW_URL || '').replace(/\/+$/, '')
 
   try {
-    // 서버: DELETE /posts/{id} (PostController.deletePost) — ADMIN만 허용
     await Promise.all(
       selectedIds.value.map(id =>
         axios.delete(`${base}/posts/${id}`, { headers: authHeaders() })
@@ -265,7 +332,6 @@ function formatDate(raw) {
 </script>
 
 <style scoped>
-/* 기존 CSS 유지 */
 .community-board { background-color: transparent; padding: 2rem; font-family: 'Noto Sans KR', sans-serif; color: #3b3b3b; }
 .board-title { font-size: 24px; font-weight: bold; margin-bottom: 1.5rem; }
 .tab-list { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
@@ -276,7 +342,6 @@ function formatDate(raw) {
 .search-select, .search-input { border: 1px solid #ddd; padding: 6px 10px; border-radius: 6px; background-color: #fff; }
 .search-button, .write-button { background-color: #c99c3c; color: #fff; padding: 6px 14px; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; }
 
-/* 선택 삭제 버튼 스타일 */
 .delete-button { background-color: #e14b4b; color: #fff; padding: 6px 14px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
 .delete-button:disabled { opacity: .45; cursor: not-allowed; }
 
@@ -284,4 +349,8 @@ function formatDate(raw) {
 .post-table th, .post-table td { padding: 10px 12px; border-bottom: 1px solid #e6e6e6; text-align: left; }
 .post-table th { background-color: #f2f2f2; font-weight: 600; color: #666; }
 .no-posts { text-align: center; color: #aaa; padding: 2rem; }
+
+/* 행 상태 시그널 */
+.post-row.locked { opacity: 0.85; }
+.post-row.clickable:hover { background: #fffaf0; }
 </style>
