@@ -29,13 +29,16 @@
         <input type="text" v-model="userInput" placeholder="답변을 입력해주세요" @keyup.enter="sendMessage" />
         <v-btn @click="sendMessage">보내기</v-btn>
       </div>
+      <div class="qna-section" v-if="showQnaBtn">
+        <v-btn color="primary" @click="goQnA" :loading="isSaving">QnA로 이어서 질문하기</v-btn>
+      </div>
     </div>
   </v-sheet>
 </template>
 
 <script>
 import axios from 'axios'
-axios.defaults.baseURL = "https://8083-dlafhr789-forbee-zz46g74qo20.ws-us120.gitpod.io"
+axios.defaults.baseURL = "https://8083-dlafhr789-forbee-zz46g74qo20.ws-us121.gitpod.io"
 
 export default {
   data() {
@@ -43,6 +46,10 @@ export default {
       userInput: "",
       isLoading: false,     // 파일 업로드 버튼 로딩
       userId: "",
+      showQnaBtn: false,
+      isSaving: false,
+      lastSessionId: null,
+      isBotLoading: false,
       messages: [
         { sender: "bot", type: "text", text: "꿀벌 질병/해충 탐지 서비스에 오신걸 환영합니다~! 분석을 원하는 사진을 올려주세요 🤓✨" }
       ],
@@ -81,6 +88,13 @@ export default {
           payload.questions.forEach((q, idx) => {
             this.messages.push({ sender: "bot", type: "text", text: `${idx + 1}. ${q}` })
           })
+        }
+
+        // 종료 조건(처방문 있고 추가질문 없음) → QnA 버튼 ON
+        if (mainText && (!payload.questions || payload.questions.length === 0)) {
+          this._removeBotLoadingMessage()
+          this.isBotLoading = false
+          this.showQnaBtn = true;
         }
 
         // 3) 혹시 아무 키도 못 찾으면 raw 데이터
@@ -193,9 +207,42 @@ export default {
         this.messages.push({ sender: "bot", type: "text", text })
       } else {
         const realIdx = this.messages.length - 1 - idx
-        // Vue2 옵션 API: this.$set 사용, Vue3는 반응형이라 직접 대입으로도 OK
         this.$set ? this.$set(this.messages, realIdx, { ...this.messages[realIdx], text }) :
           (this.messages[realIdx] = { ...this.messages[realIdx], text })
+      }
+    },
+
+    async goQnA() {
+      if (this.isBotLoading) return
+      this._removeBotLoadingMessage()
+      this.isSaving = true;
+      try {
+        // 서버에 저장 (Spring 예시: /api/chat-sessions)
+        const payload = {
+          userId: this.userId,
+          messages: this.messages
+            .filter(m => m.type !== 'loading')
+            .map((m, i) => ({
+              sender: m.sender,
+              type: m.type,
+              text: m.text || null,
+              url: m.url || null,
+              ts: Date.now() + i
+            }))
+        }
+        await axios.post('/api/chat-sessions', payload, { headers: { userId: this.userId } })
+        this.$router.push({ path: '/community/qna/write' });
+
+      } catch (e) {
+        console.warn('서버 저장 실패 → localStorage fallback', e);
+        const fallbackId = `local-${Date.now()}`;
+        localStorage.setItem(`chat:${fallbackId}`, JSON.stringify({
+          userId: this.userId,
+          messages: this.messages
+        }));
+        this.$router.push({ path: '/community/qna/write' });
+      } finally {
+        this.isSaving = false;
       }
     }
   }

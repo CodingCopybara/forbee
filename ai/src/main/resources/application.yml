@@ -10,15 +10,16 @@ spring:
   main:
     allow-bean-definition-overriding: true
   datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:testdb
-    username: sa
-    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://forbee-ai-db.mysql.database.azure.com:3306/ai?useSSL=true&requireSSL=false
+    username: forbeeai
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
         show_sql: true
         format_sql: true
   kafka:
@@ -54,8 +55,8 @@ spring:
   #         destination: forbee
   #         contentType: application/json
 
-fastapi:
-  url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-zz46g74qo20.ws-us120.gitpod.io}
+  fastapi:
+    url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-zz46g74qo20.ws-us121.gitpod.io}
 
 azure:
   storage:
@@ -77,15 +78,16 @@ spring:
   main:
     allow-bean-definition-overriding: true
   datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:testdb
-    username: sa
-    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://forbee-ai-db.mysql.database.azure.com:3306/ai?useSSL=true&requireSSL=false
+    username: forbeeai
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
         show_sql: true
         format_sql: true
   security:
@@ -116,7 +118,7 @@ spring:
   #         contentType: application/json
 
 fastapi:
-  url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-zz46g74qo20.ws-us120.gitpod.io}
+  url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-zz46g74qo20.ws-us121.gitpod.io}
 
 azure:
   storage:
