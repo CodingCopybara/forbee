@@ -1,8 +1,32 @@
 <template>
   <v-container class="fill-height" style="background-color: #F8F4E1;">
     <v-row justify="center" align="center">
-      <v-col cols="12" sm="7" md="5" lg="3">
+      <v-col cols="12" sm="12" md="10" lg="6">
+        <div v-if="!passwordVerified">
+          <v-dialog v-model="dialog" persistent max-width="400px">
+            <v-card>
+              <v-card-title>
+                <span class="headline">비밀번호 확인</span>
+              </v-card-title>
+              <v-card-text>
+                <v-text-field
+                  v-model="password"
+                  label="비밀번호"
+                  type="password"
+                  required
+                  @keyup.enter="verifyPassword"
+                ></v-text-field>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="blue darken-1" text @click="verifyPassword">확인</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+        </div>
+
         <v-card 
+          v-if="passwordVerified"
           class="pa-6"
           elevation="10" 
           rounded="lg"
@@ -62,28 +86,68 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import axios from 'axios' // axios import 추가
+import axios from 'axios'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const router = useRouter()
 const user = ref({
   email: '',
   name: '',
   role: '',
   userIdentifier: null,
 })
+const password = ref('')
+const passwordVerified = ref(false)
+const dialog = ref(true)
 
-onMounted(async () => {
+onMounted(() => {
+  const accessToken = localStorage.getItem('accessToken');
+  if (!accessToken) {
+    router.push('/login');
+  }
+})
+
+const verifyPassword = async () => {
+  try {
+    const response = await axios.post(
+      import.meta.env.VITE_GW_URL + '/oauth/token',
+      new URLSearchParams({
+        grant_type: 'password',
+        username: authStore.username,
+        password: password.value,
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: 'Basic ' + btoa('uengine-client:uengine-secret'),
+        },
+      }
+    );
+
+    if (response.data.access_token) {
+      passwordVerified.value = true;
+      dialog.value = false;
+      fetchUserData();
+    }
+  } catch (error) {
+    console.error('Password verification failed:', error);
+    alert('비밀번호가 일치하지 않습니다.');
+  }
+};
+
+const fetchUserData = async () => {
+  const accessToken = localStorage.getItem('accessToken');
   user.value.email = authStore.username || 'N/A'
   user.value.userIdentifier = authStore.userIdentifier
 
   if (authStore.userIdentifier) {
-    const accessToken = localStorage.getItem('accessToken'); // localStorage에서 accessToken 가져오기
     try {
       const response = await axios.get(
         import.meta.env.VITE_GW_URL+`/users/${authStore.userIdentifier}`,
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`, // Authorization 헤더에 JWT 추가
+            Authorization: `Bearer ${accessToken}`,
           },
         }
       );
@@ -98,14 +162,14 @@ onMounted(async () => {
     user.value.name = '로그인 필요'
     user.value.role = '로그인 필요'
   }
-})
+}
 
 const changePassword = () => {
   alert('비밀번호 변경 기능은 아직 구현되지 않았습니다.')
 }
 
 const requestMemberUpgrade = () => {
-  alert('조합원 신청 기능은 아직 구현되지 않았습니다.')
+  router.push('/member-upgrade');
 }
 </script>
 

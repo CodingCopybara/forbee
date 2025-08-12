@@ -67,6 +67,7 @@
             <div>사업자등록번호 203-82-32164(본사) | 139-82-01832(경제사업부) | 558-82-00295(구매사업단)</div>
             <div>사업장 소재지[본점] 서울특별시 중구 다산로 178 한국양봉농협 본점</div>
             <div>대표전화 02-2231-9856(본점) | 031-671-5000(경제사업부) | 팩스 031-671-6880</div>
+            <div><a href="https://yangbongnh.com/member/privacy.html" target="_blank" style="color: black;"><strong>개인정보처리방침</strong></a></div>
             <div class="mt-2">&copy; 한국양봉농협</div>
           </v-col>
         </v-row>

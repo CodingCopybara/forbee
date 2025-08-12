@@ -1,7 +1,7 @@
 <template>
   <v-container class="fill-height" style="background-color: #F8F4E1;">
     <v-row justify="center" align="center">
-      <v-col cols="12" sm="7" md="5" lg="3">
+      <v-col cols="12" sm="12" md="8" lg="5">
         <v-card 
           class="pa-6"
           elevation="10" 
@@ -11,7 +11,7 @@
             회원가입
           </v-card-title>
           <v-card-text>
-            <v-form @submit.prevent="register">
+            <v-form @submit.prevent="register" ref="registerForm">
               <v-text-field
                 v-model="email"
                 label="이메일"
@@ -22,6 +22,7 @@
                 flat
                 class="mb-3"
                 dense
+                :rules="emailRules"
               ></v-text-field>
               <v-text-field
                 v-model="password"
@@ -34,6 +35,7 @@
                 flat
                 class="mb-3"
                 dense
+                :rules="passwordRules"
               ></v-text-field>
               <v-text-field
                 v-model="confirmPassword"
@@ -46,6 +48,7 @@
                 flat
                 class="mb-3"
                 dense
+                :rules="confirmPasswordRules"
               ></v-text-field>
               <v-text-field
                 v-model="name"
@@ -107,11 +110,28 @@ const confirmPassword = ref('')
 const name = ref('')
 const privacyAgreement = ref(false)
 const router = useRouter()
+const registerForm = ref(null);
+
+const emailRules = [
+  v => !!v || '이메일을 입력해주세요.',
+  v => /.+@.+\..+/.test(v) || '유효한 이메일 형식이 아닙니다.',
+];
+
+const passwordRules = [
+  v => !!v || '비밀번호를 입력해주세요.',
+  v => (v && v.length >= 4 && v.length <= 12) || '비밀번호는 4자 이상 12자 이하로 입력해주세요.',
+];
+
+const confirmPasswordRules = [
+  v => !!v || '비밀번호 확인을 입력해주세요.',
+  v => v === password.value || '비밀번호가 일치하지 않습니다.',
+];
 
 const register = async () => {
-  if (password.value !== confirmPassword.value) {
-    alert('비밀번호가 일치하지 않습니다.')
-    return
+  const { valid } = await registerForm.value.validate();
+  if (!valid) {
+    alert('입력한 정보를 다시 확인해주세요.');
+    return;
   }
 
   if (!privacyAgreement.value) {

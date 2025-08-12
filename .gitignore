@@ -77,3 +77,14 @@ buildNumber.properties
 .secrets/
 secrets.yml
 secrets.yaml
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Other
+.msaez/
+.nvmrc
+
+GEMINI.md
