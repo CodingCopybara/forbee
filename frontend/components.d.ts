@@ -52,6 +52,7 @@ declare module '@vue/runtime-core' {
     MemberEnv: typeof import('./src/components/vo/MemberEnv.vue')['default']
     MemberGrid: typeof import('./src/components/ui/MemberGrid.vue')['default']
     MemberRequestList: typeof import('./src/components/MemberRequestList.vue')['default']
+    MemberUpgrade: typeof import('./src/components/ui/MemberUpgrade.vue')['default']
     Money: typeof import('./src/components/vo/Money.vue')['default']
     MyPage: typeof import('./src/components/ui/MyPage.vue')['default']
     Number: typeof import('./src/components/primitives/Number.vue')['default']
