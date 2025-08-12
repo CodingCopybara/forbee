@@ -10,6 +10,7 @@ import javax.transaction.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 
+@CrossOrigin(origins = "*")
 @RestController
 @Transactional
 public class PlantController {
