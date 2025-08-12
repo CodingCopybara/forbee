@@ -1,23 +1,40 @@
-package forbee.infra;
+@PostMapping("/plants/predict-Bloom")
+public String predictBloom(
+    @RequestParam int year,
+    @RequestParam String location,
+    @RequestParam String species
+) {
+    try {
+        String scriptPath = "/workspace/forbee/tree/src/main/model/predict_bloom.py";
 
-import forbee.domain.*;
-import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+        ProcessBuilder pb = new ProcessBuilder(
+            pythonExe,
+            scriptPath,
+            "--year", String.valueOf(year),
+            "--location", location,
+            "--species", species
+        );
+        
+        // 에러 확인
+        pb.redirectErrorStream(false); 
+        Process process = pb.start();
 
-//<<< Clean Arch / Inbound Adaptor
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        StringBuilder output = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            output.append(line);
+        }
 
-@RestController
-// @RequestMapping(value="/plants")
-@Transactional
-public class PlantController {
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            return "Python 스크립트 실행 실패: 종료 코드 " + exitCode;
+        }
 
-    @Autowired
-    PlantRepository plantRepository;
+        return output.toString().trim();
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return "예측 중 오류 발생: " + e.getMessage();
+    }
 }
-//>>> Clean Arch / Inbound Adaptor
