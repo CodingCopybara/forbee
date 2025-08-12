@@ -53,24 +53,24 @@ user_memory = {}
 
 current_userId = None
 
-def get_state(userId: int):
+def get_state(userId: str):
     return user_states.setdefault(userId, {})
 
-def set_state(userId: int, state: dict):
+def set_state(userId: str, state: dict):
     user_states[userId] = state
 
-def get_user_memory(userId: int):
+def get_user_memory(userId: str):
     """사용자별 메모리 객체 반환"""
     if userId not in user_memory:
         user_memory[userId] = ConversationBufferMemory(return_messages=True)
     return user_memory[userId]
 
-def get_conversation_chain(userId: int):
+def get_conversation_chain(userId: str):
     """사용자별 Memory를 사용하는 ConversationChain 생성"""
     memory = get_user_memory(userId)
     return ConversationChain(llm=llm, memory=memory)
 
-def generate_prescription_user(state: dict, userId: int) -> dict:
+def generate_prescription_user(state: dict, userId: str) -> dict:
     """userId 기반 ConversationChain을 사용하는 초기 처방 생성"""
     chain = get_conversation_chain(userId)
 
@@ -102,7 +102,7 @@ def generate_prescription_user(state: dict, userId: int) -> dict:
 
 from agent.rag_agent import generate_final_prescription as generate_final_prescription_node
 
-def generate_final_prescription_user(state: dict, userId: int) -> dict:
+def generate_final_prescription_user(state: dict, userId: str) -> dict:
     """userId 기반 ConversationChain을 사용하는 최종 처방 생성"""
     chain = get_conversation_chain(userId)
 
@@ -137,7 +137,7 @@ def generate_final_prescription_user(state: dict, userId: int) -> dict:
     state["prescription"] = response
     return state
 
-def generate_question_user(state: DiseaseState, userId: int) -> DiseaseState:
+def generate_question_user(state: DiseaseState, userId: str) -> DiseaseState:
     chain = get_conversation_chain(userId)
     
     prompt = f"""
@@ -188,7 +188,7 @@ workflow.add_edge("generate_pre", END)
 # 그래프 컴파일
 graph = workflow.compile()
 
-def run_agent(userId: int, disease_name: str, confidence: float, memory: ConversationBufferMemory) -> dict:
+def run_agent(userId: str, disease_name: str, confidence: float, memory: ConversationBufferMemory) -> dict:
     """
     YOLO 결과 → 초기 진단 → 질문 또는 처방
     """
@@ -212,7 +212,7 @@ def run_agent(userId: int, disease_name: str, confidence: float, memory: Convers
     return {"prescription": state["prescription"], "response": state["prescription"]}
 
 
-def process_user_answers_with_state(userId: int, answers: list[str], memory: ConversationBufferMemory) -> dict:
+def process_user_answers_with_state(userId: str, answers: list[str], memory: ConversationBufferMemory) -> dict:
     """
     사용자 답변 기반 → 기존 상태(state) 업데이트 후 최종 처방 생성
     """

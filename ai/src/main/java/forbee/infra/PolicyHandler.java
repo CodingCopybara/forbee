@@ -45,13 +45,9 @@ public class PolicyHandler {
             }
 
             Object userIdObj = data.get("userId");
-            Long userId = null;
-            if (userIdObj != null) {
-                try {
-                    userId = Long.valueOf(userIdObj.toString());
-                } catch (NumberFormatException e) {
-                    System.out.println("userId 변환 오류: " + userIdObj);
-                }
+            String userId = (userIdObj == null) ? null : userIdObj.toString().trim();
+            if (userId == null || userId.isEmpty()) {
+                System.out.println("userId가 비어있습니다. 이벤트 라우팅/SSE 전달이 제한될 수 있습니다.");
             }
 
             // 2. 관심 질병 라벨 매핑

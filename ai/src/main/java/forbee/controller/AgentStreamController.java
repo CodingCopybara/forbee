@@ -26,14 +26,14 @@ public class AgentStreamController {
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<AgentResponse>> stream(@RequestParam Long userId) {
+    public Flux<ServerSentEvent<AgentResponse>> stream(@RequestParam String userId) {
         // EmitterProcessor<T> 자체가 Flux<T>라서 asFlux() 불필요
         return stream.getSink(userId)
                 .map(data -> ServerSentEvent.builder(data).event("agent").build());
     }
 
     @GetMapping("/result")
-    public ResponseEntity<AgentResponse> latest(@RequestParam Long userId) {
+    public ResponseEntity<AgentResponse> latest(@RequestParam String userId) {
         AgentResponse json = store.get(userId);
         return (json == null) ? ResponseEntity.noContent().build() : ResponseEntity.ok(json);
     }

@@ -210,7 +210,7 @@ def generate_prescription(state: "DiseaseState") -> "DiseaseState":
     return state
 
 # 심각도 <= 2: 추가 정보 얻기 위해 질문
-def generate_question(state: DiseaseState, userId: int) -> DiseaseState:
+def generate_question(state: DiseaseState, userId: str) -> DiseaseState:
     chain = get_conversation_chain(userId)
     
     disease_info = state["disease_info"]["raw"]

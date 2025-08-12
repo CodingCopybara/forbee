@@ -75,7 +75,10 @@ const router = createRouter({
     {
       path: '/member-upgrade',
       component: () => import('../components/ui/MemberUpgrade.vue'),
-    },
+    },{
+      path: '/history',
+      component: () => import('../components/ui/QnaHistory.vue'),
+    }
   ],
 });
 

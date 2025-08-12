@@ -29,20 +29,26 @@
         <input type="text" v-model="userInput" placeholder="답변을 입력해주세요" @keyup.enter="sendMessage" />
         <v-btn @click="sendMessage">보내기</v-btn>
       </div>
+      <div class="qna-section" v-if="showQnaBtn">
+        <v-btn color="primary" @click="goQnA" :loading="isSaving">QnA로 이어서 질문하기</v-btn>
+      </div>
     </div>
   </v-sheet>
 </template>
 
 <script>
 import axios from 'axios'
-axios.defaults.baseURL = "https://8083-dlafhr789-forbee-zz46g74qo20.ws-us120.gitpod.io"
 
 export default {
   data() {
     return {
       userInput: "",
       isLoading: false,     // 파일 업로드 버튼 로딩
-      userId: "102",
+      userId: "",
+      showQnaBtn: false,
+      isSaving: false,
+      lastSessionId: null,
+      isBotLoading: false,
       messages: [
         { sender: "bot", type: "text", text: "꿀벌 질병/해충 탐지 서비스에 오신걸 환영합니다~! 분석을 원하는 사진을 올려주세요 🤓✨" }
       ],
@@ -52,11 +58,14 @@ export default {
 
   mounted() {
     // 에이전트 결과 실시간 구독
-    const streamUrl = `${axios.defaults.baseURL}/ai/stream?userId=${encodeURIComponent(this.userId)}`
+    const email = localStorage.getItem('username') || '';
+    this.userId = email.includes('@') ? email.split('@')[0] : email;
+
+    const streamUrl = `${import.meta.env.VITE_GW_URL}/ai/stream?userId=${encodeURIComponent(this.userId)}`
     this.es = new EventSource(streamUrl)
 
     this.es.addEventListener("agent", (evt) => {
-      // 봇 응답 도착 → 로딩 말풍선 제거
+      this.isBotLoading = false;
       this._removeBotLoadingMessage()
 
       try {
@@ -78,6 +87,13 @@ export default {
           payload.questions.forEach((q, idx) => {
             this.messages.push({ sender: "bot", type: "text", text: `${idx + 1}. ${q}` })
           })
+        }
+
+        // 종료 조건(처방문 있고 추가질문 없음) → QnA 버튼 ON
+        if (mainText && (!payload.questions || payload.questions.length === 0)) {
+          this._removeBotLoadingMessage()
+          this.isBotLoading = false
+          this.showQnaBtn = true;
         }
 
         // 3) 혹시 아무 키도 못 찾으면 raw 데이터
@@ -108,14 +124,16 @@ export default {
       const localPreview = URL.createObjectURL(file)
       this.messages.push({ sender: "user", type: "image", url: localPreview })
       this.isLoading = true
+      this.isBotLoading = true;
+      this._addBotLoadingMessage()
 
-      try {
-        // 봇 로딩 말풍선 추가
-        this._addBotLoadingMessage()
-
+      try {     
         // 1) 업로드용 SAS 발급
-        const { data: sas } = await axios.get("/ai/wsas", {
+        const { data: sas } = await axios.get(import.meta.env.VITE_GW_URL + "/ai/wsas", {
           params: { fileName: file.name },
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("accessToken")
+          }
         })
         const { uploadUrl, blobUrl, fileName } = sas
         if (!uploadUrl || !fileName) throw new Error("업로드용 SAS 또는 파일명이 없습니다.")
@@ -134,11 +152,20 @@ export default {
         this.messages.push({ sender: "bot", type: "text", text: "업로드 완료! 분석을 시작할게요 🔎" })
 
         // 3) 읽기 URL 확보
-        const { data: ro } = await axios.get("/ai/rsas", { params: { fileName } })
+        const { data: ro } = await axios.get( import.meta.env.VITE_GW_URL + "/ai/rsas", { 
+          params: { fileName },
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("accessToken")
+          } 
+        })
         const imageUrl = ro?.readOnlyUrl ?? blobUrl
 
         // 4) 분석 요청
-        await axios.post("/ai/analysis", { userId: this.userId, imageUrl })
+        await axios.post( import.meta.env.VITE_GW_URL + "/ai/analysis", { userId: this.userId, imageUrl },{
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("accessToken")
+          }}
+        )
 
         this.messages.push({ sender: "bot", type: "text", text: "분석 요청 접수 완료! 결과가 준비되면 알려드릴게요 🐝" })
       } catch (err) {
@@ -157,15 +184,14 @@ export default {
       const message = this.userInput
       this.messages.push({ sender: "user", type: "text", text: message })
       this.userInput = ""
-
-      // 봇 로딩 말풍선 추가
-      this._addBotLoadingMessage()
+      this.isBotLoading = true;
+      this._addBotLoadingMessage();
 
       try {
         await axios.post(
-          "/api/answer",
+          import.meta.env.VITE_GW_URL + "/api/answer",
           { answers: [message] },
-          { headers: { userId: this.userId } }
+          { headers: { userId: this.userId, Authorization: "Bearer " + localStorage.getItem("accessToken") } }
         )
       } catch (err) {
         console.error("답변 전송 오류", err)
@@ -192,9 +218,42 @@ export default {
         this.messages.push({ sender: "bot", type: "text", text })
       } else {
         const realIdx = this.messages.length - 1 - idx
-        // Vue2 옵션 API: this.$set 사용, Vue3는 반응형이라 직접 대입으로도 OK
         this.$set ? this.$set(this.messages, realIdx, { ...this.messages[realIdx], text }) :
           (this.messages[realIdx] = { ...this.messages[realIdx], text })
+      }
+    },
+
+    async goQnA() {
+      if (this.isBotLoading) return
+      this._removeBotLoadingMessage()
+      this.isSaving = true;
+      try {
+        // 서버에 저장 (Spring 예시: /api/chat-sessions)
+        const payload = {
+          userId: this.userId,
+          messages: this.messages
+            .filter(m => m.type !== 'loading')
+            .map((m, i) => ({
+              sender: m.sender,
+              type: m.type,
+              text: m.text || null,
+              url: m.url || null,
+              ts: Date.now() + i
+            }))
+        }
+        await axios.post( import.meta.env.VITE_GW_URL + '/api/chat-sessions', payload, { headers: { userId: this.userId, Authorization: "Bearer " + localStorage.getItem("accessToken") } })
+        this.$router.push({ path: '/community/qna/write' });
+
+      } catch (e) {
+        console.warn('서버 저장 실패 → localStorage fallback', e);
+        const fallbackId = `local-${Date.now()}`;
+        localStorage.setItem(`chat:${fallbackId}`, JSON.stringify({
+          userId: this.userId,
+          messages: this.messages
+        }));
+        this.$router.push({ path: '/community/qna/write' });
+      } finally {
+        this.isSaving = false;
       }
     }
   }

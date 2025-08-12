@@ -88,3 +88,4 @@ __pycache__/
 .nvmrc
 
 GEMINI.md
+.sqlite3
