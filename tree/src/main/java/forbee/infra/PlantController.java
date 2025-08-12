@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @Transactional
 public class PlantController {
 
-    @PostMapping("/plants/predict-Bloom")
+    @PostMapping("/plants/predict-bloom")
     public String predictBloom(
         @RequestParam int year,
         @RequestParam String location,
@@ -32,7 +32,7 @@ public class PlantController {
                 "--species", species
             );
 
-            pb.redirectErrorStream(true); // 에러도 표준출력에 합침
+            pb.redirectErrorStream(true); // 에러도 표준출력에 합칠지 여부
             Process process = pb.start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
