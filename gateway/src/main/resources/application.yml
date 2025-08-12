@@ -21,6 +21,10 @@ spring:
            uri: http://localhost:8085
            predicates:
             - Path=/comments/**
+         - id: ai-map
+           uri: http://localhost:8081
+           predicates:
+            - Path=/predict-and-get-info
          - id: tree
            uri: http://localhost:0
            predicates:

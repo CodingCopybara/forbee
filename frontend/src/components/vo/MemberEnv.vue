@@ -264,11 +264,12 @@ const captureAndPredict = async () => {
 
   try {
     const response = await axios.post(
-      'https://8081-dlafhr789-forbee-gahotnesjfz.ws-us120.gitpod.io/predict-and-get-info',
+      import.meta.env.VITE_GW_URL + '/predict-and-get-info',
       blob,
       {
         headers: {
-          'Content-Type': 'image/png'
+          'Content-Type': 'image/png',
+          'Authorization': 'Bearer ' + localStorage.getItem("accessToken")
         },
         responseType: 'json'
       }
