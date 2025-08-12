@@ -77,3 +77,4 @@ buildNumber.properties
 .secrets/
 secrets.yml
 secrets.yaml
+.sqlite3
