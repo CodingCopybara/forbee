@@ -212,12 +212,24 @@ public class PostController {
         revisionRepository.save(rev);
     
         // 2) 수정 반영
-        // EditPostCommand 에 title/content/attachments 등이 있다고 가정
         if (cmd.getTitle() != null) post.setTitle(cmd.getTitle());
         if (cmd.getContent() != null) post.setContent(cmd.getContent());
-        if (cmd.getAttachments() != null) post.setAttachments(cmd.getAttachments()); // 필드가 있으면
-        post.setUpdatedAt(new java.util.Date()); // 필드가 있으면
-    
+
+        // 첨부: 항상 JSON 문자열로 저장 (writePost와 동일한 방식)
+        try {
+            if (cmd.getAttachments() != null) {
+                String json = new ObjectMapper().writeValueAsString(cmd.getAttachments());
+                post.setAttachmentsJson(json);
+            } else {
+                post.setAttachmentsJson(null);
+            }
+        } catch (JsonProcessingException e) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "첨부파일 정보를 JSON으로 변환할 수 없습니다.", e
+            );
+        }
+
+        // updatedAt 직접 세팅 제거 (Auditing을 쓰거나 엔티티에 있는 필드명/타입에 맞게 수정)
         Post saved = postRepository.save(post);
         return ResponseEntity.ok(saved);
     }
@@ -233,16 +245,19 @@ public class PostController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePost(
             @PathVariable Long id,
-            @RequestHeader(value = "Role", required = false) String role) {
-    
-        boolean isAdmin = role != null && role.equalsIgnoreCase("ADMIN");
+            @RequestHeader(value = "Role", required = false) String role,
+            @RequestHeader(value = "X-Role", required = false) String xrole) {
+
+        // X-Role 우선, 없으면 Role 사용
+        String effectiveRole = (xrole != null) ? xrole : role;
+        boolean isAdmin = effectiveRole != null && effectiveRole.equalsIgnoreCase("ADMIN");
         if (!isAdmin) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-    
+
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    
+
         postRepository.delete(post);
         return ResponseEntity.noContent().build();
     }

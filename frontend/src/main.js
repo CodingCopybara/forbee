@@ -10,14 +10,17 @@ import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 import axios from 'axios'
 import { Icon } from '@iconify/vue'
+import './assets/style.css';
+
 
 // Load custom fonts
 loadFonts()
 
+
+
 // Axios 기본 설정 (한 번만 지정)
 axios.defaults.baseURL = ''
 axios.defaults.headers.common['Content-Type'] = 'application/json'
-axios.interceptors.request.use(cfg => { cfg.headers['Role'] = 'USER'; return cfg })
 
 // Axios 인터셉터 설정
 axios.interceptors.request.use(req => {

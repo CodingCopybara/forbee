@@ -17,16 +17,17 @@
         <button @click="$router.back()" class="back-button">← 뒤로</button>
 
         <!-- ✅ 액션 버튼: 권한에 따라 노출 -->
-        <div class="action-group">
-          <button v-if="isOwner" class="btn" @click="goEdit">수정하기</button>
-          <button v-if="isOwner || isAdmin" class="btn" @click="toggleRevisions">
+        <div class="action-group" style="transform: translateY(-6px);">
+          <button v-if="isOwner" class="btn" @click="goEdit" style="background-color: #c99c3c; color:#fff;">수정하기</button>
+          <button v-if="isOwner || isAdmin" class="btn" @click="toggleRevisions" style="background-color: #c99c3c; color:#fff;">
             {{ showRevisions ? '이력 닫기' : '이력 보기' }}
           </button>
           <button v-if="isAdmin" class="btn danger" @click="deletePost">삭제하기</button>
         </div>
       </div>
 
-      <div class="content-container">
+      <!-- 위아래로 위치 조정하는 코드 : style="transform: translateY(16px);" -->
+      <div class="content-container" style="transform: translateY(16px);">
         <table class="detail-table">
           <tbody>
             <tr>
@@ -69,12 +70,11 @@
 
         <!-- ✅ 수정 이력 뷰어 (작성자/ADMIN) -->
         <div v-if="showRevisions" class="revisions">
-          <h3>수정 이력</h3>
+          <h3>수정 전 원본</h3>
           <ul v-if="revisions.length">
             <li v-for="rev in revisions" :key="rev.id">
               <div class="rev-head">
                 <strong>{{ rev.editedAt }}</strong>
-                <span>by {{ rev.editedBy }}</span>
               </div>
               <div class="rev-diff">
                 <div><b>제목</b>: {{ rev.titleBefore }}</div>

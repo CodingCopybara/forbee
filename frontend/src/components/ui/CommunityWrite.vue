@@ -1,3 +1,4 @@
+<!-- ✅ 파일 경로: src/components/ui/CommunityWrite.vue -->
 <template>
   <div class="community-write">
     <h2>{{ tabName }} 글 작성</h2>
@@ -10,7 +11,7 @@
         @keyup.enter.prevent="submitPost"
       />
 
-      <!-- ✅ 본문 입력: contenteditable 에디터 -->
+      <!-- 본문 입력 -->
       <div
         ref="editorRef"
         class="editor"
@@ -27,6 +28,17 @@
         </button>
         <button type="button" class="btn outline" @click="triggerPdfPicker" :disabled="uploading">
           {{ uploading && pendingType === 'pdf' ? 'PDF 업로드 중...' : '첨부파일 추가(PDF)' }}
+        </button>
+
+        <!-- ✅ QnA 전용: 대화내역 보기 -->
+        <button
+          v-if="isQnA"
+          type="button"
+          class="btn outline"
+          @click="viewChatHistory"
+          :disabled="uploading"
+        >
+          대화내역보기
         </button>
 
         <!-- 숨겨진 파일 입력 -->
@@ -64,6 +76,18 @@
         <button type="button" @click="goBack">뒤로가기</button>
       </div>
     </form>
+
+    <!-- ✅ 팝업 차단 시 대체: 오른쪽 도킹 패널 -->
+    <div v-if="showChatDock && isQnA" class="chat-dock">
+      <div class="dock-header">
+        <strong>대화내역</strong>
+        <div class="dock-actions">
+          <button class="mini" @click="popOut">팝업으로</button>
+          <button class="mini danger" @click="showChatDock = false">닫기</button>
+        </div>
+      </div>
+      <iframe class="dock-frame" :src="chatUrl" referrerpolicy="no-referrer" />
+    </div>
   </div>
 </template>
 
@@ -76,15 +100,22 @@ const route = useRoute()
 const router = useRouter()
 
 const categoryParam = route.params.category
-const mapParamToTab = p => ({
-  free: '자유게시판',
-  notice: '공지사항',
-  qna: 'QnA'
-}[p] || '자유게시판')
-
+const mapParamToTab = p => ({ free: '자유게시판', notice: '공지사항', qna: 'QnA' }[p] || '자유게시판')
 const tabName = computed(() => mapParamToTab(categoryParam))
 
-// 작성 폼 상태 (content는 HTML로 전송)
+// ✅ QnA 여부
+const isQnA = computed(() => (route.params.category || '').toLowerCase() === 'qna')
+
+// ✅ 대화내역 URL (원하는 링크를 .env에 설정: VITE_QNA_CHAT_URL)
+const chatUrl = computed(() => {
+  const v = import.meta.env.VITE_QNA_CHAT_URL || '/#/member/disease'
+  // v가 "http"로 시작하면 그대로 사용, 아니면 현재 origin을 붙여서 완전한 URL 생성
+  if (/^https?:\/\//i.test(v)) return v
+  const prefix = v.startsWith('/') ? '' : '/'
+  return `${window.location.origin}${prefix}${v}`
+})
+
+// 작성 폼 상태
 const form = ref({
   title: '',
   content: '',
@@ -93,22 +124,22 @@ const form = ref({
   attachments: [] // { name, url, type: 'pdf' }
 })
 
-// 업로드 관련 ref & state
+// 업로드 관련
 const imageInput = ref(null)
 const pdfInput = ref(null)
 const editorRef = ref(null)
 const uploading = ref(false)
 const pendingType = ref('') // 'image' | 'pdf'
 
-// 에디터 동기화: div.innerHTML -> form.content
+// ✅ 팝업/도킹 상태
+const chatWin = ref(null)
+const showChatDock = ref(false)
+
+// 본문 동기화
 function syncFromEditor() {
   form.value.content = (editorRef.value?.innerHTML || '').trim()
 }
-
-// 붙여넣기 시, 이미지/파일이 클립보드에 있으면 브라우저가 dataURL로 넣는 걸 막고 텍스트만 허용(선택)
-function onPaste(e) {
-  // 필요 시 정제 로직 추가 가능
-}
+function onPaste(e) {}
 
 // 커서 위치에 HTML 삽입
 async function insertHtmlAtCaret(html) {
@@ -126,11 +157,8 @@ async function insertHtmlAtCaret(html) {
     tmp.innerHTML = html
     const frag = document.createDocumentFragment()
     let node, lastNode
-    while ((node = tmp.firstChild)) {
-      lastNode = frag.appendChild(node)
-    }
+    while ((node = tmp.firstChild)) lastNode = frag.appendChild(node)
     range.insertNode(frag)
-    // 커서를 삽입된 마지막 노드 뒤로
     if (lastNode) {
       range.setStartAfter(lastNode)
       range.collapse(true)
@@ -145,6 +173,45 @@ async function insertHtmlAtCaret(html) {
 function triggerImagePicker() { imageInput.value?.click() }
 function triggerPdfPicker() { pdfInput.value?.click() }
 
+// ✅ 팝업 열기 시도 → 차단되면 도킹으로
+function viewChatHistory() {
+  // 팝업 위치/크기 계산(가운데)
+  const W = Math.min(920, window.screen.availWidth - 120)
+  const H = Math.min(800, window.screen.availHeight - 120)
+  const left = window.screenX + Math.max(0, (window.outerWidth - W) / 2)
+  const top  = window.screenY + Math.max(0, (window.outerHeight - H) / 2)
+
+  const features = [
+    `popup`,
+    `width=${Math.round(W)}`,
+    `height=${Math.round(H)}`,
+    `left=${Math.round(left)}`,
+    `top=${Math.round(top)}`,
+    `resizable=yes`,
+    `scrollbars=yes`,
+    `toolbar=no`,
+    `menubar=no`,
+    `location=no`,
+    `status=no`
+  ].join(',')
+
+  const win = window.open(chatUrl.value, 'QnaChatHistory', features)
+  if (win && !win.closed) {
+    chatWin.value = win
+    try { win.focus() } catch {}
+    showChatDock.value = false
+  } else {
+    // 팝업 차단 시 도킹으로 표시
+    showChatDock.value = true
+  }
+}
+
+// ✅ 도킹 상태에서 팝업으로 다시 띄우기
+function popOut() {
+  showChatDock.value = false
+  setTimeout(() => viewChatHistory(), 0)
+}
+
 async function onPickImages(e) {
   const files = Array.from(e.target.files || [])
   if (!files.length) return
@@ -155,10 +222,7 @@ async function onPickImages(e) {
       if (!/^image\/(png|jpeg)$/.test(f.type)) { alert('PNG 또는 JPG만 업로드'); continue }
       if (f.size > 10 * 1024 * 1024) { alert(`${f.name}이(가) 10MB 초과`); continue }
       const url = await uploadFile(f, 'image')
-      if (url) {
-        // ✅ URL 텍스트가 아니라 실제 이미지 요소 삽입
-        await insertHtmlAtCaret(`<img src="${url}" alt="" />`)
-      }
+      if (url) await insertHtmlAtCaret(`<img src="${url}" alt="" />`)
     }
   } catch (err) {
     console.error(err); alert('이미지 업로드에 실패했습니다.')
@@ -185,7 +249,6 @@ async function onPickPdf(e) {
 
 function removeAttachment(index) { form.value.attachments.splice(index, 1) }
 
-// 업로드 호출(프리플라이트 최소화)
 async function uploadFile(file, kind) {
   const fd = new FormData()
   fd.append('file', file)
@@ -194,22 +257,15 @@ async function uploadFile(file, kind) {
   const base = (import.meta.env.VITE_GW_URL || '').replace(/\/+$/, '')
   const endpoint = `${base}/files/upload`
 
-  const { data } = await axios.post(endpoint, fd, {
-    headers: {}, // 인증 헤더 없으면 대부분 프리플라이트 회피
-    withCredentials: false
-  })
-
+  const { data } = await axios.post(endpoint, fd, { headers: {}, withCredentials: false })
   if (!data?.url) throw new Error('업로드 응답에 url이 없습니다.')
   const u = String(data.url)
   return /^https?:\/\//i.test(u) ? u : `${base}${u.startsWith('/') ? u : `/${u}`}`
 }
 
-// ⚠️ submitPost는 그대로 유지
 async function submitPost() {
   try {
-    // 전송 직전 한번 더 동기화(안전)
     syncFromEditor()
-
     await axios.post(
       import.meta.env.VITE_GW_URL + '/posts/writepost',
       form.value,
@@ -235,11 +291,11 @@ function goBack() { router.back() }
 .community-write { padding: 2rem; }
 input { display: block; width: 100%; margin-bottom: 1rem; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; }
 
-/* ✅ 내용 박스 더 길게 + WYSIWYG 스타일 */
+/* 에디터 */
 .editor {
   display: block;
   width: 100%;
-  min-height: 520px;   /* ← 길게 */
+  min-height: 520px;
   padding: 0.9rem;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -249,21 +305,16 @@ input { display: block; width: 100%; margin-bottom: 1rem; padding: 0.6rem; borde
   white-space: pre-wrap;
   word-break: break-word;
 }
-.editor:empty:before {
-  content: attr(placeholder);
-  color: #999;
-}
-
-/* 본문 내 이미지: 박스 기준 90% (좌측 정렬 원하면 margin-left만 조절) */
+.editor:empty:before { content: attr(placeholder); color: #999; }
 .editor img {
   width: 90%;
   max-width: 90%;
   height: auto;
   display: block;
-  margin: .75rem auto; /* 가운데 정렬 → 왼쪽 정렬 원하면 .75rem 0; 로 */
+  margin: .75rem auto;
 }
 
-/* 업로드 툴바 */
+/* 툴바/버튼 */
 .upload-toolbar { display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0 1rem; flex-wrap: wrap; }
 .btn { padding: 0.5rem 0.9rem; border-radius: 6px; border: none; background: #c99c3c; color: #fff; cursor: pointer; }
 .btn.outline { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
@@ -277,7 +328,41 @@ input { display: block; width: 100%; margin-bottom: 1rem; padding: 0.6rem; borde
 .attachment-item .link { text-decoration: underline; }
 .attachment-item .mini { padding: 0.3rem 0.6rem; font-size: 0.85rem; background: #e0e0e0; color: #333; border: none; border-radius: 4px; cursor: pointer; }
 
+/* 액션 */
 .actions { display: flex; gap: 0.5rem; }
 button { padding: 0.6rem 1.2rem; border: none; border-radius: 4px; cursor: pointer; background-color: #c99c3c; color: #fff; }
 button[type="button"] { background-color: #e0e0e0; color: #333; }
+
+/* ✅ 도킹 패널 */
+.chat-dock {
+  position: fixed;
+  top: 0; right: 0;
+  width: min(42vw, 600px);
+  min-width: 360px;
+  height: 100vh;
+  background: #fff;
+  border-left: 1px solid #e6e6e6;
+  box-shadow: -8px 0 24px rgba(0,0,0,0.08);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+}
+.dock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .6rem .8rem;
+  border-bottom: 1px solid #eee;
+  background: #f8f8f8;
+}
+.dock-actions { display: flex; gap: .4rem; }
+.dock-actions .mini {
+  padding: .3rem .6rem; font-size: .85rem; border: 1px solid #ddd;
+  background: #fafafa; border-radius: 6px; color: #333; cursor: pointer;
+}
+.dock-actions .mini.danger { background: #ffecec; border-color: #ffc8c8; color: #c0392b; }
+.dock-frame { width: 100%; height: calc(100% - 42px); border: 0; }
+@media (max-width: 920px) {
+  .chat-dock { width: 100vw; min-width: 0; }
+}
 </style>
