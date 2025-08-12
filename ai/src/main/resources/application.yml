@@ -88,6 +88,8 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
+  kafka:
+    bootstrap-servers: kafka:9092
   security:
     oauth2:
       resourceserver:
@@ -116,12 +118,12 @@ spring:
   #         contentType: application/json
 
 fastapi:
-  url: ${FASTAPI_URL:https://8003-dlafhr789-forbee-zz46g74qo20.ws-us120.gitpod.io}
+  url: http://localhost:8003
 
 azure:
   storage:
-    account-url: ${AZURE_STORAGE_ACCOUNT_URL:https://forbee.blob.core.windows.net}
-    container-name: ${AZURE_CONTAINER_NAME:blob}
+    account-url: https://forbee.blob.core.windows.net
+    container-name: blob
 
 logging:
   level:

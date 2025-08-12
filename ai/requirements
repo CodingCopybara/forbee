@@ -1,0 +1,27 @@
+# pip install -r requirements.txt
+
+fastapi
+uvicorn[standard]
+python-dotenv
+ultralytics
+torch
+# torchvision
+azure-storage-blob
+azure-identity
+opencv-python-headless
+matplotlib
+requests
+kafka-python
+
+langchain==0.3.24
+langgraph
+typing
+langchain_openai
+langchain_core
+langchain-community
+wikipedia
+chromadb
+google-search-results
+pymupdf
+python-docx
+gradio

@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ai
-  labels:
-    app: ai
 spec:
   replicas: 1
   selector:
@@ -14,40 +12,30 @@ spec:
       labels:
         app: ai
     spec:
-      serviceAccountName: ai-service-account
       containers:
-        - name: ai
-          image: "username/ai:latest"
-          ports:
-            - containerPort: 8080
-          env:
-            - name: AZURE_STORAGE_ACCOUNT_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: azure-config
-                  key: storage-account-url
-            - name: AZURE_STORAGE_CONTAINER_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: azure-config
-                  key: container-name
-            - name: FASTAPI_URL
-              value: "http://fastapi:8000"
-            - name: KAFKA_BROKERS
-              value: "kafka:9092"
-          readinessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 10
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 10
-          livenessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 120
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 5
+      - name: ai
+        image: <YOUR_ACR_SERVER>.azurecr.io/ai:latest
+        ports:
+        - containerPort: 8083
+        readinessProbe:
+          httpGet:
+            path: '/actuator/health/readiness'
+            port: 8083
+          initialDelaySeconds: 20
+          timeoutSeconds: 2
+          periodSeconds: 5
+          failureThreshold: 10
+        livenessProbe:
+          httpGet:
+            path: '/actuator/health/liveness'
+            port: 8083
+          initialDelaySeconds: 15
+          timeoutSeconds: 2
+          periodSeconds: 5
+          failureThreshold: 5
+      - name: fastapi
+        image: <YOUR_ACR_SERVER>.azurecr.io/fastapi:latest
+        ports:
+        - containerPort: 8003
+
+# 파이썬 readiness, liveness 프로브는 main.py에도 설정해야 함
