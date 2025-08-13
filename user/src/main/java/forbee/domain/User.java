@@ -26,6 +26,8 @@ public class User  {
 
     private String name; // 사용자 이름 (프로필 정보)
 
+    private String phone;
+
     @Column(nullable = false)
     private String role; // oauth 서비스의 role과 동일
 
