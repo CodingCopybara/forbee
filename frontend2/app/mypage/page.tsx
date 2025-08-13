@@ -1,3 +1,6 @@
+'use client' // 클라이언트 컴포넌트로 지정
+
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -5,11 +8,79 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Shield, User, Mail, MapPin, Edit, Camera, BarChart3, Flower } from "lucide-react"
 import Link from "next/link"
 
+// 사용자 정보 타입을 정의합니다.
+interface UserProfile {
+  name: string;
+  username: string; // 이메일
+  role: string;
+  address?: string; // 주소는 선택적일 수 있습니다.
+}
+
 export default function MyPage() {
+  // 사용자 정보를 담을 state
+  const [user, setUser] = useState<UserProfile | null>(null);
+  // 로딩 상태를 관리할 state
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // 페이지가 로드될 때 실행될 함수
+    const fetchUserData = async () => {
+      try {
+        // localStorage에서 토큰과 사용자 ID를 가져옵니다.
+        const accessToken = localStorage.getItem('accessToken');
+        const userIdentifier = localStorage.getItem('userIdentifier');
+        const gatewayUrl = process.env.NEXT_PUBLIC_GW_URL;
+
+        if (!accessToken || !userIdentifier) {
+          // 토큰이나 ID가 없으면 로그인 페이지로 리디렉션
+          window.location.href = '/login';
+          return;
+        }
+
+        // API 요청
+        const response = await fetch(`${gatewayUrl}/users/${userIdentifier}`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('사용자 정보를 불러오는데 실패했습니다.');
+        }
+
+        const userData: UserProfile = await response.json();
+        setUser(userData); // 받아온 사용자 정보를 state에 저장
+      } catch (error) {
+        console.error(error);
+        // 에러 발생 시 로그인 페이지로 보낼 수도 있습니다.
+        // window.location.href = '/login';
+      } finally {
+        setLoading(false); // 로딩 상태 종료
+      }
+    };
+
+    fetchUserData();
+  }, []); // 빈 배열을 전달하여 최초 렌더링 시 한 번만 실행되도록 함
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>사용자 정보를 불러올 수 없습니다.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
-      {/* Header */}
-
+      {/* ... 헤더 ... */}
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Profile Section */}
         <Card className="mb-8">
@@ -32,14 +103,14 @@ export default function MyPage() {
               <div className="relative">
                 <Avatar className="w-24 h-24">
                   <AvatarImage src="https://picsum.photos/140" alt="프로필 사진" />
-                  <AvatarFallback className="bg-amber-100 text-amber-700 text-xl font-semibold">김양봉</AvatarFallback>
+                  <AvatarFallback className="bg-amber-100 text-amber-700 text-xl font-semibold">{user.name.substring(0, 2)}</AvatarFallback>
                 </Avatar>
-                <Button
+                {/* <Button
                   size="sm"
                   className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 p-0"
                 >
                   <Camera className="w-4 h-4" />
-                </Button>
+                </Button> */}
               </div>
 
               {/* Profile Info */}
@@ -50,14 +121,14 @@ export default function MyPage() {
                       <User className="w-4 h-4" />
                       <span>이름</span>
                     </div>
-                    <p className="text-lg font-semibold text-gray-900">김양봉</p>
+                    <p className="text-lg font-semibold text-gray-900">{user.name}</p>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Mail className="w-4 h-4" />
                       <span>이메일</span>
                     </div>
-                    <p className="text-lg text-gray-900">kim.yangbong@email.com</p>
+                    <p className="text-lg text-gray-900">{user.username}</p>
                   </div>
                 </div>
 
@@ -67,7 +138,7 @@ export default function MyPage() {
                     <span>역할</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-amber-100 text-amber-800 border-amber-200">전문 양봉업자</Badge>
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-200">{user.role}</Badge>
                     <Badge variant="outline" className="border-green-200 text-green-700">
                       인증 회원
                     </Badge>
@@ -79,7 +150,7 @@ export default function MyPage() {
                     <MapPin className="w-4 h-4" />
                     <span>양봉장 위치</span>
                   </div>
-                  <p className="text-lg text-gray-900">경기도 양평군 용문면</p>
+                  <p className="text-lg text-gray-900">{user.address || '주소 정보 없음'}</p>
                 </div>
               </div>
             </div>

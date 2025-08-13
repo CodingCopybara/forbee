@@ -150,7 +150,7 @@ export default function LoginPage() {
 
       localStorage.setItem('name', data2.name)
       localStorage.setItem('role', data2.role)
-
+      localStorage.setItem('phone', data2.phone)
 
       alert("로그인 성공!");
 

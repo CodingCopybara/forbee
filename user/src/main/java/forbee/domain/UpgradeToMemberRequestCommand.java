@@ -7,6 +7,11 @@ import lombok.Data;
 @Data
 public class UpgradeToMemberRequestCommand {
 
-    private String userId;
-    private String registrationCertificateImage;
+    private String userId;          // 유저 아이디
+    private String address;         // 주소
+    private String career;          // 경력
+    private Long hiveCount;          // 보유 벌통 수
+    private Long annualProduction; // 연간 생산량
+    private String documents;       // 서류
+    private String etc;             // 기타 사항
 }
