@@ -21,30 +21,35 @@ spring:
            uri: http://localhost:8085
            predicates:
             - Path=/comments/**
+         - id: ai-map
+           uri: http://localhost:8081
+           predicates:
+            - Path=/predict-and-get-info
          - id: tree
            uri: http://localhost:0
            predicates:
-            - Path=/plants/** 
+            - Path=/plants/**
          - id: user
            uri: http://localhost:8084
            predicates:
-            - Path=/users/** 
+            - Path=/users/**
          - id: dashboard
            uri: http://localhost:0
            predicates:
-            - Path= /maps/**
+            - Path=/maps/**
          - id: chatbot
            uri: http://localhost:0
            predicates:
-            - Path=/chatbots/** 
+            - Path=/chatbots/**
          - id: ai
            uri: http://localhost:8083
            predicates:
-            - Path=/ai/** 
+            - Path=/ai/**
+            - Path=/api/**
          - id: oauth-register
            uri: http://localhost:8090
            predicates:
-            - Path=/api/users/register
+            - Path=/oauth/users/register
          - id: oauth-token
            uri: http://localhost:8090
            predicates:

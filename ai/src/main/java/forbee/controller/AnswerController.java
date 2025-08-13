@@ -44,7 +44,7 @@ public class AnswerController {
 
 @PostMapping("/answer")
 public ResponseEntity<String> handleUserAnswer(
-        @RequestHeader("userId") Long userId,
+        @RequestHeader("userId") String userId,
         @RequestBody AnswerRequest request) {
 
         List<String> answers = request.getAnswers();

@@ -15,7 +15,7 @@ import org.springframework.web.client.RestTemplate;
 // import java.util.UUID; // userIdentifier 생성을 위해 추가 (이제 Long이므로 사용 안함)
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/oauth/users")
 public class UserController {
 
     @Autowired
@@ -57,6 +57,7 @@ public class UserController {
             userProfileDto.setUserIdentifier(newUser.getUserIdentifier());
             userProfileDto.setUsername(newUser.getUsername()); // username으로 사용
             userProfileDto.setName(registrationDto.getName()); // 이름 추가
+            userProfileDto.setPhone(registrationDto.getPhone());
 
             // user 서비스의 /users/signup 엔드포인트로 POST 요청
             String userServiceUrl = "http://localhost:8084/users/signup"; // user 서비스의 실제 주소로 변경

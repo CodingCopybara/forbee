@@ -68,6 +68,7 @@ public class UserController {
 
             // 받은 userProfile 객체를 그대로 저장
             userProfile.setName(userProfile.getName()); // name 필드 설정
+            userProfile.setPhone(userProfile.getPhone());
             userRepository.save(userProfile);
             return userProfile;
     }

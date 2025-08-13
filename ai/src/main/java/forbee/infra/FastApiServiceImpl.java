@@ -36,6 +36,8 @@ public class FastApiServiceImpl implements FastApiService {
     @Override
     public void requestAnalysis(ImageAnalysisRequest request) {
         try {
+            System.out.println("요청 시도...");
+            System.out.println(request.getImageUrl());
             ResponseEntity<Void> response = restTemplate.postForEntity(
                     "/object-detection",
                     request,

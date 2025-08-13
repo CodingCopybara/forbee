@@ -15,7 +15,7 @@ public class FastApiClient {
     @Value("${fastapi.url}") // application.yml에서 설정
     private String FASTAPI_URL;
 
-    public String sendDiagnoseRequest(String diseaseName, double confidence, Long userId) {
+    public String sendDiagnoseRequest(String diseaseName, double confidence, String userId) {
         String url = FASTAPI_URL + "/diagnose";
         Map<String, Object> request = new HashMap<>();
         request.put("disease_name", diseaseName);
@@ -37,7 +37,7 @@ public class FastApiClient {
         }
     }
 
-    public String sendAnswerRequest(List<String> answers, Long userId) {
+    public String sendAnswerRequest(List<String> answers, String userId) {
         String url = FASTAPI_URL + "/answer";
         Map<String, Object> request = new HashMap<>();
         request.put("answers", answers);

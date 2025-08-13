@@ -8,4 +8,5 @@ public class RegistrationRequestDto {
     private String password;
     private Long userIdentifier; // Optional
     private String name; // New field for user's name
+    private String phone;
 }

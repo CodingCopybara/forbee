@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend2
+  template:
+    metadata:
+      labels:
+        app: frontend2
+    spec:
+      containers:
+      - name: frontend2
+        image: forbeeregistry.azurecr.io/frontend2:latest # ACR 이미지 주소 예시
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: frontend2-config

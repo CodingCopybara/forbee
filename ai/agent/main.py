@@ -39,7 +39,7 @@ def read_root():
 
 # 나중에 YOLO에서 받아오는걸로 수정해야함
 @app.post("/diagnose")
-def diagnose(req: DiagnoseRequest, userId: int = Header(None)):
+def diagnose(req: DiagnoseRequest, userId: str = Header(alias="userId")):
     # state = {
     #     "disease_name": req.disease_name,
     #     "confidence": req.confidence,
@@ -53,7 +53,7 @@ def diagnose(req: DiagnoseRequest, userId: int = Header(None)):
     return result
 
 @app.post("/answer")
-def answer(req: AnswerRequest, userId: int = Header(None)):
+def answer(req: AnswerRequest, userId: str = Header(alias="userId")):
     # 사용자 답변 memory에 기록
     if not userId:
         raise HTTPException(status_code=400, detail="Missing userId in headers")

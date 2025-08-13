@@ -72,6 +72,13 @@ const router = createRouter({
       path: '/ai',
       component: () => import('../components/ui/ImageAnalysis.vue'),
     },
+    {
+      path: '/member-upgrade',
+      component: () => import('../components/ui/MemberUpgrade.vue'),
+    },{
+      path: '/history',
+      component: () => import('../components/ui/QnaHistory.vue'),
+    }
   ],
 });
 
