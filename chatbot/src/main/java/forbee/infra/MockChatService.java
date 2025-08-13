@@ -1,11 +1,14 @@
 package forbee.infra;
-
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import forbee.infra.ChatService;
+
 @Service
+@Profile("dev")
 public class MockChatService implements ChatService {
     @Override
     public void streamAnswer(String question, Consumer<String> onChunk) {

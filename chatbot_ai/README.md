@@ -5,8 +5,7 @@
 cd chatbot_ai  
 .env 파일 만들어주기 (OPENAI_API_KEY=)
 pip install -r requirements.txt 
-uvicorn main:app --reload  
-uvicorn main:app --port 8000
+uvicorn main:app --port 8002
 
 
 스프링 부트를 위한  

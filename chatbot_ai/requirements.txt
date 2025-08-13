@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
 python-dotenv
+pydantic
 openai
 jinja2
 itsdangerous

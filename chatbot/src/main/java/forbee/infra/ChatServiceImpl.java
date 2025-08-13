@@ -1,10 +1,11 @@
 package forbee.infra;
-
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.util.function.Consumer;
 
 @Service
+@Primary
 public class ChatServiceImpl implements ChatService {
 
     @Override

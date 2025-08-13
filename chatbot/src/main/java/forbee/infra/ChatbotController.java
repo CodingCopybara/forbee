@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import forbee.domain.ChatSave;
 import forbee.domain.ChatbotRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +20,9 @@ import java.util.function.Consumer;
 @RequestMapping("/chat")
 @RequiredArgsConstructor
 public class ChatbotController {
-
+    
+    @Qualifier("chatServiceImpl")
+    
     private final ChatbotRepository chatSaveRepository; // ✅ ChatSave 전용 리포지토리
     private final ChatService chatService;               // ✅ 스트리밍 답변 서비스
     private final ObjectMapper objectMapper = new ObjectMapper();
