@@ -1,5 +1,14 @@
-from services.env_loader import get_env
+# services/openai_client.py
+#!/usr/bin/env python3
+import os
+from dotenv import load_dotenv
 from openai import OpenAI, AsyncOpenAI
+
+ENV_PATH = "/workspace/forbee/chatbot_ai/.env"
+
+def get_env(key: str, default=None):
+    load_dotenv(ENV_PATH, override=True)
+    return os.getenv(key, default)
 
 API_KEY = get_env("OPENAI_API_KEY")
 VSID    = get_env("VECTOR_STORE_ID")
