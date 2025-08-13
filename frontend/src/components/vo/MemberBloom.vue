@@ -210,7 +210,7 @@ const updateCoordinates = () => {
 
 const predictFlowering = () => {
   if (selectedLocation.value && selectedFlower.value) {
-    const apiUrl = 'https://8087-dlafhr789-forbee-cholfcdvkfe.ws-us121.gitpod.io/plants/predict-Bloom';
+    const apiUrl = 'https://8087-dlafhr789-forbee-cholfcdvkfe.ws-us121.gitpod.io/plants/predict-bloom';
     // const apiUrl = import.meta.env.VITE_GW_URL + '/predict-bloom';
 
     const params = {
