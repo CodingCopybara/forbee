@@ -242,6 +242,20 @@ export default function PestDetectionPage() {
       const readOnlyUrl = ro?.readOnlyUrl ?? blobUrl
       if (!readOnlyUrl) throw new Error("읽기 URL을 얻지 못했습니다.")
 
+      setUploadedImage(readOnlyUrl)
+      setMessages(prev => {
+        const copy = [...prev]
+        // 가장 최근의 사용자 이미지 메시지를 찾아 교체
+        for (let i = copy.length - 1; i >= 0; i--) {
+          const m = copy[i]
+          if (m.sender === "user" && m.kind === "image") {
+            copy[i] = { ...m, imageUrl: readOnlyUrl }
+            break
+          }
+        }
+        return copy
+      })
+
       // 4) 분석 요청
       await postJSON(`${GW_URL}/ai/analysis`, { userId, imageUrl: readOnlyUrl }, { Authorization: `Bearer ${token}` })
 
