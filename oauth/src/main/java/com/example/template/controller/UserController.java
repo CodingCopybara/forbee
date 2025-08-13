@@ -15,7 +15,7 @@ import org.springframework.web.client.RestTemplate;
 // import java.util.UUID; // userIdentifier 생성을 위해 추가 (이제 Long이므로 사용 안함)
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/oauth/users")
 public class UserController {
 
     @Autowired

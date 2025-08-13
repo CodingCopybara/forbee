@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { register } from "module"
 
 interface DecodedToken {
   userIdentifier: string;
@@ -94,7 +95,6 @@ export default function LoginPage() {
     setIsLoading(true)
     try {
       const gatewayUrl = process.env.NEXT_PUBLIC_GW_URL;
-      const tokenUrl = `${gatewayUrl}/oauth/token`;
 
       // Basic a_auth 헤더를 위한 client:secret 인코딩
       const client_id = 'uengine-client';
@@ -107,7 +107,7 @@ export default function LoginPage() {
       params.append('username', loginForm.email);
       params.append('password', loginForm.password);
 
-      const response = await fetch(tokenUrl, {
+      const response = await fetch(`${gatewayUrl}/oauth/token`, {
         method: 'POST',
         headers: {
           'Authorization': `Basic ${basicAuth}`,
@@ -180,15 +180,36 @@ export default function LoginPage() {
 
     setIsLoading(true)
     try {
-      // 회원가입 API 호출 로직
-      console.log("회원가입 시도:", registerForm)
-      // 실제 구현에서는 API 호출
-      await new Promise((resolve) => setTimeout(resolve, 2000)) // 시뮬레이션
-      alert("회원가입이 완료되었습니다!")
+      const gatewayUrl = process.env.NEXT_PUBLIC_GW_URL;
+      
+      // registerForm에서 confirmPassword와 agreeTerms를 제외한 데이터를 준비합니다.
+      const { confirmPassword, agreeTerms, ...payload } = registerForm;
+
+      const response = await fetch(`${gatewayUrl}/oauth/users/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload) // 데이터를 JSON 문자열로 변환
+      })
+
+      if (!response.ok) {
+        // 응답이 성공적이지 않을 경우 에러 처리
+        // 서버에서 오는 에러 메시지를 그대로 보여주도록 수정
+        const errorText = await response.text();
+        throw new Error(errorText || '회원가입에 실패했습니다.');
+      }
+
+      // 성공 시 응답은 text일 수 있으므로 .text()로 받음
+      const data = await response.text();
+      console.log("회원가입 성공", data);
+
+      alert("회원가입이 완료되었습니다! 로그인 탭으로 이동합니다.")
       setActiveTab("login")
     } catch (error) {
-      console.error("회원가입 실패:", error)
-      alert("회원가입에 실패했습니다.")
+      console.error("회원가입 실패:", error);
+      // 서버에서 받은 에러 메시지를 alert에 표시
+      alert((error as Error).message);
     } finally {
       setIsLoading(false)
     }

@@ -21,7 +21,7 @@ public class SecurityConfiguration {
             .cors().and() // CORS 활성화
             .csrf().disable()
             .authorizeExchange()
-            .pathMatchers("/login/**", "/logout**", "/products/**", "/api/users/register", "/oauth/token", "/users/**", "/ai/**") // /users/** 경로 추가
+            .pathMatchers("/login/**", "/logout**", "/products/**", "/oauth/**", "/oauth/token", "/users/**", "/ai/**") // /users/** 경로 추가
             .permitAll()
             .anyExchange()
             .authenticated()
