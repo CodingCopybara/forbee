@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import axios from "axios"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -124,6 +124,7 @@ const flowers = [
 ]
 
 export default function BloomPredictionPage() {
+  const [searchKeyword, setSearchKeyword] = useState("") 
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const [selectedFlower, setSelectedFlower] = useState<string>("")
   const [isLoading, setIsLoading] = useState(false)
@@ -135,6 +136,12 @@ export default function BloomPredictionPage() {
     setShowLocationPopup(true)
     setResult(null)
   }
+
+  const filteredLocations = useMemo(() => {
+    return locations.filter((loc) =>
+      loc.name.toLowerCase().includes(searchKeyword.toLowerCase())
+    )
+  }, [searchKeyword])
 
   const handlePredict = async () => {
     if (!selectedLocation || !selectedFlower) return
@@ -180,6 +187,7 @@ export default function BloomPredictionPage() {
         previousYearBloomDate: apiResponse.previousYearBloomDate
       };
 
+
       setResult(newResult);
 
     } catch (error) {
@@ -201,28 +209,43 @@ export default function BloomPredictionPage() {
             <p className="text-sm text-gray-600 mt-2">AI를 이용해 가까운 관측소의 올해 개화시기를 예측하여 알려드려요.</p>
           </div>
 
+          {/* 검색 입력창 */}
+          <div className="p-4 border-b">
+            <input
+              type="text"
+              placeholder="지역 검색..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          </div>
+
           <div className="p-4">
             <h3 className="font-semibold text-gray-900 mb-3">관측 지역</h3>
             <div className="space-y-2">
-              {locations.map((location) => (
-                <Card
-                  key={location.id}
-                  className={`cursor-pointer transition-all hover:shadow-md ${
-                    selectedLocation?.id === location.id ? "ring-2 ring-amber-500" : ""
-                  }`}
-                  onClick={() => handleLocationSelect(location)}
-                >
-                  <CardContent className="p-3">
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="h-4 w-4 text-amber-600" />
-                      <div>
-                        <p className="font-medium text-sm">{location.name}</p>
-                        <p className="text-xs text-gray-500">{location.station}</p>
+              {locations
+                .filter((loc) =>
+                  loc.name.toLowerCase().includes(searchKeyword.toLowerCase())
+                )
+                .map((location) => (
+                  <Card
+                    key={location.id}
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      selectedLocation?.id === location.id ? "ring-2 ring-amber-500" : ""
+                    }`}
+                    onClick={() => handleLocationSelect(location)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-amber-600" />
+                        <div>
+                          <p className="font-medium text-sm">{location.name}</p>
+                          <p className="text-xs text-gray-500">{location.station}</p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
           </div>
         </div>
@@ -252,7 +275,7 @@ export default function BloomPredictionPage() {
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
                       <Card>
                         <CardContent className="p-4">
                           <div className="flex items-center space-x-2">
@@ -296,6 +319,18 @@ export default function BloomPredictionPage() {
                             <div>
                               <p className="text-sm text-gray-600">습도</p>
                               <p className="font-semibold">{result.humidity}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center space-x-2">
+                            <Wind className="h-5 w-5 text-gray-500" />
+                            <div>
+                              <p className="text-sm text-gray-600">풍속</p>
+                              <p className="font-semibold">{result.windSpeed}</p>
                             </div>
                           </div>
                         </CardContent>
