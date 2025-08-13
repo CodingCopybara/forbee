@@ -11,7 +11,7 @@ export default function Header() {
             <Shield className="w-6 h-6 text-amber-900" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">BeeGuard AI</h1>
+            <h1 className="text-xl font-bold text-gray-900">Forbee AI</h1>
             <p className="text-sm text-gray-600">양봉농협 협업 서비스</p>
           </div>
         </Link>
