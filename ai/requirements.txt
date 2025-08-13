@@ -1,19 +1,27 @@
-azure-storage-blob
-uvicorn
+# pip install -r requirements.txt
+
 fastapi
-langchain==0.3.24
-langchain_community
-langchain_core
-langchain_openai
-langgraph
-chromadb
-# numpy
-# openai
-# opencv_python
-opencv_python_headless
-# pandas
-# pydantic
+uvicorn[standard]
 python-dotenv
-# Requests
-torch
 ultralytics
+torch
+# torchvision
+azure-storage-blob
+azure-identity
+opencv-python-headless
+matplotlib
+requests
+kafka-python
+
+langchain==0.3.24
+langgraph
+typing
+langchain_openai
+langchain_core
+langchain-community
+wikipedia
+chromadb
+google-search-results
+pymupdf
+python-docx
+gradio

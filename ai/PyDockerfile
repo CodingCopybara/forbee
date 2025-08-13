@@ -1,48 +1,43 @@
-# FROM python:3.9-slim
-
-# RUN apt-get update && apt-get install -y \
-#     libglib2.0-0 \
-#     libsm6 \
-#     libxext6 \
-#     libxrender-dev \
-#     libgomp1 \
-#     libglib2.0-0 \
-#     libgtk-3-0 \
-#     libavcodec-dev \
-#     libavformat-dev \
-#     libswscale-dev \
-#     && rm -rf /var/lib/apt/lists/*
-
-# WORKDIR /python
-
-# COPY requirements.txt .
-# RUN pip install --no-cache-dir -r requirements.txt
-
-# COPY . .
-
-# RUN mkdir -p results
-
-# EXPOSE 8003
-
-# ENV PYTHONPATH=/python
-# ENV PYTHONUNBUFFERED=1
-
-# CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003"]
-
-
 # 버전 정해야 함 
-FROM python:3.12-slim
+FROM python:3.12-slim AS builder
 WORKDIR /python
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /python/venv
+ENV VIRTUAL_ENV=/python/venv
+ENV PATH="/python/venv/bin:$PATH"
+
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu \
+    torch==2.8.0
+
+RUN pip install --no-cache-dir \
+    ultralytics==8.3.178 \
+    opencv-python-headless==4.12.0.88
+
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --default-timeout=600 -r requirements.txt
+
+FROM python:3.12-slim AS runtime
+WORKDIR /python
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libglib2.0-0 libsm6 libxext6 libxrender1 libgl1 libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /python/venv /python/venv
+ENV VIRTUAL_ENV=/python/venv
+ENV PATH="/python/venv/bin:$PATH"
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+ENV MPLBACKEND=Agg
 
 COPY . .
-
+EXPOSE 8003
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003"]
 
 
-# .dockerignore 파일 생성 
-# Java 관련 파일 추가 (/src/main/java, /src/main/resources, /target, pom.xml)
+# .dockerignore 파일 수정 (Java 관련 파일 추가 (/src/main/java, /src/main/resources, /target, pom.xml))
 # docker build -t <이미지 이름> -f PyDockerfile .
 # docker run -d -p 8003:8003 --name <컨테이너 이름> <이미지 이름>

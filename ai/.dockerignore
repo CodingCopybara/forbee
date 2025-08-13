@@ -4,18 +4,20 @@
 .vscode/
 __pycache__/
 README.md
+.env
+kubernetes/
 
 # Java 빌드 시 제외할 파일(Python 빌드 시에만 제외)
-PyDockerfile
-agent/
-src/main/python/
-main.py
-bee_disease_chroma_db/
+# PyDockerfile
+# agent/
+# src/main/python/
+# main.py
+# bee_disease_chroma_db/
 
 
 # Python 빌드 시 제외할 파일 
-# Dockerfile
-# pom.xml
-# src/main/java/
-# src/main/resources/
-# target/
+Dockerfile
+pom.xml
+src/main/java/
+src/main/resources/
+target/
