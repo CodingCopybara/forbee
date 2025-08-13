@@ -63,18 +63,6 @@ public class OAuth2AuthorizationServerConfig
     public void configure(AuthorizationServerSecurityConfigurer security)
         throws Exception {
         security
-            .accessDeniedHandler((request, response, exception) -> {
-                response.setContentType("application/json;charset=UTF-8");
-                response.setHeader("Cache-Control", "no-cache");
-                PrintWriter writer = response.getWriter();
-                writer.println(new AccessDeniedException("access denied !"));
-            })
-            .authenticationEntryPoint((request, response, exception) -> {
-                response.setContentType("application/json;charset=UTF-8");
-                response.setHeader("Cache-Control", "no-cache");
-                PrintWriter writer = response.getWriter();
-                writer.println(new AccessDeniedException("access denied !"));
-            })
             .checkTokenAccess("permitAll()");
     }
 

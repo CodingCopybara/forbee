@@ -46,7 +46,7 @@ SYSTEM_PROMPT = (
 # ✅ 전체 메시지를 받아 GPT 호출
 async def get_answer_from_openai(messages: list[dict]) -> str:
     resp = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o-mini",
         SYSTEM_PROMPT = (
             "당신은 감정이 없는 전문 양봉 데이터 분석가입니다. "
             "모든 질문에 대해 감정 없이, 수치와 과학적 근거에 기반한 간결하고 사실적인 답변만 제공합니다. "

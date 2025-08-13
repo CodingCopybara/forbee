@@ -21,6 +21,10 @@ spring:
            uri: http://localhost:8085
            predicates:
             - Path=/comments/**
+         - id: files
+           uri: http://localhost:8085
+           predicates:
+            - Path=/files/**
          - id: ai-map
            uri: http://localhost:8081
            predicates:
@@ -38,9 +42,19 @@ spring:
            predicates:
             - Path= /maps/**
          - id: chatbot
-           uri: http://localhost:0
+           uri: http://localhost:8082
            predicates:
-            - Path=/chatbots/** 
+            - Path=/chatbot/** 
+         - id: chatbot_ai
+           uri: http://localhost:8002
+           predicates:
+            - Path=/chatbot_ai/**
+           filters:
+            - StripPrefix=1 
+         - id: chatbot_ai_api
+           uri: http://localhost:8002
+           predicates:
+            - Path=/chat, /chat/stream 
          - id: ai
            uri: http://localhost:8083
            predicates:
@@ -96,11 +110,15 @@ spring:
         - id: chatbot
           uri: http://chatbot:8080
           predicates:
-            - Path=/chatbots/** 
+            - Path=/chatbot/** 
         - id: ai
           uri: http://ai:8080
           predicates:
             - Path=/ai/** 
+        - id: frontend
+          uri: http://frontend:8080
+          predicates:
+            - Path=/** 
       globalcors:
         corsConfigurations:
           '[/**]':

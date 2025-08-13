@@ -12,7 +12,7 @@
         <v-window-item :value="0">
           <!-- 첫 번째 탭: 해충/질병 탐지 서비스 -->
           <div class="text-center mb-6">
-            <img src="nhchar.png" alt="탐지" style="height: 54px; margin-bottom: 12px;" />
+            <img src="/nhchar.png" alt="탐지" style="height: 54px; margin-bottom: 12px;" />
             <h3 class="font-weight-bold mb-2">해충/질병 탐지 서비스</h3>
             <v-divider class="my-2" />
             <div class="mb-5">
@@ -32,7 +32,7 @@
         <v-window-item :value="1">
           <!-- 두 번째 탭: 개화시기 예측 서비스 -->
           <div class="text-center mb-6">
-            <img src="nhchar.png" alt="개화" style="height: 54px; margin-bottom: 12px;" />
+            <img src="/nhchar.png" alt="개화" style="height: 54px; margin-bottom: 12px;" />
             <h3 class="font-weight-bold mb-2">개화시기 예측 서비스</h3>
             <v-divider class="my-2" />
             <div class="mb-5">
@@ -51,7 +51,7 @@
         <v-window-item :value="2">
           <!-- 세 번째 탭: 양봉 환경 분석 서비스 -->
           <div class="text-center mb-6">
-            <img src="nhchar.png" alt="환경분석" style="height: 54px; margin-bottom: 12px;" />
+            <img src="/nhchar.png" alt="환경분석" style="height: 54px; margin-bottom: 12px;" />
             <h3 class="font-weight-bold mb-2">양봉 환경 분석 서비스</h3>
             <v-divider class="my-2" />
             <div class="mb-5">

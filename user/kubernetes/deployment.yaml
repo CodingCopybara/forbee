@@ -16,13 +16,18 @@ spec:
     spec:
       containers:
         - name: user
-          image: "username/user:latest"
+          image: forbeeregistry.azurecr.io/user:v1
           ports:
-            - containerPort: 8080
+            - containerPort: 8084
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: db-secret
           readinessProbe:
             httpGet:
               path: '/actuator/health'
-              port: 8080
+              port: 8084
             initialDelaySeconds: 15
             timeoutSeconds: 2
             periodSeconds: 5
@@ -30,7 +35,7 @@ spec:
           livenessProbe:
             httpGet:
               path: '/actuator/health'
-              port: 8080
+              port: 8084
             initialDelaySeconds: 15
             timeoutSeconds: 2
             periodSeconds: 5

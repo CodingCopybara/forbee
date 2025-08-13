@@ -63,16 +63,16 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     logout() {
-      this.accessToken = null
-      this.userIdentifier = null
-      this.username = null
-      this.name = null
-      this.role = null
       localStorage.removeItem('accessToken')
       localStorage.removeItem('userIdentifier')
       localStorage.removeItem('username')
       localStorage.removeItem('name')
       localStorage.removeItem('role')
+      this.accessToken = null
+      this.userIdentifier = null
+      this.username = null
+      this.name = null
+      this.role = null
     },
   },
 })

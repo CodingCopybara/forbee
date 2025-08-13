@@ -3,7 +3,7 @@
     "version": "0.0.0",
     "scripts": {
         "dev": "npm run build:icons && vite --host",
-        "build": "npm run build:icons && vite build",
+        "build": "npm run build:icons && VITE_GW_URL=http://20.249.193.12 vite build",
         "preview": "vite preview --port 5050",
         "lint": "eslint . -c .eslintrc.js --fix --ext .ts,.js,.vue,.tsx,.jsx",
         "build:icons": "node src/@iconify/build-icons.js"
@@ -20,11 +20,13 @@
         "axios": "^0.27.2",
         "axios-mock-adapter": "^1.21.2",
         "chart.js": "^3.9.1",
+        "dompurify": "^3.2.6",
         "eslint-import-resolver-alias": "^1.1.2",
         "html2canvas": "^1.4.1",
         "i": "^0.3.7",
         "json2yaml": "^1.1.0",
         "jwt-decode": "^3.1.2",
+        "marked": "^16.1.2",
         "partial-json-parser": "^1.2.2",
         "pinia": "^2.0.22",
         "prismjs": "^1.29.0",
