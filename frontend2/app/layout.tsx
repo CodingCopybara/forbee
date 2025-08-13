@@ -34,6 +34,7 @@ html {
         <main>{children}</main>
         <Footer />
         <FloatingChatbot />
+        <script src="https://sgisapi.kostat.go.kr/OpenAPI3/auth/javascriptAuth?consumer_key=81e5e7f2bafc41a5a506"></script>
       </body>
     </html>
   )
