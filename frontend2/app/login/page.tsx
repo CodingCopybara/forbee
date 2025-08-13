@@ -3,10 +3,17 @@
 import type React from "react"
 
 import { useState } from "react"
+import { jwtDecode } from "jwt-decode"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+
+interface DecodedToken {
+  userIdentifier: string;
+  username: string;
+}
+
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login")
@@ -86,16 +93,74 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
     try {
-      // 로그인 API 호출 로직
-      console.log("로그인 시도:", loginForm)
-      // 실제 구현에서는 API 호출
-      await new Promise((resolve) => setTimeout(resolve, 1500)) // 시뮬레이션
-      alert("로그인 성공!")
+      const gatewayUrl = process.env.NEXT_PUBLIC_GW_URL;
+      const tokenUrl = `${gatewayUrl}/oauth/token`;
+
+      // Basic a_auth 헤더를 위한 client:secret 인코딩
+      const client_id = 'uengine-client';
+      const client_secret = 'uengine-secret';
+      const basicAuth = btoa(`${client_id}:${client_secret}`);
+
+      // Spring OAuth2는 x-www-form-urlencoded 형식의 데이터를 기대합니다.
+      const params = new URLSearchParams();
+      params.append('grant_type', 'password');
+      params.append('username', loginForm.email);
+      params.append('password', loginForm.password);
+
+      const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${basicAuth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params,
+      });
+
+      if (!response.ok) {
+        // 응답이 성공적이지 않을 경우 에러 처리
+        const errorData = await response.json();
+        throw new Error(errorData.error_description || '로그인에 실패했습니다.');
+      }
+
+      const data = await response.json();
+      console.log("로그인 성공, 토큰:", data.access_token);
+      
+      // 토큰 디코딩 및 정보 저장
+      const decodedToken = jwtDecode<DecodedToken>(data.access_token);
+      localStorage.setItem('accessToken', data.access_token);
+      localStorage.setItem('userIdentifier', decodedToken.userIdentifier);
+      localStorage.setItem('username', decodedToken.username);
+
+      console.log('Decoded Token:', decodedToken);
+
+      const response2 = await fetch(`${gatewayUrl}/users/${decodedToken.userIdentifier}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      })
+
+      if (!response2.ok) {
+        // 응답이 성공적이지 않을 경우 에러 처리
+        const errorData2 = await response2.json();
+        throw new Error(errorData2.error_description || '로그인에 실패했습니다.');
+      }
+
+      const data2 = await response2.json();
+
+      localStorage.setItem('name', data2.name)
+      localStorage.setItem('role', data2.role)
+
+
+      alert("로그인 성공!");
+
+      window.location.href = '/'; // 메인 페이지로 리디렉션
+
     } catch (error) {
-      console.error("로그인 실패:", error)
-      alert("로그인에 실패했습니다.")
+      console.error("로그인 실패:", error);
+      alert((error as Error).message);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
