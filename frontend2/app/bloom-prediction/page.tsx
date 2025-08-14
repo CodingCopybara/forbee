@@ -150,7 +150,9 @@ export default function BloomPredictionPage() {
       console.log("주는 데이터:", params);
 
       // POST 요청
-      const response = await axios.post(apiUrl, null, { params });
+      const response = await axios.post(apiUrl, null, { params,   headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      }, });
       const apiResponse = response.data; 
       console.log("받는 데이터:", apiResponse);
 
@@ -335,7 +337,9 @@ export default function BloomPredictionPage() {
                       <h4 className="font-medium text-amber-900 mb-2">
                         {result.station} - {result.flower} 개화 예측 정보
                       </h4>
-                      <p className="text-sm text-amber-800">AI 예측 성공</p>
+                      <p className="text-sm text-amber-800">AI 예측에 성공했습니다.</p>
+                      <p className="text-sm text-amber-800">해당 관측소에 전년도 개화일 데이터가 존재하지 않으면 표시되지 않을 수 있습니다.</p>
+                      <p className="text-sm text-amber-800">관측소의 평균 개화일 데이터는 최근 10년간의 데이터를 기준으로 산정됩니다. 최근 관측 데이터가 없는 경우, 표시되지 않을 수 있습니다.</p>
                     </div>
                   </>
                 )}

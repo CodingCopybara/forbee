@@ -26,7 +26,7 @@ spring:
            predicates:
             - Path=/predict-and-get-info
          - id: tree
-           uri: http://localhost:0
+           uri: http://localhost:8087
            predicates:
             - Path=/plants/**
          - id: user
