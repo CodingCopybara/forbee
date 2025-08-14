@@ -10,6 +10,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from pydantic import BaseModel
 
+import re
+
+
 from services.custom_functions import provide_recommendation_url
 from services.openai_client import client, aclient, FILE_SEARCH_RES
 from services.tools import run_open_link
@@ -73,18 +76,24 @@ def get_url(question: str = Query(..., description="사용자 질문")):
 # --- 불필요 문구 제거 함수 ---
 def clean_ai_answer(raw_answer: str) -> str:
     """
-    AI 응답에서 '모른다' 류의 불필요한 안내 문구 제거
+    AI 응답에서 '모른다' 류의 불필요한 안내 문구 제거 (정규식 기반 확장)
     """
-    remove_phrases = [
-        "업로드하신 문서 내에서는",
-        "확인되지 않았습니다",
-        "자료를 제공해 주시면 확인해 드리겠습니다"
+    # 제거 패턴 목록 (대소문자 구분 없음)
+    patterns = [
+        r"업로드.*문서.*(포함|확인).{0,20}않습니다",
+        r"자료.*제공.*확인.*드리겠습니다",
+        r"죄송하지만.*(문서|정보).*포함.*않습니다",
+        r"현재.*문서.*내용.*없습니다",
+        r"불확실.*추가정보.*요청",
     ]
+
+    # 줄 단위로 검사
     lines = raw_answer.splitlines()
     cleaned_lines = []
     for line in lines:
-        if not any(p in line for p in remove_phrases):
+        if not any(re.search(p, line, re.IGNORECASE) for p in patterns):
             cleaned_lines.append(line.strip())
+
     return "\n".join([l for l in cleaned_lines if l]).strip()
 
 # --- 동기 헬프센터 실행 ---
@@ -156,8 +165,6 @@ async def help_api(req: ChatRequest, request: Request):
 
     messages = _build_messages(session_history[:-1], req.question)
     raw_answer = await asyncio.to_thread(run_help_center_sync, messages)
-
-    # 1) 불필요 문구 제거
     answer = clean_ai_answer(raw_answer)
 
     # 2) URL 추천
