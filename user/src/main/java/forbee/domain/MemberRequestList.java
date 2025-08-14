@@ -24,12 +24,13 @@ public class MemberRequestList {
 
     private String address;         // 주소
 
-    private String career;          // 경력
+    private Long career;          // 경력
 
     private Long hiveCount;          // 보유 벌통 수
 
     private Long annualProduction; // 연간 생산량
 
+    @Lob
     private String documents;       // 서류
 
     @Lob
@@ -73,12 +74,19 @@ public class MemberRequestList {
         //implement business logic here:
 
         RequestApproved requestApproved = new RequestApproved(this);
+
+        this.setStatus(Status.APPROVED);
+        this.setProcessMessage(requestApprovalCommand.getProcessMessage());
         requestApproved.publishAfterCommit();
     }
 
     public void requestDeny(RequestDenyCommand requestDenyCommand) {
         //implement business logic here:
+        RequestDenied requestDenied = new RequestDenied(this);
 
+        this.setStatus(Status.REJECTED);
+        this.setProcessMessage(requestDenyCommand.getProcessMessage());
+        requestDenied.publishAfterCommit();
     }
 
 }
