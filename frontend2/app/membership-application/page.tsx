@@ -68,7 +68,6 @@ export default function MembershipApplication() {
     try {
       const gatewayUrl = process.env.NEXT_PUBLIC_GW_URL;
       const accessToken = localStorage.getItem('accessToken');
-      console.log("accessToken : ", accessToken)
 
       const response = await fetch(`${gatewayUrl}/files/upload`, {
         method: 'POST',
