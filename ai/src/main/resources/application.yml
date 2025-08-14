@@ -117,7 +117,7 @@ spring:
   #         destination: forbee
   #         contentType: application/json
 
-python:
+fastapi:
   url: http://localhost:8003
 
 azure:
