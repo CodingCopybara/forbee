@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Calendar, Thermometer, Droplets, Wind, Loader2 } from "lucide-react"
-import { BloomMap } from "@/components/ui/BloomMap"
+import { BloomMap } from "@/components/ui/bloomMap"
 
 interface Location {
   id: string
@@ -29,7 +29,6 @@ interface BloomResult {
 }
 
 const locations: Location[] = [
-  // { id: "1", name: "강릉", coordinates: [37.7515, 128.891], station: "강릉관측소" },
   { id: "2", name: "강화", coordinates: [37.7074, 126.4463], station: "강화기상관측소, 인천광역시 강화군 불은면 중앙로 630" },
   { id: "4", name: "거제", coordinates: [34.8882, 128.6046], station: "거제기상관측소, 경상남도 거제시 장평2로2길 47" },
   { id: "5", name: "거창", coordinates: [35.6674, 127.9099], station: "거창기상대, 경상남도 거창군 거창읍 수남로 2117" },
@@ -41,7 +40,6 @@ const locations: Location[] = [
   { id: "14", name: "금산", coordinates: [36.1056, 127.4818], station: "금산기상관측소, 충청남도 금산군 금산읍 비단로 410-8" },
   { id: "16", name: "남원", coordinates: [35.4213, 127.3965], station: "남원기상레이더운영지원센, 전북특별자치도 남원시 춘향로 74-32" },
   { id: "17", name: "남해", coordinates: [34.8166, 127.9264], station: "남해기상관측소, 경상남도 남해군 이동면 남해대로 2423" },
-  // { id: "18", name: "대관령", coordinates: [37.6771, 128.7183], station: "대관령관측소" },
   { id: "19", name: "대구", coordinates: [35.878, 128.653], station: "대구지방기상청, 대구광역시 동구 효동로2길 10" },
   { id: "20", name: "대전", coordinates: [36.372, 127.3721], station: "대전지방기상청, 대전광역시 유성구 구성동 20-4" },
   { id: "21", name: "동두천", coordinates: [37.9019, 127.0607], station: "동두천기상대, 경기도 동두천시 방죽로 16-47" },
@@ -86,7 +84,6 @@ const locations: Location[] = [
   { id: "71", name: "진주", coordinates: [35.1638, 128.04], station: "진주기상대, 경상남도 진주시 남강로 43" },
   { id: "73", name: "천안", coordinates: [36.7622, 127.2928], station: "한국기상산업진흥원, 충청남도 천안시 동남구 병천면 병천1로 36" },
   { id: "75", name: "청주", coordinates: [36.6392, 127.4407], station: "청주기상대, 충청북도 청주시 흥덕구 공단로 76" },
-  // { id: "76", name: "춘천", coordinates: [37.9026, 127.7357], station: "기상청춘천기상대(구), 강원특별자치도 춘천시 우두동 406-1" },
   { id: "77", name: "추풍령", coordinates: [36.2203, 127.9946], station: "추풍령표준기상관측소, 충청북도 영동군 추풍령면 관리길 25-15" },
   { id: "78", name: "충주", coordinates: [36.9705, 127.9525], station: "충주기상대, 충청북도 충주시 안림동 526-1" },
   { id: "79", name: "통영", coordinates: [34.8454, 128.4356], station: "통영기상대, 경상남도 통영시 망일1길 67" },
@@ -251,15 +248,15 @@ export default function BloomPredictionPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center justify-between mb-4">
+                    {/* <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-gray-900">개화 예측 결과</h3>
                       <Badge variant="secondary" className="bg-green-100 text-green-800">
                         신뢰도 {result.confidence}%
                       </Badge>
-                    </div>
+                    </div> */}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-                      <Card>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                      <Card className="lg:col-start-2 col-span-1">
                         <CardContent className="p-4">
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-5 w-5 text-amber-600" />
@@ -271,7 +268,7 @@ export default function BloomPredictionPage() {
                         </CardContent>
                       </Card>
 
-                      <Card>
+                      <Card className="lg:col-start-3 col-span-1">
                         <CardContent className="p-4">
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-5 w-5 text-amber-600" />
@@ -283,7 +280,7 @@ export default function BloomPredictionPage() {
                         </CardContent>
                       </Card>
 
-                      <Card>
+                      {/* <Card>
                         <CardContent className="p-4">
                           <div className="flex items-center space-x-2">
                             <Thermometer className="h-5 w-5 text-red-500" />
@@ -293,9 +290,9 @@ export default function BloomPredictionPage() {
                             </div>
                           </div>
                         </CardContent>
-                      </Card>
+                      </Card> */}
 
-                      <Card>
+                      {/* <Card>
                         <CardContent className="p-4">
                           <div className="flex items-center space-x-2">
                             <Droplets className="h-5 w-5 text-blue-500" />
@@ -305,9 +302,9 @@ export default function BloomPredictionPage() {
                             </div>
                           </div>
                         </CardContent>
-                      </Card>
+                      </Card> */}
 
-                      <Card>
+                      {/* <Card>
                         <CardContent className="p-4">
                           <div className="flex items-center space-x-2">
                             <Wind className="h-5 w-5 text-gray-500" />
@@ -317,7 +314,7 @@ export default function BloomPredictionPage() {
                             </div>
                           </div>
                         </CardContent>
-                      </Card>
+                      </Card> */}
                     </div>
 
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">

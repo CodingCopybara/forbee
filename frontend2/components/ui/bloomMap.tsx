@@ -15,15 +15,16 @@ interface Location {
   name: string
   coordinates: [number, number]
   station: string
+  
 }
 
-interface BloomMapProps {
+interface bloomMapProps {
   locations: Location[]
   onMarkerClick: (location: Location) => void
   selectedLocation: Location | null
 }
 
-export function BloomMap({ locations, onMarkerClick, selectedLocation }: BloomMapProps) {
+export function BloomMap({ locations, onMarkerClick, selectedLocation }: bloomMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const markersRef = useRef<any[]>([]);

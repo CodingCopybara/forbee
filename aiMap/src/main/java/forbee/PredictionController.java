@@ -15,7 +15,7 @@ import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
-// @CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 public class PredictionController {
 

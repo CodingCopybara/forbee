@@ -165,15 +165,6 @@ const mockPredictionData = {
   }
 };
 
-// 임시 예측 결과 표시 (개발용)
-const showMockPredictionResult = () => {
-  resultImageSrc.value = mockPredictionData.image_data;
-  pixelRatios.value = mockPredictionData.pixel_ratios;
-  recommendationText.value = calculateRecommendation(mockPredictionData.pixel_ratios);
-  showPopup.value = true;
-};
-const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
 const closePopup = () => {
   showPopup.value = false;
 };
@@ -198,123 +189,110 @@ const updateCoordinates = () => {
 };
 
 const captureAndPredict = async () => {
-  if (!map.value) return;
-  console.log("지도 캡처 시작...");
-  isLoading.value = true;
+  if (!mapRef.current || !mapInstance.current) return;
+  console.log("지도 캡처 시작...");
+  setIsLoading(true);
 
-  const widgetElements = document.querySelectorAll('.sop-control');
-  widgetElements.forEach(el => {
-    el.dataset.prevDisplay = el.style.display;
-    el.style.display = 'none';
-  });
+  // 지도 위젯 숨기기
+  const widgetElements = document.querySelectorAll('.sop-control');
+  widgetElements.forEach(el => {
+    (el as HTMLElement).dataset.prevDisplay = (el as HTMLElement).style.display;
+    (el as HTMLElement).style.display = 'none';
+  });
 
-  const originalCenter = map.value.getCenter();
-  const originalZoom = map.value.getZoom();
-  console.log("현재 위치/줌 저장:", originalCenter, originalZoom);
+  const map = mapInstance.current;
+  const originalCenter = map.getCenter();
+  const originalZoom = map.getZoom();
+  console.log("현재 위치/줌 저장:", originalCenter, originalZoom);
 
-  const captureZoom = 18;
-  map.value.setZoom(captureZoom);
-  await wait(2000);
+  const captureZoom = 18;
+  map.setZoom(captureZoom);
 
-  const mapElement = mapDiv.value;
-  const tileWidth = mapElement.offsetWidth;
-  const tileHeight = mapElement.offsetHeight;
-  const minTargetSize = 3000;
-  const tilesPerSide = Math.ceil(minTargetSize / tileWidth);
-  const finalWidth = tileWidth * tilesPerSide;
-  const finalHeight = tileHeight * tilesPerSide;
+  // 렌더링 안정화
+  await new Promise(r => setTimeout(r, 2000));
 
-  console.log(`최소 목표 크기 ${minTargetSize}px. ${tilesPerSide}x${tilesPerSide} 그리드 캡처 시작. 최종 크기: ${finalWidth}x${finalHeight}`);
+  const mapElement = mapRef.current;
+  const tileWidth = mapElement.offsetWidth;
+  const tileHeight = mapElement.offsetHeight;
+  const minTargetSize = 3000;
+  const tilesPerSide = Math.ceil(minTargetSize / tileWidth);
+  const finalWidth = tileWidth * tilesPerSide;
+  const finalHeight = tileHeight * tilesPerSide;
 
-  const capturedImages = [];
-  const startOffset = -Math.floor(tilesPerSide / 2);
-  for (let y = 0; y < tilesPerSide; y++) {
-    for (let x = 0; x < tilesPerSide; x++) {
-      const dx = (startOffset + x) * tileWidth;
-      const dy = (startOffset + y) * tileHeight;
+  console.log(`최종 캡처 크기: ${finalWidth}x${finalHeight}, ${tilesPerSide}x${tilesPerSide} 그리드`);
 
-      map.value.setView(originalCenter, map.value.getZoom(), { animate: false });
-      map.value.panBy([dx, dy], { animate: false });
-      await wait(1000);
+  const capturedImages: HTMLCanvasElement[] = [];
+  const startOffset = -Math.floor(tilesPerSide / 2);
 
-      const canvas = await html2canvas(mapElement, {
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        width: tileWidth,
-        height: tileHeight
-      });
-      capturedImages.push(canvas);
-    }
-  }
+  for (let y = 0; y < tilesPerSide; y++) {
+    for (let x = 0; x < tilesPerSide; x++) {
+      const dx = (startOffset + x) * tileWidth;
+      const dy = (startOffset + y) * tileHeight;
 
-  const finalCanvas = document.createElement("canvas");
-  finalCanvas.width = finalWidth;
-  finalCanvas.height = finalHeight;
-  const ctx = finalCanvas.getContext("2d");
+      map.setView(originalCenter, map.getZoom(), { animate: false });
+      map.panBy([dx, dy], { animate: false });
+      await new Promise(r => setTimeout(r, 1000));
 
-  for (let i = 0; i < capturedImages.length; i++) {
-    const x = (i % tilesPerSide) * tileWidth;
-    const y = Math.floor(i / tilesPerSide) * tileHeight;
-    ctx.drawImage(capturedImages[i], x, y, tileWidth, tileHeight);
-  }
+      const canvas = await html2canvas(mapElement, {
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        width: tileWidth,
+        height: tileHeight
+      });
+      capturedImages.push(canvas);
+    }
+  }
 
-  const blob = await new Promise(resolve => finalCanvas.toBlob(resolve, "image/png"));
-  console.log("PNG Blob 생성 완료. 서버로 전송...");
+  // 모든 타일 합치기
+  const finalCanvas = document.createElement("canvas");
+  finalCanvas.width = finalWidth;
+  finalCanvas.height = finalHeight;
+  const ctx = finalCanvas.getContext("2d")!;
+  capturedImages.forEach((c, i) => {
+    const x = (i % tilesPerSide) * tileWidth;
+    const y = Math.floor(i / tilesPerSide) * tileHeight;
+    ctx.drawImage(c, x, y, tileWidth, tileHeight);
+  });
 
-  try {
-    const response = await axios.post(
-      import.meta.env.VITE_GW_URL + '/predict-and-get-info',
-      blob,
-      {
-        headers: {
-          'Content-Type': 'image/png',
-          'Authorization': 'Bearer ' + localStorage.getItem("accessToken")
-        },
-        responseType: 'json'
-      }
+  const blob: Blob = await new Promise(resolve => finalCanvas.toBlob(resolve as any, "image/png"));
+  console.log("PNG Blob 생성 완료. 서버로 전송...");
+
+  try {
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_GW_URL}/plants/predict-bloom`,
+      blob,
+      {
+        headers: {
+          "Content-Type": "image/png",
+          Authorization: "Bearer " + localStorage.getItem("accessToken"),
+        },
+        responseType: "json",
+      }
     );
 
-    const result = response.data;
-    console.log('서버로부터 받은 예측 결과:', result);
+    const result = response.data;
+    console.log('서버 응답:', result);
 
-    lastPredictionImage.value = result.image_data;
-    lastPredictionRatios.value = result.pixel_ratios;
+    lastPredictionImage.current = result.image_data;
+    lastPredictionRatios.current = result.pixel_ratios;
+    setResultImageSrc(result.image_data);
+    setPixelRatios(result.pixel_ratios);
+    setRecommendationText(calculateRecommendation(result.pixel_ratios));
 
-    resultImageSrc.value = result.image_data;
-    pixelRatios.value = result.pixel_ratios;
-    recommendationText.value = calculateRecommendation(result.pixel_ratios);
-    showPopup.value = true;
-
-  } catch (error) {
-    console.error('예측 과정에서 오류 발생:', error);
-    alert('예측에 실패했습니다. 콘솔을 확인해주세요.');
-  } finally {
-    map.value.setView(originalCenter, originalZoom);
-
-    // 좌표 얻기
-    let lat, lng;
-    if (typeof originalCenter.getLat === 'function') {
-      lat = originalCenter.getLat();
-      lng = originalCenter.getLng();
-    } else {
-      const utmkX = originalCenter.x;
-      const utmkY = originalCenter.y;
-      const latlng = proj4('EPSG:5179', 'EPSG:4326', [utmkX, utmkY]);
-      lat = latlng[1];
-      lng = latlng[0];
-    }
-
-    // 문자열로 저장
-    analysisResultCoordinates.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-
+  } catch (error) {
+    console.error('예측 실패:', error);
+    alert("예측 실패. 콘솔 확인");
+  } finally {
+    map.setView(originalCenter, originalZoom);
     widgetElements.forEach(el => {
-      el.style.display = el.dataset.prevDisplay || 'block';
+      (el as HTMLElement).style.display = (el as HTMLElement).dataset.prevDisplay || 'block';
     });
-    isLoading.value = false;
+    setIsLoading(false);
     console.log("지도 상태 복구 완료.");
   }
 };
+
 
 const showLastPrediction = () => {
   if (!lastPredictionImage.value || !lastPredictionRatios.value) {
