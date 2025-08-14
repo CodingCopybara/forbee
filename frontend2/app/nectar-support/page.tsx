@@ -60,6 +60,61 @@ const nectarSources = [
   },
 ]
 
+const gatewayUrl = process.env.NEXT_PUBLIC_GW_URL;
+async function getAccessToken(): Promise<string | null> {
+  // 네 앱 인증 흐름에 맞게 수정 (지금 membership 코드와 동일 처리)
+  return localStorage.getItem("accessToken");
+}
+
+async function uploadOne(file: File): Promise<string> {
+  const token = await getAccessToken();
+  const fd = new FormData();
+  fd.append("file", file);
+
+  const res = await fetch(`${gatewayUrl}/files/upload`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: fd,
+  });
+  if (!res.ok) {
+    let m = "";
+    try { m = await res.text(); } catch {}
+    throw new Error(`파일 업로드 실패: ${res.status} ${m}`);
+  }
+  const data = (await res.json()) as { url: string };
+  return data.url;
+}
+
+type CreateTreePayload = {
+  username: string;
+  applicantName: string;
+  phone: string;
+  apiaryAddress: string;
+  apiarySize?: "small" | "medium" | "large";
+  desiredFlora: string;  // "아카시아" | "개나리" | "매화" | "벚꽃"
+  desiredQty: number;
+  photoUrl?: string;     // 대표 1장
+  reason?: string;
+};
+
+async function createTreeApplication(payload: CreateTreePayload) {
+  const token = localStorage.getItem("accessToken"); // optional
+  const res = await fetch(`${gatewayUrl}/trees`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const msg = await res.text();
+    console.error("신청 생성 실패:", res.status, msg); // ✅ 콘솔에도 남김
+    throw new Error(`신청 생성 실패: ${res.status} ${msg}`);
+  }
+  return res.json() as Promise<{ id: string; status: string }>;
+}
+
 export default function NectarSupportPage() {
   const [selectedSource, setSelectedSource] = useState<string>("")
   const [applicationStep, setApplicationStep] = useState<"info" | "form" | "success">("info")
@@ -73,29 +128,68 @@ export default function NectarSupportPage() {
     quantity: "",
     reason: "",
   })
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [loading, setLoading] = useState(false)
+  
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     const validFiles = files.filter((file) => {
-      const isValidType = file.type === "image/png" || file.type === "image/jpeg" || file.type === "image/jpg"
-      const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB 제한
+      const isValidType = ["image/png","image/jpeg","image/jpg"].includes(file.type)
+      const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB
       return isValidType && isValidSize
     })
-
     if (validFiles.length !== files.length) {
-      alert("PNG, JPG 파일만 업로드 가능하며, 파일 크기는 10MB 이하여야 합니다.")
+      alert("PNG, JPG 파일만 업로드 가능하며, 각 10MB 이하여야 합니다.")
     }
-
-    setSitePhotos((prev) => [...prev, ...validFiles].slice(0, 5)) // 최대 5개 파일
+    // 미리보기 위해 파일은 유지
+    setSitePhotos((prev) => [...prev, ...validFiles].slice(0, 5))
   }
 
   const removePhoto = (index: number) => {
     setSitePhotos((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setApplicationStep("success")
+    if (loading) return
+
+    try {
+      setLoading(true)
+
+      // 1) 선택된 사진 업로드 (병렬)
+      const uploadedUrls = await Promise.all(sitePhotos.map(uploadOne))
+      const primaryPhoto = uploadedUrls[0] // 대표 1장만 저장 (여러 장은 추후 확장)
+      const username = localStorage.getItem("username") || "";
+
+      // 2) 프론트 값 → 백엔드 DTO 매핑
+      const payload = {
+        username,
+        applicantName: formData.name.trim(),
+        phone: formData.phone.trim(),
+        apiaryAddress: formData.address.trim(),
+        apiarySize: (formData.farmSize || undefined) as "small" | "medium" | "large" | undefined,
+        desiredFlora: formData.nectarType,              // "아카시아" 등
+        desiredQty: Number(formData.quantity || 0),
+        photoUrl: primaryPhoto,
+        reason: formData.reason?.trim() || "",
+      }
+
+      if (!payload.applicantName || !payload.phone || !payload.apiaryAddress || !payload.desiredFlora || !payload.desiredQty) {
+        alert("필수 입력을 확인해주세요.")
+        setLoading(false)
+        return
+      }
+
+      // 3) 신청 생성
+      await createTreeApplication(payload)
+
+      // 4) 완료 화면
+      setApplicationStep("success")
+    } catch (err: any) {
+      console.error(err)
+      alert(err?.message ?? "신청 중 오류가 발생했습니다.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (applicationStep === "success") {
@@ -295,8 +389,8 @@ export default function NectarSupportPage() {
                 </ul>
               </div>
 
-              <Button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-white">
-                지원 신청하기
+              <Button type="submit" disabled={loading} className="w-full bg-amber-500 hover:bg-amber-600 text-white">
+                {loading ? "처리 중..." : "지원 신청하기"}
               </Button>
             </form>
           </div>
