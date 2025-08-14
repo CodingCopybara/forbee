@@ -7,6 +7,10 @@ spring:
 ---
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   profiles: default
   datasource:
     url: jdbc:mysql://forbee-user-db.mysql.database.azure.com:3306/user?useSSL=false&serverTimezone=UTC&useLegacyDatetimeCode=false
@@ -56,6 +60,11 @@ logging:
 api:
   url: 
     user: localhost:8084
+
+azure:
+  storage:
+    connection-string: ${AZURE_STORAGE_CONNECTION_STRING}
+    container-name: blob
     
 
 server:

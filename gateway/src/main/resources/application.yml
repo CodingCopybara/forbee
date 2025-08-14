@@ -33,6 +33,14 @@ spring:
            uri: http://localhost:8084
            predicates:
             - Path=/users/**
+         - id: memberRequest
+           uri: http://localhost:8084
+           predicates:
+            - Path=/memberRequestLists/**
+         - id: file
+           uri: http://localhost:8084
+           predicates:
+            - Path=/files/**
          - id: dashboard
            uri: http://localhost:0
            predicates:
@@ -44,8 +52,7 @@ spring:
          - id: ai
            uri: http://localhost:8083
            predicates:
-            - Path=/ai/**
-            - Path=/api/**
+            - Path=/ai/**, /api/**
          - id: oauth-register
            uri: http://localhost:8090
            predicates:

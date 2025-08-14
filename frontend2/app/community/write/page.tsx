@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,105 +44,132 @@ interface ChatMessage {
 }
 
 function ChatHistoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  // 샘플 채팅 데이터 (실제로는 props나 context에서 받아올 것)
-  const chatHistory: ChatMessage[] = [
-    {
-      id: "1",
-      type: "user",
-      content: "벌집 사진을 업로드했습니다. 분석을 시작해주세요.",
-      timestamp: new Date(Date.now() - 300000),
-      imageUrl: "/beehive-inspection.png",
-    },
-    {
-      id: "2",
-      type: "bot",
-      content: `분석이 완료되었습니다. 
+  const GW_URL = process.env.NEXT_PUBLIC_GW_URL || ""
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string>("")
+  const [messages, setMessages] = useState<ChatMessage[]>([])
 
-**진단 결과:**
-- 바로아 진드기(Varroa mites) 감염 의심
-- 위험도: 중간 (60%)
-- 감염된 벌방 수: 약 15-20개 추정
+  const currentUserId = () => {
+    const email = (typeof window !== "undefined" && localStorage.getItem("username")) || ""
+    return email.includes("@") ? email.split("@")[0] : email
+  }
 
-**주요 증상:**
-- 벌방 뚜껑에 작은 구멍들이 관찰됨
-- 일부 유충에서 갈색 반점 확인
-- 성충 꿀벌의 날개 기형 징후
+  // fetch 유틸(GET)
+  const getJSON = async <T,>(url: string, headers: Record<string, string> = {}) => {
+    const res = await fetch(url, { headers })
+    if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`)
+    return (await res.json()) as T
+  }
 
-**권장 조치사항:**
-1. 즉시 바로아 진드기 치료제 적용
-2. 감염된 벌방 제거 고려
-3. 2주 후 재검사 필요`,
-      timestamp: new Date(Date.now() - 297000),
-    },
-    {
-      id: "3",
-      type: "user",
-      content: "치료제는 어떤 것을 사용해야 하나요? 그리고 치료 기간은 얼마나 걸리나요?",
-      timestamp: new Date(Date.now() - 240000),
-    },
-    {
-      id: "4",
-      type: "bot",
-      content:
-        "바로아 진드기 치료에 대해 더 자세히 설명드리겠습니다. 현재 상황에서는 포름산 기반 치료제를 권장합니다. 치료 기간은 보통 2-3주 정도 소요되며, 치료 과정에서 궁금한 점이 있으시면 언제든 말씀해주세요.",
-      timestamp: new Date(Date.now() - 239000),
-    },
-  ]
+  const loadLatest = async () => {
+    if (!GW_URL) {
+      setError("게이트웨이 URL(NEXT_PUBLIC_GW_URL)이 설정되지 않았습니다.")
+      return
+    }
+    setLoading(true)
+    setError("")
+    try {
+      const token = (typeof window !== "undefined" && localStorage.getItem("accessToken")) || ""
+      type RawMsg = { sender: "user" | "bot"; type: "text" | "image"; text?: string | null; url?: string | null; ts?: number }
+      const data = await getJSON<{ messages?: RawMsg[] }>(`${GW_URL}/api/chat-sessions/latest`, {
+        userId: currentUserId(),
+        Authorization: `Bearer ${token}`,
+      })
+
+      const mapped: ChatMessage[] = Array.isArray(data?.messages)
+        ? data!.messages.map((m, i) => ({
+            id: String(m.ts ?? i),
+            type: m.sender,
+            content: m.text ?? "",
+            imageUrl: m.url ?? undefined,
+            timestamp: new Date(m.ts ?? Date.now()),
+          }))
+        : []
+
+      setMessages(mapped)
+    } catch (e) {
+      console.error(e)
+      setError("대화내역을 불러오지 못했습니다.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 모달이 열릴 때마다 새로고침
+  useEffect(() => {
+    if (isOpen) {
+      loadLatest()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-direction flex-col">
+        {/* 헤더 */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-amber-600" />
             채팅 이력
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-4">
-            {chatHistory.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}
-              >
-                {message.type === "bot" && (
-                  <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-4 h-4 text-amber-600" />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
-                    message.type === "user" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-900"
-                  }`}
-                >
-                  {message.imageUrl && (
-                    <img
-                      src={message.imageUrl || "/placeholder.svg"}
-                      alt="업로드된 이미지"
-                      className="rounded mb-2 w-full h-24 object-cover"
-                    />
-                  )}
-                  <p className="text-sm whitespace-pre-line">{message.content}</p>
-                  <p className={`text-xs mt-1 ${message.type === "user" ? "text-amber-100" : "text-gray-500"}`}>
-                    {message.timestamp.toLocaleTimeString()}
-                  </p>
-                </div>
-                {message.type === "user" && (
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                    <User className="w-4 h-4 text-gray-600" />
-                  </div>
-                )}
-              </div>
-            ))}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={loadLatest} disabled={loading}>
+              새로고침
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="w-4 h-4" />
+            </Button>
           </div>
         </div>
 
+        {/* 본문 */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {error ? (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-3">⚠️ {error}</div>
+          ) : loading ? (
+            <div className="text-sm text-gray-600">불러오는 중...</div>
+          ) : messages.length === 0 ? (
+            <div className="text-sm text-gray-600">최근 대화가 없어요.</div>
+          ) : (
+            <div className="space-y-4">
+              {messages.map((message) => (
+                <div key={message.id} className={`flex gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}>
+                  {message.type === "bot" && (
+                    <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Bot className="w-4 h-4 text-amber-600" />
+                    </div>
+                  )}
+                  <div
+                    className={`max-w-[80%] rounded-lg p-3 ${
+                      message.type === "user" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-900"
+                    }`}
+                  >
+                    {message.imageUrl && (
+                      <img
+                        src={message.imageUrl || "/placeholder.svg"}
+                        alt="업로드된 이미지"
+                        className="rounded mb-2 w-full h-24 object-cover"
+                      />
+                    )}
+                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                    <p className={`text-xs mt-1 ${message.type === "user" ? "text-amber-100" : "text-gray-500"}`}>
+                      {message.timestamp.toLocaleTimeString()}
+                    </p>
+                  </div>
+                  {message.type === "user" && (
+                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-gray-600" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 푸터 */}
         <div className="p-6 border-t bg-gray-50">
           <p className="text-sm text-gray-600 text-center">이 채팅 내용을 참고하여 전문가에게 질문을 작성해보세요.</p>
         </div>

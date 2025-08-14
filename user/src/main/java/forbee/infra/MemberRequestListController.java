@@ -26,11 +26,14 @@ public class MemberRequestListController {
     public MemberRequestList upgradeToMemberRequest(HttpServletRequest request, HttpServletResponse response, 
         @RequestBody UpgradeToMemberRequestCommand upgradeToMemberRequestCommand) throws Exception {
             System.out.println("##### /memberRequestList/upgradeToMemberRequest  called #####");
+
             MemberRequestList memberRequestList = new MemberRequestList();
             memberRequestList.upgradeToMemberRequest(upgradeToMemberRequestCommand);
             memberRequestListRepository.save(memberRequestList);
+
             return memberRequestList;
     }
+
     @RequestMapping(value = "/memberRequestLists/{id}/requestapproval",
         method = RequestMethod.PUT,
         produces = "application/json;charset=UTF-8")
@@ -46,6 +49,7 @@ public class MemberRequestListController {
             return memberRequestList;
             
     }
+    
     @RequestMapping(value = "/memberRequestLists/{id}/requestdeny",
         method = RequestMethod.PUT,
         produces = "application/json;charset=UTF-8")

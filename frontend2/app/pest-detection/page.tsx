@@ -1,124 +1,298 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-  Camera,
-  Upload,
-  MessageSquare,
-  Send,
-  ArrowLeft,
-  AlertTriangle,
-  CheckCircle,
-  Bot,
-  User,
-  HelpCircle,
+  Camera, Upload, MessageSquare, Send, ArrowLeft, AlertTriangle, CheckCircle, Bot, User, HelpCircle,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
+type Sender = "user" | "bot"
+type Kind = "text" | "image" | "loading"
+type Detection = { name: string; risk?: string | number } | null
+
 interface Message {
   id: string
-  type: "user" | "bot"
-  content: string
-  timestamp: Date
+  sender: Sender
+  kind: Kind
+  content?: string
   imageUrl?: string
+  timestamp: number
+}
+
+const ALLOWED_TYPES = ["image/jpeg", "image/png"]
+const MAX_SIZE = 10 * 1024 * 1024 // 10MB
+const GW_URL = process.env.NEXT_PUBLIC_GW_URL || ""
+
+// ---- fetch 유틸 ----
+async function getJSON<T>(url: string, headers: Record<string, string> = {}) {
+  const res = await fetch(url, { headers, credentials: "include" })
+  if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`)
+  return (await res.json()) as T
+}
+
+async function postJSON<T = unknown>(url: string, body: any, headers: Record<string, string> = {}) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify(body),
+    credentials: "include",
+  })
+  if (!res.ok) throw new Error(`POST ${url} -> ${res.status}`)
+  try {
+    return (await res.json()) as T
+  } catch {
+    return undefined as unknown as T
+  }
 }
 
 export default function PestDetectionPage() {
+  const router = useRouter()
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisComplete, setAnalysisComplete] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: String(Date.now()),
+      sender: "bot",
+      kind: "text",
+      content: "꿀벌 질병/해충 탐지 서비스에 오신걸 환영합니다~! 분석을 원하는 사진을 올려주세요 🤓✨",
+      timestamp: Date.now(),
+    },
+  ])
   const [inputMessage, setInputMessage] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [isBotLoading, setIsBotLoading] = useState(false)
+  const [showQnaBtn, setShowQnaBtn] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const esRef = useRef<EventSource | null>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const imageUrl = e.target?.result as string
-        setUploadedImage(imageUrl)
+  const userId = useMemo(() => {
+    if (typeof window === "undefined") return ""
+    const email = localStorage.getItem("username") || ""
+    return email.includes("@") ? email.split("@")[0] : email
+  }, [])
+  const [detection, setDetection] = useState<Detection>(null)
+  // SSE 구독
+  useEffect(() => {
+    if (!GW_URL || !userId) return
+    const streamUrl = `${GW_URL}/ai/stream?userId=${encodeURIComponent(userId)}`
+    const es = new EventSource(streamUrl)
+    esRef.current = es
 
-        // 분석 시작
-        setIsAnalyzing(true)
+    const onAgent = (evt: MessageEvent) => {
+      setIsBotLoading(false)
+      removeBotLoadingMessage()
 
-        // 사용자 메시지 추가
-        const userMessage: Message = {
-          id: Date.now().toString(),
-          type: "user",
-          content: "벌집 사진을 업로드했습니다. 분석을 시작해주세요.",
-          timestamp: new Date(),
-          imageUrl: imageUrl,
+      try {
+        const payload = JSON.parse(evt.data)
+        const mainText: string | undefined = payload.prescription || payload.response
+
+        const diseaseName =
+          payload?.diseaseName ||
+          payload?.diagnosis?.name ||
+          payload?.result?.disease ||
+          payload?.disease ||
+          payload?.condition
+
+        const risk =
+          payload?.risk ?? payload?.severity ?? payload?.score ?? payload?.confidence
+
+        setIsAnalyzing(false)
+        setAnalysisComplete(true)
+
+        if (mainText) {
+          pushMessage({ sender: "bot", kind: "text", content: mainText })
         }
-        setMessages([userMessage])
 
-        // 3초 후 분석 완료 시뮬레이션
-        setTimeout(() => {
-          setIsAnalyzing(false)
-          setAnalysisComplete(true)
+        if (diseaseName) {
+          setDetection({ name: String(diseaseName), risk })
+        } else if (mainText) {
+          // 2) 텍스트에서 파싱 (한국어 문구들 대응)
+          const rx =
+            /(?:질병명|진단|의심)\s*[:：]\s*([^\n]+)/
+              .exec(mainText) ||
+            /응애|부저병|날개불구바이러스감염증|석고병/i
+              .exec(mainText) // 키워드만 있을 때
+          if (rx) setDetection({ name: rx[1]?.trim?.() || rx[0], risk })
+        }
 
-          const botMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            type: "bot",
-            content: `분석이 완료되었습니다. 
+        if (Array.isArray(payload.questions) && payload.questions.length > 0) {
+          pushMessage({
+            sender: "bot",
+            kind: "text",
+            content:
+              '추가 질문이 있어요. 아래에 답변해 주세요🤗\n답변 형식은 1. "1번 답입니다 2. 2번 답입니다 3. 3번 답입니다"처럼 한 번에 보내주세요:',
+          })
+          payload.questions.forEach((q: string, idx: number) => {
+            pushMessage({ sender: "bot", kind: "text", content: `${idx + 1}. ${q}` })
+          })
+        }
 
-**진단 결과:**
-- 바로아 진드기(Varroa mites) 감염 의심
-- 위험도: 중간 (60%)
-- 감염된 벌방 수: 약 15-20개 추정
+        if (mainText && (!payload.questions || payload.questions.length === 0)) {
+          setShowQnaBtn(true)
+        }
 
-**주요 증상:**
-- 벌방 뚜껑에 작은 구멍들이 관찰됨
-- 일부 유충에서 갈색 반점 확인
-- 성충 꿀벌의 날개 기형 징후
-
-**권장 조치사항:**
-1. 즉시 바로아 진드기 치료제 적용
-2. 감염된 벌방 제거 고려
-3. 2주 후 재검사 필요
-
-더 자세한 상담이 필요하시면 언제든 질문해주세요.`,
-            timestamp: new Date(),
-          }
-          setMessages((prev) => [...prev, botMessage])
-        }, 3000)
+        if (!mainText && !(payload.questions?.length)) {
+          pushMessage({ sender: "bot", kind: "text", content: evt.data })
+        }
+      } catch {
+        pushMessage({ sender: "bot", kind: "text", content: evt.data })
       }
-      reader.readAsDataURL(file)
+    }
+
+    const onError = () => {
+      removeBotLoadingMessage()
+      setIsBotLoading(false)
+    }
+
+    es.addEventListener("agent", onAgent as EventListener)
+    es.addEventListener("error", onError as EventListener)
+
+    return () => {
+      es.removeEventListener("agent", onAgent as EventListener)
+      es.removeEventListener("error", onError as EventListener)
+      es.close()
+    }
+  }, [GW_URL, userId])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages, isAnalyzing, isBotLoading, analysisComplete])
+
+  const pushMessage = (msg: Omit<Message, "id" | "timestamp">) => {
+    setMessages((prev) => [
+      ...prev,
+      { id: String(Date.now()) + Math.random().toString(36).slice(2), timestamp: Date.now(), ...msg },
+    ])
+  }
+  const addBotLoadingMessage = () => {
+    setMessages((prev) => (prev.some((m) => m.kind === "loading") ? prev : [...prev, {
+      id: String(Date.now()), sender: "bot", kind: "loading", timestamp: Date.now(),
+    }]))
+  }
+  const removeBotLoadingMessage = () => setMessages((prev) => prev.filter((m) => m.kind !== "loading"))
+
+  // 파일 업로드 + 분석 요청 (fetch만 사용)
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const byMime = ALLOWED_TYPES.includes(file.type)
+    const byExt = /\.(jpe?g|png)$/i.test(file.name)
+    if (!byMime && !byExt) {
+      pushMessage({ sender: "bot", kind: "text", content: "JPG/PNG 파일만 업로드할 수 있어요." })
+      event.target.value = ""
+      return
+    }
+    if (file.size > MAX_SIZE) {
+      pushMessage({ sender: "bot", kind: "text", content: "파일 크기는 최대 10MB까지 가능합니다." })
+      event.target.value = ""
+      return
+    }
+
+    const localUrl = URL.createObjectURL(file)
+    setUploadedImage(localUrl)
+    pushMessage({ sender: "user", kind: "image", imageUrl: localUrl })
+
+    setIsLoading(true)
+    setIsAnalyzing(true)
+    setShowQnaBtn(false)
+    setIsBotLoading(true)
+    addBotLoadingMessage()
+    pushMessage({ sender: "bot", kind: "text", content: "업로드 중..." })
+
+    try {
+      const token = localStorage.getItem("accessToken") || ""
+
+      // 1) 업로드용 SAS
+      const sas = await getJSON<{ uploadUrl: string; blobUrl?: string; fileName: string }>(
+        `${GW_URL}/ai/wsas?fileName=${encodeURIComponent(file.name)}`,
+        { Authorization: `Bearer ${token}` }
+      )
+      const { uploadUrl, blobUrl, fileName } = sas
+      if (!uploadUrl || !fileName) throw new Error("업로드용 SAS 또는 파일명이 없습니다.")
+
+      // 2) Azure Blob PUT (fetch) - 진행률은 fetch로는 불가
+      const putRes = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "x-ms-blob-type": "BlockBlob",
+          "Content-Type": file.type || "application/octet-stream",
+        },
+        body: file,
+      })
+      if (!putRes.ok) throw new Error(`PUT Blob 실패: ${putRes.status}`)
+      pushMessage({ sender: "bot", kind: "text", content: "업로드 완료! 분석을 시작할게요 🔎" })
+
+      // 3) 읽기 URL
+      const ro = await getJSON<{ readOnlyUrl?: string }>(
+        `${GW_URL}/ai/rsas?fileName=${encodeURIComponent(fileName)}`,
+        { Authorization: `Bearer ${token}` }
+      )
+      const readOnlyUrl = ro?.readOnlyUrl ?? blobUrl
+      if (!readOnlyUrl) throw new Error("읽기 URL을 얻지 못했습니다.")
+
+      setUploadedImage(readOnlyUrl)
+      setMessages(prev => {
+        const copy = [...prev]
+        // 가장 최근의 사용자 이미지 메시지를 찾아 교체
+        for (let i = copy.length - 1; i >= 0; i--) {
+          const m = copy[i]
+          if (m.sender === "user" && m.kind === "image") {
+            copy[i] = { ...m, imageUrl: readOnlyUrl }
+            break
+          }
+        }
+        return copy
+      })
+
+      // 4) 분석 요청
+      await postJSON(`${GW_URL}/ai/analysis`, { userId, imageUrl: readOnlyUrl }, { Authorization: `Bearer ${token}` })
+
+      pushMessage({ sender: "bot", kind: "text", content: "분석 요청 접수 완료! 결과가 준비되면 알려드릴게요 🐝" })
+      // 결과는 SSE 'agent' 이벤트로 수신
+    } catch (err) {
+      console.error(err)
+      removeBotLoadingMessage()
+      setIsBotLoading(false)
+      setIsAnalyzing(false)
+      pushMessage({ sender: "bot", kind: "text", content: "⚠️ 업로드/분석 중 오류가 발생했습니다. 다시 시도해주세요." })
+    } finally {
+      setIsLoading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
     }
   }
 
-  const handleSendMessage = () => {
+  // 사용자 답변 전송 (fetch)
+  const handleSendMessage = async () => {
     if (!inputMessage.trim()) return
+    const text = inputMessage.trim()
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: "user",
-      content: inputMessage,
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
+    pushMessage({ sender: "user", kind: "text", content: text })
     setInputMessage("")
+    setIsBotLoading(true)
+    addBotLoadingMessage()
 
-    // 봇 응답 시뮬레이션
-    setTimeout(() => {
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: "bot",
-        content:
-          "질문해주셔서 감사합니다. 바로아 진드기 치료에 대해 더 자세히 설명드리겠습니다. 현재 상황에서는 포름산 기반 치료제를 권장합니다. 치료 과정에서 궁금한 점이 있으시면 언제든 말씀해주세요.",
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, botMessage])
-    }, 1000)
+    try {
+      const token = localStorage.getItem("accessToken") || ""
+      await postJSON(`${GW_URL}/api/answer`, { answers: [text] }, { userId, Authorization: `Bearer ${token}` })
+      // 응답은 SSE로
+    } catch (err) {
+      console.error("답변 전송 오류", err)
+      removeBotLoadingMessage()
+      setIsBotLoading(false)
+      pushMessage({ sender: "bot", kind: "text", content: "⚠️ 답변 전송 실패" })
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -128,9 +302,39 @@ export default function PestDetectionPage() {
     }
   }
 
+  // QnA로 이어서 (fetch)
+  const goQnA = async () => {
+    if (isBotLoading) return
+    removeBotLoadingMessage()
+    setIsSaving(true)
+    try {
+      const token = localStorage.getItem("accessToken") || ""
+      const payload = {
+        userId,
+        messages: messages
+          .filter((m) => m.kind !== "loading")
+          .map((m, i) => ({
+            sender: m.sender,
+            type: m.kind,
+            text: m.content ?? null,
+            url: m.imageUrl ?? null,
+            ts: Date.now() + i,
+          })),
+      }
+      await postJSON(`${GW_URL}/api/chat-sessions`, payload, { userId, Authorization: `Bearer ${token}` })
+      router.push("/community/write?board=qna&category=disease")
+    } catch (e) {
+      console.warn("서버 저장 실패 → localStorage fallback", e)
+      const fallbackId = `local-${Date.now()}`
+      localStorage.setItem(`chat:${fallbackId}`, JSON.stringify({ userId, messages }))
+      router.push("/community/qna/write")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
-      {/* 간단한 페이지 타이틀만 유지 */}
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 flex items-center gap-4">
           <Link href="/">
@@ -191,7 +395,7 @@ export default function PestDetectionPage() {
                         </div>
                       )}
                     </div>
-                    <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
+                    <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full" disabled={isLoading}>
                       다른 사진 업로드
                     </Button>
                   </div>
@@ -199,14 +403,13 @@ export default function PestDetectionPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg"
                   onChange={handleImageUpload}
                   className="hidden"
                 />
               </CardContent>
             </Card>
 
-            {/* 분석 상태 카드 */}
             {(isAnalyzing || analysisComplete) && (
               <Card>
                 <CardHeader>
@@ -227,20 +430,26 @@ export default function PestDetectionPage() {
                 {analysisComplete && (
                   <CardContent>
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-orange-500" />
-                        <span className="text-sm">바로아 진드기 감염 의심</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-orange-400 rounded-full"></div>
-                        <span className="text-sm">위험도: 중간 (60%)</span>
-                      </div>
-                      <Button className="w-full mt-4 bg-amber-500 hover:bg-amber-600" asChild>
-                        <Link href="/community/write?board=qna&category=disease">
+                      {detection && (
+                        <div className="p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-900 text-sm">
+                          <div className="font-semibold mb-1">🤖 AI 허니비 닥터</div>
+                          <div>
+                            진단 : <span className="font-medium">{detection.name}</span>
+                            {detection.risk != null && (
+                              <>
+                                {" · "}위험도: {typeof detection.risk === "number" ? `${Math.round(Number(detection.risk) * 100)}%` : String(detection.risk)}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 mt-4">
+                        <Button className="w-full bg-amber-500 hover:bg-amber-600" onClick={goQnA} disabled={isSaving}>
                           <HelpCircle className="w-4 h-4 mr-2" />
                           QnA 작성하러 가기
-                        </Link>
-                      </Button>
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 )}
@@ -250,7 +459,7 @@ export default function PestDetectionPage() {
 
           {/* 채팅 섹션 */}
           <div className="space-y-6">
-            <Card className="h-[600px] flex flex-col">
+            <Card className="h-[600px] flex flex-col overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Bot className="w-5 h-5 text-amber-600" />
@@ -258,8 +467,8 @@ export default function PestDetectionPage() {
                 </CardTitle>
                 <CardDescription>분석 결과에 대해 궁금한 점을 언제든 질문하세요</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                <ScrollArea className="flex-1 pr-4">
+              <CardContent className="flex-1 flex flex-col min-h-0">
+                <ScrollArea className="flex-1 min-h-0 pr-4">
                   {messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-400">
                       <div className="text-center">
@@ -272,41 +481,48 @@ export default function PestDetectionPage() {
                       {messages.map((message) => (
                         <div
                           key={message.id}
-                          className={`flex gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}
+                          className={`flex items-start gap-3 min-w-0 ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                         >
-                          {message.type === "bot" && (
+                          {message.sender === "bot" && (
                             <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
                               <Bot className="w-4 h-4 text-amber-600" />
                             </div>
                           )}
                           <div
-                            className={`max-w-[80%] rounded-lg p-3 ${
-                              message.type === "user" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-900"
+                            className={`max-w-[80%] w-fit rounded-lg p-3 overflow-hidden whitespace-pre-wrap break-words 
+                              ${message.sender === "user" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-900"
                             }`}
                           >
-                            {message.imageUrl && (
+                            {message.kind === "image" && message.imageUrl && (
                               <Image
-                                src={message.imageUrl || "/placeholder.svg"}
+                                src={message.imageUrl}
                                 alt="업로드된 이미지"
                                 width={200}
                                 height={120}
-                                className="rounded mb-2 w-full h-24 object-cover"
+                                className="rounded mb-2 w-full max-h-40 object-contain"
                               />
                             )}
-                            <p className="text-sm whitespace-pre-line">{message.content}</p>
-                            <p
-                              className={`text-xs mt-1 ${message.type === "user" ? "text-amber-100" : "text-gray-500"}`}
-                            >
-                              {message.timestamp.toLocaleTimeString()}
-                            </p>
+                            {message.kind === "loading" ? (
+                              <div className="flex items-center gap-2">
+                                <div className="loading-dots flex gap-1">
+                                  <span className="inline-block w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.2s]" />
+                                  <span className="inline-block w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
+                                  <span className="inline-block w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+                                </div>
+                                <span className="text-sm">답변을 생성 중...</span>
+                              </div>
+                            ) : (
+                              <p className="text-sm">{message.content}</p>
+                            )}
                           </div>
-                          {message.type === "user" && (
+                          {message.sender === "user" && (
                             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
                               <User className="w-4 h-4 text-gray-600" />
                             </div>
                           )}
                         </div>
                       ))}
+                      <div ref={bottomRef} />
                     </div>
                   )}
                 </ScrollArea>
@@ -321,11 +537,7 @@ export default function PestDetectionPage() {
                         onKeyPress={handleKeyPress}
                         className="flex-1"
                       />
-                      <Button
-                        onClick={handleSendMessage}
-                        disabled={!inputMessage.trim()}
-                        className="bg-amber-500 hover:bg-amber-600"
-                      >
+                      <Button onClick={handleSendMessage} disabled={!inputMessage.trim()} className="bg-amber-500 hover:bg-amber-600">
                         <Send className="w-4 h-4" />
                       </Button>
                     </div>
