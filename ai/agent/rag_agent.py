@@ -40,6 +40,7 @@ def load_api_keys(env_path=Path(__file__).parent / ".env"):
     else:
         print(f"[WARN] .env 파일을 찾을 수 없습니다: {env_path}")
 
+# AKS 사용 시에는 아래 두줄을 주석처리 하고 빌드해야 함
 load_api_keys()
 openai_key = os.getenv("OPENAI_API_KEY")
 
