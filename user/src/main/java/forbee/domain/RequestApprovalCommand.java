@@ -8,6 +8,5 @@ import lombok.Data;
 public class RequestApprovalCommand {
 
     private Long id;
-    private String userId;
-    private String state;
+    private String processMessage;
 }

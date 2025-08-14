@@ -14,13 +14,13 @@ import javax.transaction.Transactional;
 //<<< Clean Arch / Inbound Adaptor
 
 @RestController
-// @RequestMapping(value="/memberRequestLists")
+@RequestMapping(value="/memberRequestLists")
 @Transactional
 public class MemberRequestListController {
     @Autowired
     MemberRequestListRepository memberRequestListRepository;
 
-    @RequestMapping(value = "/memberRequestLists/upgradetomemberrequest",
+    @RequestMapping(value = "/upgradetomemberrequest",
             method = RequestMethod.POST,
             produces = "application/json;charset=UTF-8")
     public MemberRequestList upgradeToMemberRequest(HttpServletRequest request, HttpServletResponse response, 
@@ -34,7 +34,7 @@ public class MemberRequestListController {
             return memberRequestList;
     }
 
-    @RequestMapping(value = "/memberRequestLists/{id}/requestapproval",
+    @RequestMapping(value = "/{id}/requestapproval",
         method = RequestMethod.PUT,
         produces = "application/json;charset=UTF-8")
     public MemberRequestList requestApproval(@PathVariable(value = "id") Long id, @RequestBody RequestApprovalCommand requestApprovalCommand, HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -50,7 +50,7 @@ public class MemberRequestListController {
             
     }
     
-    @RequestMapping(value = "/memberRequestLists/{id}/requestdeny",
+    @RequestMapping(value = "/{id}/requestdeny",
         method = RequestMethod.PUT,
         produces = "application/json;charset=UTF-8")
     public MemberRequestList requestDeny(@PathVariable(value = "id") Long id, @RequestBody RequestDenyCommand requestDenyCommand, HttpServletRequest request, HttpServletResponse response) throws Exception {
