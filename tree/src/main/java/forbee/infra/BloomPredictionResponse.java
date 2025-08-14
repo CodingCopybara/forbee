@@ -15,4 +15,5 @@ public class BloomPredictionResponse {
     private String humidity;
     private String windSpeed;
     private String previousYearBloomDate;
+    private String avgBloomDate;
 }

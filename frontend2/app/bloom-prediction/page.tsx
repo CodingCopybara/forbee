@@ -26,6 +26,7 @@ interface BloomResult {
   humidity: string
   windSpeed: string
   previousYearBloomDate: string
+  avgBloomDate: string
 }
 
 const locations: Location[] = [
@@ -164,7 +165,8 @@ export default function BloomPredictionPage() {
         temperature: apiResponse.temperature,
         humidity: apiResponse.humidity,
         windSpeed: apiResponse.windSpeed,
-        previousYearBloomDate: apiResponse.previousYearBloomDate
+        previousYearBloomDate: apiResponse.previousYearBloomDate,
+        avgBloomDate: apiResponse.avgBloomDate
       };
 
 
@@ -256,7 +258,7 @@ export default function BloomPredictionPage() {
                     </div> */}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                      <Card className="lg:col-start-2 col-span-1">
+                      <Card>
                         <CardContent className="p-4">
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-5 w-5 text-amber-600" />
@@ -268,13 +270,25 @@ export default function BloomPredictionPage() {
                         </CardContent>
                       </Card>
 
-                      <Card className="lg:col-start-3 col-span-1">
+                      <Card>
                         <CardContent className="p-4">
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-5 w-5 text-amber-600" />
                             <div>
                               <p className="text-sm text-gray-600">전년도 개화일</p>
                               <p className="font-semibold">{result.previousYearBloomDate}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="h-5 w-5 text-amber-600" />
+                            <div>
+                              <p className="text-sm text-gray-600">관측소 평균 개화일</p>
+                              <p className="font-semibold">{result.avgBloomDate}</p>
                             </div>
                           </div>
                         </CardContent>
