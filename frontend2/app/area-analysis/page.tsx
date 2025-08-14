@@ -82,9 +82,9 @@ export default function MapPredict() {
   }
 
   const waitForTilesLoaded = async (map: any) => {
-    console.log("타일 로딩 대기 시작 (임시 delay)")
-    await new Promise(r => setTimeout(r, 500))
-    console.log("타일 로딩 대기 완료")
+    // console.log("타일 로딩 대기 시작 (임시 delay)")
+    await new Promise(r => setTimeout(r, 300))
+    // console.log("타일 로딩 대기 완료")
   }
 
   const calculateOffsetCenter = (originalCenter: any, dx: number, dy: number) => {
@@ -190,7 +190,7 @@ export default function MapPredict() {
 
     const captureZoom = 18;
     map.setZoom(captureZoom);
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 300));
 
     const mapElement = mapRef.current;
     const tileWidth = mapElement.offsetWidth;
