@@ -69,7 +69,7 @@ logging:
 ---
 
 spring:
-  config:
+  config:  
     activate:
       on-profile: docker
   main:
