@@ -25,10 +25,19 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: ai
-        image: forbeeregistry.azurecr.io/ai:latest
+        image: forbeeregistry.azurecr.io/ai:v1
         env:
         - name: AZURE_CLIENT_ID
           value: "67c8e9d2-4e62-4a58-87e7-c74c258163e5"
+        - name: AZURE_TENANT_ID
+          value: "a7b712a5-a241-4e41-8073-56918e85ab3f"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
         ports:
         - containerPort: 8083
         readinessProbe:
@@ -47,11 +56,13 @@ spec:
           timeoutSeconds: 2
           periodSeconds: 5
           failureThreshold: 5
-      - name: fastapi
-        image: forbeeregistry.azurecr.io/fastapi:latest
+      - name: python
+        image: forbeeregistry.azurecr.io/python:v1
         env:
         - name: AZURE_CLIENT_ID
           value: "67c8e9d2-4e62-4a58-87e7-c74c258163e5"
+        - name: AZURE_TENANT_ID
+          value: "a7b712a5-a241-4e41-8073-56918e85ab3f"
         envFrom:
           - secretRef:
               name: app-secrets
