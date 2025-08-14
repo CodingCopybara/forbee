@@ -62,7 +62,6 @@ const nectarSources = [
 
 const gatewayUrl = process.env.NEXT_PUBLIC_GW_URL;
 async function getAccessToken(): Promise<string | null> {
-  // 네 앱 인증 흐름에 맞게 수정 (지금 membership 코드와 동일 처리)
   return localStorage.getItem("accessToken");
 }
 
@@ -109,7 +108,7 @@ async function createTreeApplication(payload: CreateTreePayload) {
   });
   if (!res.ok) {
     const msg = await res.text();
-    console.error("신청 생성 실패:", res.status, msg); // ✅ 콘솔에도 남김
+    console.error("신청 생성 실패:", res.status, msg); // 콘솔에도 남김
     throw new Error(`신청 생성 실패: ${res.status} ${msg}`);
   }
   return res.json() as Promise<{ id: string; status: string }>;
