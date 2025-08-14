@@ -1,191 +1,183 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>🐝 양봉 전문가 챗봇</title>
-  <link rel="stylesheet" href="/static/css/style.css">
+  <!-- Tailwind + daisyUI (CDN, 빌드 불필요) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" />
   <style>
-    body {
-      background-color:transparent;
-      margin: 0;
-      padding: 40px 0;
-      font-family: 'Segoe UI', sans-serif;
-    }
+    html,body{margin:0;padding:0;overflow:hidden;background:transparent!important;font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
 
-    .chat-container {
-      width: 600px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      border: 1px solid #e0e0e0;
-      border-radius: 12px;
-      overflow: hidden;
-      background-color: #ffeca5;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    /* typing dots */
+    @keyframes typingBlink { 0%, 80%, 100% { opacity:.2 } 40% { opacity:1 } }
+    .typing { display:inline-flex; gap:6px; vertical-align:middle; }
+    .typing .dot{
+      width:6px; height:6px; border-radius:9999px;
+      background: currentColor; opacity:.2; animation: typingBlink 1.4s infinite both;
     }
-
-    .header {
-      background: #ffe066;
-      padding: 12px;
-      font-weight: bold;
-      font-size: 20px;
-    }
-
-    .messages {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-      height: 400px;
-      background: #fafafa;
-    }
-
-    .message {
-      margin-bottom: 10px;
-      padding: 8px 12px;
-      border-radius: 10px;
-      max-width: 80%;
-      line-height: 1.5;
-    }
-
-    .user {
-      align-self: flex-end;
-      background: #dff4ff;
-      text-align: right;
-    }
-
-    .bot {
-      align-self: flex-start;
-      background: #fff7d1;
-      text-align: left;
-    }
-
-    .footer {
-      display: flex;
-      padding: 10px;
-      border-top: 1px solid #ccc;
-      background-color: #fff7d7;
-    }
-
-    textarea {
-      flex: 1;
-      resize: none;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 14px;
-      background-color: #ffffff;
-    }
-
-    button {
-      margin-left: 10px;
-      padding: 10px 16px;
-      background-color: #ffe066;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-
-    button:hover {
-      background-color: #ffdd55;
-    }
+    .typing .dot:nth-child(2){ animation-delay:.2s }
+    .typing .dot:nth-child(3){ animation-delay:.4s }
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="header">🐝 양봉 전문가 챗봇</div>
+  <!-- ✅ 고정 높이: min-h → h 로 변경 -->
+  <div id="chat-root"
+     class="mx-auto my-0 w-[clamp(360px,64vw,600px)] h-[clamp(600px,64vw,600px)] min-h-[520px]
+            bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden">
+    <div class="bg-yellow-300/90 font-extrabold text-[18px] md:text-[20px] text-stone-900 px-5 py-4">🐝 양봉 전문가 챗봇</div>
 
-    <div class="messages" id="chat-box">
+    <!-- 메시지 영역(내부만 스크롤) -->
+    <div id="chat-box" class="flex-1 overflow-y-auto bg-gradient-to-b from-white to-amber-50 p-4 space-y-3">
       {% for msg in history %}
-        <div class="message {{ 'user' if msg.role == 'user' else 'bot' }}">
-          <strong>{{ '나' if msg.role == 'user' else '챗봇' }}:</strong>
-          {{ msg.content }}
+        <div class="chat {{ 'chat-end' if msg.role == 'user' else 'chat-start' }}">
+          <!-- user: 연한 노란색 / bot: 연한 갈색(앰버) -->
+          <div class="chat-bubble shadow-none max-w-[66%] {{ 
+               'bg-yellow-100 text-stone-900 border border-yellow-200' 
+               if msg.role == 'user' 
+               else 'bg-[#5B3A29] text-white border border-[#3D2416]' }}">
+            <span class="opacity-70 font-semibold mr-1">{{ '나' if msg.role == 'user' else '챗봇' }}:</span>
+            {{ msg.content }}
+          </div>
         </div>
       {% endfor %}
-      <div class="message bot" id="answer"></div> <!-- 스트리밍용 -->
+      <!-- 스트리밍용(초기 숨김) -->
+      <div id="stream-row" class="chat chat-start hidden">
+        <div class="chat-bubble shadow-none max-w-[66%] bg-[#5B3A29] text-white border border-[#3D2416]">
+          <span class="opacity-70 font-semibold mr-1">챗봇:</span>
+          <!-- 로딩 점 -->
+          <span id="typing-dots" class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+          <!-- 실제 스트림 텍스트 -->
+          <span id="stream-text" class="hidden"></span>
+        </div>
+      </div>
     </div>
 
-    <div class="footer">
-      <form id="chat-form" style="display: flex; width: 100%; gap: 10px; align-items: stretch;">
-        <textarea
-          id="question"
-          name="question"
-          rows="2"
-          placeholder="질문을 입력하세요..."
-          required
-          style="flex: 1; padding: 10px; resize: none; border-radius: 6px; border: 1px solid #ccc;"
-        ></textarea>
-        <button
-          type="submit"
-          style="width: 80px; background-color: #ffe066; border: none; border-radius: 6px; cursor: pointer; padding: 10px;"
-        >
-          전송
-        </button>
-      </form>
-    </div>
-
-
+    <!-- 입력 영역 -->
+    <form id="chat-form" class="grid grid-cols-[1fr_110px] gap-3 p-4 border-t bg-amber-50/50">
+      <textarea id="question" rows="2" required
+        class="w-full min-w-0 h-[clamp(64px,9vh,140px)] resize-none rounded-xl border border-amber-300 px-3 py-2 outline-none focus:ring-2 focus:ring-amber-300"></textarea>
+      <button type="submit"
+        class="rounded-xl border border-amber-300 bg-gradient-to-b from-yellow-300 to-yellow-400 font-bold text-stone-900 hover:brightness-105 transition">
+        전송
+      </button>
+    </form>
   </div>
 
   <script>
-    async function streamChat(question) {
-      const chatBox = document.getElementById("chat-box");
+  /* 부모 iframe에 고정 높이만 알려주기(로드/리사이즈 때) */
+  function sendHeight(){
+    const h = Math.ceil(document.getElementById('chat-root').getBoundingClientRect().height)
+    try{ window.parent.postMessage({ type:'CHATBOT_HEIGHT', height:h }, '*') }catch(_){}
+  }
+  addEventListener('load', sendHeight)
+  new ResizeObserver(sendHeight).observe(document.getElementById('chat-root'))
 
-      const userMsg = document.createElement("div");
-      userMsg.className = "message user";
-      userMsg.innerHTML = `<strong>나:</strong> ${question}`;
-      chatBox.appendChild(userMsg);
+  /* 스트리밍 */
+  const chatBox   = document.getElementById('chat-box');
+  const streamRow = document.getElementById('stream-row');
+  const streamTxt = document.getElementById('stream-text');
+  const typingDots = document.getElementById('typing-dots');
 
-      const botMsg = document.createElement("div");
-      botMsg.className = "message bot";
-      chatBox.appendChild(botMsg);
+  // 필요 시 인증 헤더에 사용
+  const token = localStorage.getItem('accessToken') || '';
+  const role  = (localStorage.getItem('role') || '').toUpperCase();
 
-      chatBox.scrollTop = chatBox.scrollHeight;
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]
+    ));
+  }
 
-      const response = await fetch("/chat/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+  function appendUserBubble(text){
+    const wrap = document.createElement('div'); wrap.className = 'chat chat-end';
+    const b = document.createElement('div');
+    b.className = 'chat-bubble shadow-none bg-yellow-100 text-stone-900 border border-yellow-200 max-w-[66%]';
+    b.innerHTML = `<span class="opacity-70 font-semibold mr-1">나:</span>${escapeHtml(text)}`;
+    wrap.appendChild(b);
+    chatBox.appendChild(wrap);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function startBotStream(){
+    streamTxt.textContent = '';
+    streamTxt.classList.add('hidden');           // 텍스트 숨김
+    typingDots.classList.remove('hidden');       // 로딩 점 표시
+    streamRow.classList.remove('hidden');
+    chatBox.appendChild(streamRow);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    sendHeight();
+  }
+
+  function appendBotChunk(ch){
+    // 첫 글자가 들어오면 로딩 점을 숨기고 텍스트 표시
+    if (streamTxt.classList.contains('hidden')) {
+      typingDots.classList.add('hidden');
+      streamTxt.classList.remove('hidden');
+    }
+    streamTxt.textContent += ch;
+    chatBox.scrollTop = chatBox.scrollHeight;
+    sendHeight();
+  }
+
+  function endBotStream(){
+    typingDots.classList.add('hidden'); // 안전 장치
+    chatBox.scrollTop = chatBox.scrollHeight;
+    sendHeight();
+  }
+
+  async function streamChat(question){
+    appendUserBubble(question);
+    startBotStream();
+
+    try {
+      const res = await fetch('/chat/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+          ...(role  ? { 'Role': role } : {}),
+        },
         body: JSON.stringify({ question })
       });
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
+      if (!res.ok || !res.body) throw new Error('네트워크 오류');
 
-      let text = "";
-      while (true) {
+      const reader = res.body.getReader();
+      const dec = new TextDecoder('utf-8');
+      while(true){
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (let char of chunk) {
-          text += char;
-          botMsg.textContent = `챗봇: ${text}`;
-          chatBox.scrollTop = chatBox.scrollHeight;
-          await new Promise(r => setTimeout(r, 20));
+        const chunk = dec.decode(value, { stream: true });
+        for (const ch of chunk) {
+          appendBotChunk(ch);
+          await new Promise(r => setTimeout(r, 12));
         }
       }
+    } catch (e){
+      typingDots.classList.add('hidden');
+      streamTxt.classList.remove('hidden');
+      streamTxt.textContent = '잠시 장애가 발생했어요. 다시 시도해 주세요.';
+    } finally {
+      endBotStream();
     }
+  }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const form = document.getElementById("chat-form");
-      const textarea = document.getElementById("question");
+  document.getElementById('chat-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const ta = document.getElementById('question');
+    const q = ta.value.trim();
+    if (!q) return;
+    ta.value = '';
+    streamChat(q);
+  });
 
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const question = textarea.value.trim();
-        if (question) {
-          textarea.value = "";
-          streamChat(question);
-        }
-      });
-
-      textarea.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          form.requestSubmit();
-        }
-      });
-    });
-  </script>
+  document.getElementById('question').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      e.currentTarget.form.requestSubmit();
+    }
+  });
+</script>
 </body>
 </html>

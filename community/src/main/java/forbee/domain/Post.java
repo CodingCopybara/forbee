@@ -10,6 +10,9 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Lob
+    private String attachmentsJson;
+
     private String title;
     private String content;
     private String category;
@@ -19,6 +22,9 @@ public class Post {
 
     public Post() {}
 
+
+    public String getAttachmentsJson() { return attachmentsJson; }
+    public void setAttachmentsJson(String v) { this.attachmentsJson = v; }
     public Long getId() { return id; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

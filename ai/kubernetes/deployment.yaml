@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: ai
   labels:
-    app: ai
+    azure.workload.identity/use: "true"
 spec:
   replicas: 1
   selector:
@@ -13,41 +13,60 @@ spec:
     metadata:
       labels:
         app: ai
+        azure.workload.identity/use: "true"
     spec:
-      serviceAccountName: ai-service-account
+      serviceAccountName: ai-wi-sa
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+      - key: "azure.workload.identity/use"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
       containers:
-        - name: ai
-          image: "username/ai:latest"
-          ports:
-            - containerPort: 8080
-          env:
-            - name: AZURE_STORAGE_ACCOUNT_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: azure-config
-                  key: storage-account-url
-            - name: AZURE_STORAGE_CONTAINER_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: azure-config
-                  key: container-name
-            - name: FASTAPI_URL
-              value: "http://fastapi:8000"
-            - name: KAFKA_BROKERS
-              value: "kafka:9092"
-          readinessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 10
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 10
-          livenessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 120
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 5
+      - name: ai
+        image: forbeeregistry.azurecr.io/ai:v1
+        env:
+        - name: AZURE_CLIENT_ID
+          value: "67c8e9d2-4e62-4a58-87e7-c74c258163e5"
+        - name: AZURE_TENANT_ID
+          value: "a7b712a5-a241-4e41-8073-56918e85ab3f"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        ports:
+        - containerPort: 8083
+        readinessProbe:
+          httpGet:
+            path: '/actuator/health/readiness'
+            port: 8083
+          initialDelaySeconds: 20
+          timeoutSeconds: 2
+          periodSeconds: 5
+          failureThreshold: 10
+        livenessProbe:
+          httpGet:
+            path: '/actuator/health/liveness'
+            port: 8083
+          initialDelaySeconds: 15
+          timeoutSeconds: 2
+          periodSeconds: 5
+          failureThreshold: 5
+      - name: python
+        image: forbeeregistry.azurecr.io/python:v1
+        env:
+        - name: AZURE_CLIENT_ID
+          value: "67c8e9d2-4e62-4a58-87e7-c74c258163e5"
+        - name: AZURE_TENANT_ID
+          value: "a7b712a5-a241-4e41-8073-56918e85ab3f"
+        envFrom:
+          - secretRef:
+              name: app-secrets
+        ports:
+        - containerPort: 8003
+
+# 파이썬 readiness, liveness 프로브는 main.py에도 설정해야 함

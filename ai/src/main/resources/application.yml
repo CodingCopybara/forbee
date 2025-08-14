@@ -87,6 +87,8 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
         show_sql: true
         format_sql: true
+  kafka:
+    bootstrap-servers: kafka:9092
   security:
     oauth2:
       resourceserver:
@@ -115,12 +117,12 @@ spring:
   #         contentType: application/json
 
 fastapi:
-  url: ${FASTAPI_URL:http://localhost:8003}
+  url: http://localhost:8003
 
 azure:
   storage:
-    account-url: ${AZURE_STORAGE_ACCOUNT_URL:https://forbee.blob.core.windows.net}
-    container-name: ${AZURE_CONTAINER_NAME:blob}
+    account-url: https://forbee.blob.core.windows.net
+    container-name: blob
 
 logging:
   level:
