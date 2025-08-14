@@ -22,6 +22,9 @@ public class Chatbot {
 
     private Date requestTime;
 
+    @Column(nullable = false)      // ← 사용자 없이 저장 못 하게
+    private String username;
+
     @Embedded
     @AttributeOverrides({
       @AttributeOverride(name="message", column=@Column(name="request_message")),
