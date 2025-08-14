@@ -22,7 +22,7 @@ import com.opencsv.exceptions.CsvException;
 @Transactional
 public class PlantController {
     private String getPreviousYearBloomDate(String species, String location, int year) {
-        String previousYearBloomDate = "N/A";
+        String previousYearBloomDate = "전년도 개화 데이터 없음";
         String csvFilePath = "/workspace/forbee/tree/src/main/model/data/" + species + ".csv";
         
         System.out.println("1. Starting getPreviousYearBloomDate...");
