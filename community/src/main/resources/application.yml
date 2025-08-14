@@ -14,16 +14,19 @@ spring:
       enabled: true
       force: true
 
-  # 추가: 파일 업로드 및 정적 리소스 경로
+  # 파일 업로드
   servlet:
     multipart:
       max-file-size: 20MB
       max-request-size: 25MB
+
+  # JPA & Cloud Stream 공통 설정은 각 프로필에 있음
+
   app:
     upload:
       base-dir: uploads
 
-# 공통 로깅 설정: CORS 필터 DEBUG
+# 공통 로깅 (필요에 맞게 조절)
 logging:
   level:
     org.hibernate.type: trace
@@ -36,6 +39,26 @@ logging:
 api:
   url:
     community: localhost:8082
+
+# ===== CORS (백엔드 엔드포인트 /ai/wsas, /ai/rsas 접근 허용용) =====
+cors:
+  # 콤마(,)로 여러 원본 허용
+  allowed-origins: "http://localhost:3000,https://your-frontend.example.com"
+  allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+  allowed-headers: "*"
+  max-age: 3600
+
+# ===== Azure Storage (SAS 발급 파라미터 포함) =====
+azure:
+  storage:
+    account-name: ${AZURE_STORAGE_ACCOUNT}
+    account-key: ${AZURE_STORAGE_ACCOUNT_KEY}
+    container: ${AZURE_STORAGE_CONTAINER}
+    # 컨테이너 공개 여부(Blob public이면 true) — 공개면 업로드 후 blobUrl 그대로 표시 가능
+    public-container: true
+    sas:
+      upload-expire-minutes: 15  # 업로드용 SAS 유효시간(분)
+      read-expire-hours: 12      # 읽기용 SAS 유효시간(시간)
 
 ---
 spring:
