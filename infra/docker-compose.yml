@@ -15,6 +15,7 @@ services:
       # 리스너 설정
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      # KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092  # 로컬 사용 시
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
@@ -35,5 +36,26 @@ services:
       timeout: 10s
       retries: 5
 
+    # networks:
+    #   - my-network
+
+  # ai:
+  #   build:
+  #     context: ../ai
+  #     dockerfile: Dockerfile
+  #   image: ai
+  #   ports:
+  #     - "8083:8083"
+  #   environment:
+  #     - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+  #   depends_on:
+  #     - kafka
+  #   networks:
+  #     - my-network
+
 volumes:
   kafka-data:
+
+# networks:
+#   my-network:
+#     driver: bridge

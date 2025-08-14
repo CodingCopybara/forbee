@@ -1,6 +1,12 @@
 server:
   port: 8083
 
+# management:
+#   endpoints:
+#     web:
+#       exposure:
+#         include: env,health,info
+
 ---
 
 spring:
@@ -27,6 +33,9 @@ spring:
     consumer:
       group-id: ai
       auto-offset-reset: earliest
+    # listener:
+    #   auto-startup: false
+
   security:
     oauth2:
       resourceserver:
@@ -69,7 +78,7 @@ logging:
 ---
 
 spring:
-  config:
+  config:  
     activate:
       on-profile: docker
   main:
@@ -77,7 +86,7 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://forbee-ai-db.mysql.database.azure.com:3306/ai?useSSL=true&requireSSL=false
-    username: forbeeai@forbee-ai-db
+    username: forbeeai
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
@@ -88,13 +97,13 @@ spring:
         show_sql: true
         format_sql: true
   kafka:
-    bootstrap-servers: kafka:9092
+    bootstrap-servers: localhost:9092  # kafka:9092 였음 default profile이 실행되지 않아서 localhost로 변경
   security:
     oauth2:
       resourceserver:
         jwt:
-          # jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
-          jwk-set-uri: http://oauth:9090/
+          jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
+          # jwk-set-uri: http://oauth:9090/
   # cloud:
   #   stream:
   #     kafka:
@@ -117,7 +126,7 @@ spring:
   #         destination: forbee
   #         contentType: application/json
 
-python:
+fastapi:
   url: http://localhost:8003
 
 azure:
