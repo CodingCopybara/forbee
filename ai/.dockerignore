@@ -1,5 +1,4 @@
 .venv/
-.nvmrc
 .vscode/
 __pycache__/
 README.md
@@ -7,7 +6,7 @@ README.md
 kubernetes/
 README.md
 
-# Java 빌드 시 제외할 파일(Python 빌드 시에만 제외)
+# Java 빌드 시 제외할 파일(Python 빌드 시 주석 처리)
 PyDockerfile
 agent/
 src/main/python/

@@ -16,7 +16,9 @@ import { X, Upload, ArrowLeft, MessageSquare, Bot, User, FileText } from "lucide
 import { Textarea } from "@/components/ui/textarea"
 
 const GW = (process.env.NEXT_PUBLIC_GW_URL || "").replace(/\/+$/, "")
-const AZURE_SAS = process.env.NEXT_PUBLIC_AZURE_BLOB_SAS_URL || "" // https://acct.blob.core.windows.net/container?sv=...
+// 백엔드가 응답에 publicContainer를 내려주지 않는 경우를 대비한 기본 플래그
+const CONTAINER_PUBLIC_DEFAULT =
+  (process.env.NEXT_PUBLIC_AZURE_CONTAINER_PUBLIC || "true").toLowerCase() === "true"
 
 const categories = {
   free: [
@@ -257,38 +259,74 @@ export default function WritePage() {
     }
   }
 
-  // 업로드 공통
-  const uploadToAzure = async (file: File, kind: "image" | "pdf"): Promise<string> => {
-    if (!AZURE_SAS) throw new Error("NEXT_PUBLIC_AZURE_BLOB_SAS_URL 미설정")
-    const [containerUrl, sasQuery] = AZURE_SAS.split("?")
-    const ext =
-      kind === "pdf" ? "pdf" : file.type === "image/png" ? "png" : "jpg"
-    const blobName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const putUrl = `${containerUrl}/${blobName}?${sasQuery}`
+  /* =========================
+   * 업로드: wsas/rsas + Azure PUT
+   * ========================= */
+  type WsasResp = {
+    uploadUrl: string
+    blobUrl: string
+    fileName: string
+    publicContainer?: string | boolean
+  }
 
-    const res = await fetch(putUrl, {
+  // 1) 백엔드(wsas)에서 업로드용 SAS/고유 파일명 받아오기
+  async function getWriteSasFromGW(originalName: string): Promise<WsasResp> {
+    if (!GW) throw new Error("NEXT_PUBLIC_GW_URL 미설정")
+    const url = `${GW}/ai/wsas?fileName=${encodeURIComponent(originalName)}`
+    const res = await fetch(url, { method: "GET", cache: "no-store" })
+    if (!res.ok) {
+      const msg = await res.text().catch(() => "")
+      throw new Error(`wsas 실패 ${res.status} ${msg}`)
+    }
+    return (await res.json()) as WsasResp
+  }
+
+  // 2) (비공개 컨테이너일 때) 읽기 전용 링크 발급
+  async function getReadSasFromGW(uniqueName: string): Promise<string> {
+    if (!GW) throw new Error("NEXT_PUBLIC_GW_URL 미설정")
+    const url = `${GW}/ai/rsas?fileName=${encodeURIComponent(uniqueName)}`
+    const res = await fetch(url, { method: "GET", cache: "no-store" })
+    if (!res.ok) {
+      const msg = await res.text().catch(() => "")
+      throw new Error(`rsas 실패 ${res.status} ${msg}`)
+    }
+    const json = await res.json()
+    return String(json.readOnlyUrl || "")
+  }
+
+  // 3) 실제 PUT 업로드 (이미지/PDF 공용)
+  async function uploadViaSas(file: File): Promise<{ publicUrl: string; uniqueName: string; isPublic: boolean }> {
+    const { uploadUrl, blobUrl, fileName, publicContainer } = await getWriteSasFromGW(file.name)
+
+    const put = await fetch(uploadUrl, {
       method: "PUT",
-      headers: { "x-ms-blob-type": "BlockBlob", "Content-Type": file.type },
+      headers: {
+        "x-ms-blob-type": "BlockBlob", // 중요
+        "Content-Type": file.type || "application/octet-stream",
+      },
       body: file,
     })
-    if (!res.ok) throw new Error(`Azure 업로드 실패: ${res.status}`)
-    return `${containerUrl}/${blobName}`
+    if (!put.ok) throw new Error(`Azure 업로드 실패 ${put.status}`)
+
+    // 컨테이너 공개 여부 결정: 응답 > 환경변수 기본값
+    const isPublic =
+      typeof publicContainer === "string"
+        ? publicContainer.toLowerCase() === "true"
+        : typeof publicContainer === "boolean"
+        ? publicContainer
+        : CONTAINER_PUBLIC_DEFAULT
+
+    if (isPublic) {
+      return { publicUrl: blobUrl, uniqueName: fileName, isPublic: true }
+    } else {
+      const readUrl = await getReadSasFromGW(fileName)
+      return { publicUrl: readUrl, uniqueName: fileName, isPublic: false }
+    }
   }
 
-  const uploadViaGW = async (file: File, kind: "image" | "pdf"): Promise<string> => {
-    if (!GW) throw new Error("NEXT_PUBLIC_GW_URL 미설정")
-    const fd = new FormData()
-    fd.append("file", file)
-    fd.append("type", kind === "pdf" ? "pdf" : "image")
-    const res = await fetch(`${GW}/files/upload`, { method: "POST", body: fd })
-    if (!res.ok) throw new Error(`GW 업로드 실패: ${res.status}`)
-    const data = await res.json()
-    const u: string = data?.url || data?.location || data?.path
-    if (!u) throw new Error("업로드 응답에 url이 없습니다.")
-    const base = GW.replace(/\/+$/, "")
-    return /^https?:\/\//i.test(u) ? u : `${base}${u.startsWith("/") ? u : `/${u}`}`
-  }
-
+  /* =========================
+   * 파일 선택 핸들러
+   * ========================= */
   // 이미지 삽입 (PNG/JPG만, 본문에 <img>로 직접 삽입)
   const onPickImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -305,13 +343,10 @@ export default function WritePage() {
         continue
       }
       try {
-        let url = ""
-        try {
-          url = await uploadToAzure(f, "image")
-        } catch {
-          url = await uploadViaGW(f, "image")
-        }
-        insertHtmlAtCaret(`<img src="${url}" alt="${f.name}" style="max-width:100%;height:auto;display:block;margin:0.5rem 0;" />`)
+        const { publicUrl } = await uploadViaSas(f)
+        insertHtmlAtCaret(
+          `<img src="${publicUrl}" alt="${f.name}" style="max-width:100%;height:auto;display:block;margin:0.5rem 0;" />`,
+        )
         syncFromEditor()
       } catch (err) {
         console.error(err)
@@ -334,13 +369,8 @@ export default function WritePage() {
       return
     }
     try {
-      let url = ""
-      try {
-        url = await uploadToAzure(file, "pdf")
-      } catch {
-        url = await uploadViaGW(file, "pdf")
-      }
-      setAttachments((prev) => [...prev, { name: file.name, url, type: "pdf" }])
+      const { publicUrl } = await uploadViaSas(file)
+      setAttachments((prev) => [...prev, { name: file.name, url: publicUrl, type: "pdf" }])
     } catch (err) {
       console.error(err)
       alert("PDF 업로드 실패")
@@ -368,16 +398,16 @@ export default function WritePage() {
     }
 
     try {
-      const role = (localStorage.getItem("role") || "").toUpperCase()
-      const token = localStorage.getItem("accessToken") || ""
+      const role = roleFromLS()
+      const token = tokenFromLS()
       const author = usernameFromLS() || "익명"
 
       const payload = {
         title,
-        content: contentHtml,    // HTML. 이미지 <img> 그대로 저장
-        category: boardType,     // "free" | "notice" | "qna"
+        content: contentHtml, // HTML 본문 (이미지 <img> 포함)
+        category: boardType, // "free" | "notice" | "qna"
         author,
-        attachments,             // PDF만 들어있음
+        attachments, // PDF만
         tags,
       }
 

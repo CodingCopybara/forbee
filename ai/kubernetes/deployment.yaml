@@ -27,16 +27,21 @@ spec:
       - name: ai
         image: forbeeregistry.azurecr.io/ai:v1
         env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: docker
         - name: AZURE_CLIENT_ID
           value: "67c8e9d2-4e62-4a58-87e7-c74c258163e5"
         - name: AZURE_TENANT_ID
           value: "a7b712a5-a241-4e41-8073-56918e85ab3f"
+        envFrom:
+        - secretRef:
+            name: app-secrets
         resources:
           requests:
             memory: "512Mi"
             cpu: "250m"
           limits:
-            memory: "2Gi"
+            memory: "3Gi"
             cpu: "1"
         ports:
         - containerPort: 8083
@@ -44,7 +49,7 @@ spec:
           httpGet:
             path: '/actuator/health/readiness'
             port: 8083
-          initialDelaySeconds: 20
+          initialDelaySeconds: 180
           timeoutSeconds: 2
           periodSeconds: 5
           failureThreshold: 10
@@ -52,7 +57,7 @@ spec:
           httpGet:
             path: '/actuator/health/liveness'
             port: 8083
-          initialDelaySeconds: 15
+          initialDelaySeconds: 180
           timeoutSeconds: 2
           periodSeconds: 5
           failureThreshold: 5
