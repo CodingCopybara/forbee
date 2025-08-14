@@ -12,7 +12,7 @@ export default function HomePage() {
         <div className="container mx-auto text-center">
           <Badge className="mb-4 bg-amber-100 text-amber-800 border-amber-200">양봉농협 공식 파트너</Badge>
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            AI로 더 스마트한
+            AI로 더욱 스마트해진
             <br />
             <span className="text-amber-500">양봉 관리</span>
           </h1>
