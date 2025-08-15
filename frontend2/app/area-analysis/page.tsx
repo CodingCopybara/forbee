@@ -34,7 +34,9 @@ export default function MapPredict() {
   const [showResultPopup, setShowResultPopup] = useState(false);
   const markerLayerRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
-  
+  const honeycombIconRef = useRef<any>(null);
+  const [analysisCoordinates, setAnalysisCoordinates] = useState<string>("")
+
   useEffect(() => {
     if (mapInstance.current && !markerLayerRef.current) {
       const layer = new window.sop.LayerGroup();
@@ -43,11 +45,15 @@ export default function MapPredict() {
     }
   }, [mapInstance.current]);
 
-  const honeycombIcon = new window.sop.icon({
-    iconUrl: '/markers/honeycomb.png',
-    iconSize: [64, 64],                
-    iconAnchor: [16, 32],             
-  });
+  useEffect(() => {
+    if (typeof window.sop !== "undefined") {
+      honeycombIconRef.current = new window.sop.icon({
+        iconUrl: '/markers/honeycomb.png',
+        iconSize: [64, 64],
+        iconAnchor: [16, 32],
+      });
+    }
+  }, []);
 
   const updateCoordinates = () => {
     if (!mapInstance.current || !markerLayerRef.current) return;
@@ -66,14 +72,15 @@ export default function MapPredict() {
       lng = latlng[0];
     }
 
-    setCoordinates(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+    setCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+    setAnalysisCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`)
 
     const utmkPos = window.sop.utmk(center.x, center.y);
 
     if (!markerLayerRef.current) return;
 
     markerLayerRef.current.clearLayers();
-    const newMarker = new window.sop.Marker(utmkPos, { icon: honeycombIcon });
+    const newMarker = new window.sop.Marker(utmkPos, { icon: honeycombIconRef.current });
     newMarker.addTo(markerLayerRef.current);
     markerRef.current = newMarker;
   };
@@ -379,7 +386,7 @@ export default function MapPredict() {
             {/* 분석 버튼 */}
             <Button
               onClick={captureAndPredict}
-              disabled={isLoading || !isMapInitialized}
+              disabled={isLoading || !isMapInitialized || showResultPopup}
               className="w-full bg-amber-500 hover:bg-amber-600 text-white mb-6"
             >
               {isLoading ? (
@@ -397,7 +404,7 @@ export default function MapPredict() {
 
             <Button
               onClick={() => setShowResultPopup(true)}
-              disabled={!resultImageSrc} // 결과가 없으면 비활성화
+              disabled={!resultImageSrc || showResultPopup} // 결과 없을 때, 팝업 보고 있을 때 비활성화
               className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800">
               결과 보기
             </Button>
@@ -429,10 +436,15 @@ export default function MapPredict() {
 
               <div className="flex flex-col md:flex-row gap-4 w-full items-stretch">
                 <div className="md:w-6/10">
-                  {/* 양봉장 입지 */}
+                  {/* 분석 보고서 */}
                   <Card className="w-full">
-                    <CardHeader>
+                    <CardHeader className="flex justify-between items-center">
                       <CardTitle className="text-lg pb-4">분석 보고서</CardTitle>
+                      {analysisCoordinates && (
+                        <span className="text-s text-gray-500">
+                          ({analysisCoordinates})
+                        </span>
+                      )}
                     </CardHeader>
                     <CardContent>
                       <div dangerouslySetInnerHTML={{ __html: recommendationText }} />
