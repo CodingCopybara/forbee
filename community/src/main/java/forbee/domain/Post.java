@@ -14,6 +14,9 @@ public class Post {
     private String attachmentsJson;
 
     private String title;
+    
+    @Lob
+    @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String content;
     private String category;
     private String author;

@@ -17,7 +17,7 @@ export default function MessengerStyleChatbot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "안녕하세요! '꿀봇이'입니다! 무엇을 도와드릴까요? 🐝",
+      content: "안녕하세요! '꿀봇이'입니다!\n무엇을 도와드릴까요? 🐝",
       sender: "bot",
       timestamp: new Date(),
     },
@@ -39,7 +39,6 @@ export default function MessengerStyleChatbot() {
     setLoading(true)
 
     try {
-      // Next.js Route Handler로 프록시 호출 (아래 2장에 구현)
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,7 +53,7 @@ export default function MessengerStyleChatbot() {
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, botMsg])
-    } catch (e) {
+    } catch {
       const errMsg: Message = {
         id: (Date.now() + 2).toString(),
         content: "서버 연결에 문제가 있어요. 잠시 후 다시 시도해주세요.",
@@ -103,7 +102,7 @@ export default function MessengerStyleChatbot() {
                 className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[75%] px-4 py-2 text-sm rounded-2xl ${
+                  className={`max-w-[75%] px-4 py-2 text-sm rounded-2xl leading-relaxed break-words whitespace-pre-line ${
                     msg.sender === "user"
                       ? "bg-amber-500 text-white rounded-br-sm"
                       : "bg-gray-200 text-black rounded-bl-sm"
