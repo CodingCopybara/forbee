@@ -75,14 +75,14 @@ export default function MessengerStyleChatbot() {
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-amber-500 text-white shadow-lg text-2xl z-50"
+          className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-amber-500 text-white shadow-lg text-2xl z-[2000]"
         >
           🐝
         </Button>
       )}
 
       {isOpen && (
-        <div className="fixed bottom-[19px] right-6 w-96 h-[500px] bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden z-50 border">
+        <div className="fixed bottom-[19px] right-6 w-96 h-[500px] bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden z-[2000] border">
           {/* 헤더 */}
           <div className="bg-amber-500 text-white px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 font-semibold text-lg">

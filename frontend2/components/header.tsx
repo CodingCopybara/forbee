@@ -4,7 +4,7 @@ import { Shield, Settings, LogOut, UserCog } from "lucide-react"
 
 export default function Header() {
   return (
-    <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-[2000]">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
           <div className="w-10 h-10 bg-amber-400 rounded-lg flex items-center justify-center">

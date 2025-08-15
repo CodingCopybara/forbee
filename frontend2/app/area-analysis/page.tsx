@@ -296,6 +296,8 @@ export default function MapPredict() {
     circularCanvas.height = radius * 2;
     const ctx2 = circularCanvas.getContext("2d")!;
 
+    ctx2.clearRect(0, 0, radius, radius);
+
     ctx2.beginPath();
     ctx2.arc(radius, radius, radius, 0, Math.PI * 2);
     ctx2.closePath();
@@ -348,7 +350,7 @@ export default function MapPredict() {
       setIsLoading(false)
     }
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex h-screen">
@@ -399,6 +401,7 @@ export default function MapPredict() {
               className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800">
               결과 보기
             </Button>
+
           </div>
         </div>
 
@@ -415,7 +418,7 @@ export default function MapPredict() {
           </div>
 
           {showResultPopup && resultImageSrc && (
-            <div className="flex-1 relative grid place-items-center z-40 bg-white rounded-lg shadow-lg p-4 h-full overflow-auto">
+            <div className="absolute inset-0 grid place-items-center z-[1000] bg-white rounded-lg shadow-lg p-4 h-full overflow-auto">
               {/* 닫기 버튼 - 바꿔야함 개 별로임*/}
               <button
                 className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
@@ -424,99 +427,94 @@ export default function MapPredict() {
                 ✕
               </button>
 
-              {/* 양봉장 입지 */}
-              <Card className="mb-6 w-full">
-                <CardHeader>
-                  <CardTitle className="text-lg">분석 보고서</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div dangerouslySetInnerHTML={{ __html: recommendationText }} />
-                </CardContent>
-              </Card>
-
               <div className="flex flex-col md:flex-row gap-4 w-full items-stretch">
-                {/* 분석 이미지 */}
-                <div className="md:w-7/10">
-                  <Card className="h-full flex flex-col">
+                <div className="md:w-6/10">
+                  {/* 양봉장 입지 */}
+                  <Card className="w-full">
                     <CardHeader>
-                      <CardTitle className="text-lg">분석 이미지</CardTitle>
+                      <CardTitle className="text-lg pb-4">분석 보고서</CardTitle>
                     </CardHeader>
-                    <CardContent className="flex-grow">
-                      <img
-                        src={resultImageSrc}
-                        alt="예측 결과"
-                        className="w-full h-full rounded-full object-cover shadow-sm"
-                      />
+                    <CardContent>
+                      <div dangerouslySetInnerHTML={{ __html: recommendationText }} />
                     </CardContent>
                   </Card>
-                </div>
-                
-                {/* 비율 */}
-                <div className="md:w-3/10 h-full">
-                  <Card className="h-full flex flex-col">
-                    <CardHeader>
-                      <CardTitle className="text-lg">토지 비율 분석</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 overflow-auto flex-grow">
-                      {Object.entries(pixelRatios)
-                      .sort((a, b) => b[1] - a[1])
-                      .map(([key, value]) => {
-                        const labels: Record<string, string> = {
-                          "-1": "무시",
-                          "0": "기타",
-                          "1": "건물",
-                          "2": "주차장",
-                          "3": "도로",
-                          "4": "가로수",
-                          "5": "논",
-                          "6": "비닐하우스",
-                          "7": "밭",
-                          "8": "활엽수림",
-                          "9": "침엽수림",
-                          "10": "나지",
-                          "11": "수역",
-                        };
+                </div>    
 
-                        const colors: Record<string, string> = {
-                          "-1": "#646464",
-                          "0": "#A0A0A0",
-                          "1": "#3C3C3C",
-                          "2": "#DCDCDC",
-                          "3": "#808080",
-                          "4": "#ADFF2F",
-                          "5": "#8B4513",
-                          "6": "#87CEEB",
-                          "7": "#90EE90",
-                          "8": "#32CD32",
-                          "9": "#A54141",
-                          "10": "#FF8C00",
-                          "11": "#0000FF",
-                        };
+                <div className="md:w-4/10 h-full">
+                  <div className="flex flex-col gap-4 w-full items-stretch md:flex-col">
+                    {/* 비율 */}
+                    <Card className="h-full flex flex-col">
+                      <CardHeader>
+                        <CardTitle className="text-lg">토지 비율 분석</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2 overflow-auto flex-grow">
+                        {Object.entries(pixelRatios)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([key, value]) => {
+                          console.log("key type:", typeof key, "key:", key, "value:", value);
+                          const labels: Record<string, string> = {
+                            "-1": "무시",
+                            "0": "기타",
+                            "1": "건물",
+                            "2": "주차장",
+                            "3": "도로",
+                            "4": "가로수",
+                            "5": "논",
+                            "6": "비닐하우스",
+                            "7": "밭",
+                            "8": "활엽수림",
+                            "9": "침엽수림",
+                            "10": "나지",
+                            "11": "수역",
+                          };
 
-                        const percent = Math.floor(value * 10000) / 100;
+                          const colors: Record<string, string> = {
+                            "무시": "bg-[#646464]",
+                            "기타": "bg-[#A0A0A0]",
+                            "건물": "bg-[#3C3C3C]",
+                            "주차장": "bg-[#DCDCDC]",
+                            "도로": "bg-[#808080]",
+                            "가로수": "bg-[#ADFF2F]",
+                            "논": "bg-[#8B4513]",
+                            "비닐하우스": "bg-[#87CEEB]",
+                            "밭": "bg-[#90EE90]",
+                            "활엽수림": "bg-[#32CD32]",
+                            "침엽수림": "bg-[#A54141]",
+                            "나지": "bg-[#FF8C00]",
+                            "수역": "bg-[#0000FF]",
+                          };
 
-                        return (
-                          <div key={key} className="space-y-1">
-                            {/* 텍스트 + 색상 원 */}
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-4 h-4 rounded-full border border-gray-300 inline-block"
-                                style={{ backgroundColor: colors[key] }}
-                              />
-                              <span className="text-gray-700">{labels[key] || key}: {percent}%</span>
+                          const percent = Math.floor(value * 10000) / 100;
+
+                          return (
+                            <div key={key} className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-4 h-4 rounded-full border border-gray-300 inline-block ${colors[key]}`} />
+                                <span className="text-gray-700">{key}: {percent}%</span>
+                              </div>
+                              <div className="w-full h-2 bg-gray-200 rounded overflow-hidden">
+                                <div className={`h-full ${colors[key]}`} style={{ width: `${percent}%` }} />
+                              </div>
                             </div>
-                            {/* 퍼센트 막대 */}
-                            <div className="w-full h-2 bg-gray-200 rounded overflow-hidden">
-                              <div
-                                className="h-full"
-                                style={{ width: `${percent}%`, backgroundColor: colors[key] }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </CardContent>
-                  </Card>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+
+                    {/* 분석 이미지 */}
+                    <Card className="mb-6 mt-6 w-full flex flex-col">
+                      <CardHeader>
+                        <CardTitle className="text-lg">분석 이미지</CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex-grow">
+                        <img
+                          src={resultImageSrc}
+                          alt="예측 결과"
+                          className="w-full h-full rounded-full object-cover shadow-sm"
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               </div>
             </div>
