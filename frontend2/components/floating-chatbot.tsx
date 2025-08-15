@@ -23,29 +23,48 @@ export default function MessengerStyleChatbot() {
     },
   ])
   const [inputMessage, setInputMessage] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const handleSend = () => {
-    if (!inputMessage.trim()) return
+  const handleSend = async () => {
+    if (!inputMessage.trim() || loading) return
 
-    const newMessage: Message = {
+    const userMsg: Message = {
       id: Date.now().toString(),
       content: inputMessage,
       sender: "user",
       timestamp: new Date(),
     }
-
-    setMessages((prev) => [...prev, newMessage])
+    setMessages((prev) => [...prev, userMsg])
     setInputMessage("")
+    setLoading(true)
 
-    setTimeout(() => {
-      const reply: Message = {
+    try {
+      // Next.js Route Handler로 프록시 호출 (아래 2장에 구현)
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: userMsg.content }),
+      })
+      const data = await res.json()
+
+      const botMsg: Message = {
         id: (Date.now() + 1).toString(),
-        content: "질문을 잘 받았습니다. 전문가가 곧 답변드릴게요!",
+        content: data.answer ?? "죄송해요. 잠시 후 다시 시도해주세요.",
         sender: "bot",
         timestamp: new Date(),
       }
-      setMessages((prev) => [...prev, reply])
-    }, 1000)
+      setMessages((prev) => [...prev, botMsg])
+    } catch (e) {
+      const errMsg: Message = {
+        id: (Date.now() + 2).toString(),
+        content: "서버 연결에 문제가 있어요. 잠시 후 다시 시도해주세요.",
+        sender: "bot",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, errMsg])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -94,6 +113,9 @@ export default function MessengerStyleChatbot() {
                 </div>
               </div>
             ))}
+            {loading && (
+              <div className="text-xs text-gray-500 px-2">응답 작성 중…</div>
+            )}
           </div>
 
           {/* 입력창 */}
@@ -109,6 +131,7 @@ export default function MessengerStyleChatbot() {
               <Button
                 onClick={handleSend}
                 className="bg-amber-500 hover:bg-amber-600 text-white px-3"
+                disabled={loading}
               >
                 <Send className="w-4 h-4" />
               </Button>
