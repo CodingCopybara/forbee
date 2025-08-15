@@ -32,24 +32,53 @@ export default function MapPredict() {
   const [pixelRatios, setPixelRatios] = useState<PixelRatios>({})
   const [recommendationText, setRecommendationText] = useState("")
   const [showResultPopup, setShowResultPopup] = useState(false);
-
-  // SOP 지도 중심 좌표 갱신
-  const updateCoordinates = () => {
-    if (!mapInstance.current) return
-    const center = mapInstance.current.getCenter()
-    let lat: number, lng: number
-    if (typeof center.getLat === "function") {
-      lat = center.getLat()
-      lng = center.getLng()
-    } else {
-      const utmkX = center.x
-      const utmkY = center.y
-      const latlng = proj4("EPSG:5179", "EPSG:4326", [utmkX, utmkY])
-      lat = latlng[1]
-      lng = latlng[0]
+  const markerLayerRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  
+  useEffect(() => {
+    if (mapInstance.current && !markerLayerRef.current) {
+      const layer = new window.sop.LayerGroup();
+      layer.addTo(mapInstance.current); 
+      markerLayerRef.current = layer;
     }
-    setCoordinates(`${lat.toFixed(6)}, ${lng.toFixed(6)}`)
-  }
+  }, [mapInstance.current]);
+
+  const honeycombIcon = new window.sop.icon({
+    iconUrl: '/markers/honeycomb.png',
+    iconSize: [64, 64],                
+    iconAnchor: [16, 32],             
+  });
+
+  const updateCoordinates = () => {
+    if (!mapInstance.current || !markerLayerRef.current) return;
+
+    const center = mapInstance.current.getCenter();
+    let lat: number, lng: number;
+
+    if (typeof center.getLat === "function") {
+      lat = center.getLat();
+      lng = center.getLng();
+    } else {
+      const utmkX = center.x;
+      const utmkY = center.y;
+      const latlng = proj4("EPSG:5179", "EPSG:4326", [utmkX, utmkY]);
+      lat = latlng[1];
+      lng = latlng[0];
+    }
+
+    setCoordinates(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+
+    const utmkPos = window.sop.utmk(center.x, center.y);
+
+    if (!markerLayerRef.current) return;
+
+    markerLayerRef.current.clearLayers();
+    const newMarker = new window.sop.Marker(utmkPos, { icon: honeycombIcon });
+    newMarker.addTo(markerLayerRef.current);
+    markerRef.current = newMarker;
+  };
+
+
 
   // 추천 점수 계산
   const calculateRecommendation = (ratios: PixelRatios) => {
@@ -71,16 +100,30 @@ export default function MapPredict() {
     else if (score >= 0.25) grade = "B"
     else grade = "C"
 
-    const lines = [
-      "예측 결과는 참고용입니다. 실제와 다를 수 있습니다.",
-      "- A/B/C 3등급으로 분류되어 있으며, 알파벳 순서대로 등급입니다.",
-      "- C 등급은 꿀벌에게 부정적인 환경으로 양봉지로 적합하지 않습니다.",
-    ]
     const gradeBadgeColor =
       grade === "A" ? "#28a745" : grade === "B" ? "#ffc107" : "#dc3545"
     const badgeHtml = `<div style="background-color: ${gradeBadgeColor}; font-weight:bold;font-size:18px;color:white;padding:6px 12px;border-radius:8px;display:inline-block;margin-bottom:10px;">예측 등급: ${grade}</div>`
-    const lineHtml = lines.map((line) => `<p>${line}</p>`).join("")
-    return badgeHtml + lineHtml
+
+    // 레이블별 설명 - 보완 필요
+    const labelDescriptions: Record<string, string> = {
+      "활엽수림": "활엽수림은 꿀벌의 주요 서식지이며, 꽃의 다양성이 풍부합니다.",
+      "침엽수림": "침엽수림은 꿀벌 활동이 제한적일 수 있습니다.",
+      "논": "논은 주로 벼를 심고, 꿀벌 활동기와 농약 사용이 겹쳐 주의가 필요합니다.",
+      "밭": "밭은 작물의 파종시기와 농약 살포 시기가 불규칙해 주의가 필요합니다.",
+      "비닐하우스": "비닐하우스는 밀폐된 환경으로 꿀벌 활동에 제한이 있을뿐 아니라, 농약의 위험도 있습니다.",
+      "수역": "수역은 꿀벌의 활동에 영향을 미치지 않습니다.",
+    }
+
+    // 라벨별 HTML 생성
+    const labelHtml = Object.entries(ratios)
+      .filter(([label, ratio]) => labelDescriptions[label])
+      .map(([label, ratio]) => {
+        const percent = Math.floor(ratio * 10000) / 100
+        return `<p>분석된 반경 중 ${label}이 ${percent}% 차지합니다.<br>${labelDescriptions[label]}</p>`
+      })
+      .join("")
+
+    return badgeHtml + labelHtml
   }
 
   // 지도 초기화
@@ -171,6 +214,7 @@ export default function MapPredict() {
     }
   }, [resultImageSrc]);
 
+  // 입지 분석
   const captureAndPredict = async () => {
     if (!mapRef.current || !mapInstance.current) return;
     setIsLoading(true);
@@ -180,7 +224,7 @@ export default function MapPredict() {
       el.dataset.prevDisplay = el.style.display;
       el.style.display = 'none';
     });
-
+    markerLayerRef.current?.remove();
 
     const map = mapInstance.current;
     const originalCenter = map.getCenter();
@@ -188,7 +232,7 @@ export default function MapPredict() {
 
     const captureZoom = 18;
     map.setZoom(captureZoom);
-    await new Promise(r => setTimeout(r, 700));
+    await new Promise(r => setTimeout(r, 999));
 
     const mapElement = mapRef.current;
     const tileWidth = mapElement.offsetWidth;
@@ -209,7 +253,7 @@ export default function MapPredict() {
     console.log("가로/세로 타일 수:", tilesPerSideX, tilesPerSideY);
     console.log("최종 캡처 이미지 크기 (px):", finalWidth, "x", finalHeight);
     
-    // 타일 스티
+    // 타일 스티칭
     for (let y = 0; y < tilesPerSideY; y++) {
       for (let x = 0; x < tilesPerSideX; x++) {
         const dx = (startOffsetX + x) * tileWidth;
@@ -217,7 +261,7 @@ export default function MapPredict() {
 
         map.setView(originalCenter, captureZoom, { animate: false });
         map.panBy([dx, dy], { animate: false });
-        await new Promise(r => setTimeout(r, 700));
+        await new Promise(r => setTimeout(r, 999));
 
         const canvas = await html2canvas(mapRef.current!, {
           useCORS: true,
@@ -299,6 +343,7 @@ export default function MapPredict() {
         el.style.display = el.dataset.prevDisplay || '';
         delete el.dataset.prevDisplay;
       });
+      markerLayerRef.current?.addTo(mapInstance.current);
       map.setView(originalCenter, originalZoom)
       setIsLoading(false)
     }
@@ -310,7 +355,7 @@ export default function MapPredict() {
         {/* 좌측 사이드바 */}
         <div className="w-80 bg-white shadow-lg overflow-y-auto">
           <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">양봉 지역 분석</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">양봉지 분석</h1>
 
             {/* 분석할 지역 */}
             <div className="mb-6">
@@ -362,7 +407,7 @@ export default function MapPredict() {
           <div className="relative w-full h-full">
             <div className="w-full h-full" ref={mapRef}></div>
             {isLoading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-white" style={{ zIndex: 10 , backgroundColor: "rgba(0,0,0,0.8)",}}>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-50" style={{ backgroundColor: "rgba(0,0,0,0.8)",}}>
                 <Loader2 className="w-16 h-16 animate-spin mb-4" />
                 <p className="text-xl">분석 중입니다. 잠시만 기다려주세요...</p>
               </div>
@@ -370,93 +415,106 @@ export default function MapPredict() {
           </div>
 
           {showResultPopup && resultImageSrc && (
-            <div className="absolute top-12 left-0 right-0 mx-auto z-30 bg-white rounded-lg shadow-lg p-4" style={{ width: '100%' }}>
-              <div className="flex flex-col md:flex-row gap-4">
-                <button
-                  className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                  onClick={() => setShowResultPopup(false)}
-                >
-                  ✕
-                </button>
-                {/* 추천 점수 */}
-                <Card className="mb-4">
-                  <CardHeader>
-                    <CardTitle className="text-lg">추천 점수</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div dangerouslySetInnerHTML={{ __html: recommendationText }} />
-                  </CardContent>
-                </Card>
+            <div className="flex-1 relative grid place-items-center z-40 bg-white rounded-lg shadow-lg p-4 h-full overflow-auto">
+              {/* 닫기 버튼 - 바꿔야함 개 별로임*/}
+              <button
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowResultPopup(false)}
+              >
+                ✕
+              </button>
 
+              {/* 양봉장 입지 */}
+              <Card className="mb-6 w-full">
+                <CardHeader>
+                  <CardTitle className="text-lg">분석 보고서</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div dangerouslySetInnerHTML={{ __html: recommendationText }} />
+                </CardContent>
+              </Card>
+
+              <div className="flex flex-col md:flex-row gap-4 w-full items-stretch">
                 {/* 분석 이미지 */}
                 <div className="md:w-7/10">
-                  <Card>
+                  <Card className="h-full flex flex-col">
                     <CardHeader>
                       <CardTitle className="text-lg">분석 이미지</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <img src={resultImageSrc} alt="예측 결과" className="w-full h-full rounded-full object-cover shadow-sm" />
+                    <CardContent className="flex-grow">
+                      <img
+                        src={resultImageSrc}
+                        alt="예측 결과"
+                        className="w-full h-full rounded-full object-cover shadow-sm"
+                      />
                     </CardContent>
                   </Card>
                 </div>
-
                 
-                {/* 토지 이용 비율 */}
-                <div className="md:w-3/19">
-                  <Card>
+                {/* 비율 */}
+                <div className="md:w-3/10 h-full">
+                  <Card className="h-full flex flex-col">
                     <CardHeader>
-                      <CardTitle className="text-lg">토지 이용 비율</CardTitle>
+                      <CardTitle className="text-lg">토지 비율 분석</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2">
+                    <CardContent className="space-y-2 overflow-auto flex-grow">
                       {Object.entries(pixelRatios)
-                        .sort((a, b) => b[1] - a[1]) 
-                        .map(([key, value]) => {
-                          const labels: Record<string, string> = {
-                            // "-1": "무시",
-                            // "0": "기타",
-                            "1": "건물",
-                            // "2": "주차장",
-                            // "3": "도로",
-                            // "4": "가로수",
-                            "5": "논",
-                            "6": "비닐하우스",
-                            "7": "밭",
-                            "8": "활엽수림",
-                            "9": "침엽수림",
-                            "10": "나지",
-                            "11": "수역"
-                          };
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([key, value]) => {
+                        const labels: Record<string, string> = {
+                          "-1": "무시",
+                          "0": "기타",
+                          "1": "건물",
+                          "2": "주차장",
+                          "3": "도로",
+                          "4": "가로수",
+                          "5": "논",
+                          "6": "비닐하우스",
+                          "7": "밭",
+                          "8": "활엽수림",
+                          "9": "침엽수림",
+                          "10": "나지",
+                          "11": "수역",
+                        };
 
-                          const colors: Record<string, string> = {
-                            "-1": "rgb(100,100,100)",
-                            "0": "rgb(160,160,160)",
-                            "1": "rgb(60,60,60)",
-                            "2": "rgb(220,220,220)",
-                            "3": "rgb(128,128,128)",
-                            "4": "rgb(173,255,47)",
-                            "5": "rgb(139,69,19)",
-                            "6": "rgb(135,206,235)",
-                            "7": "rgb(144,238,144)",
-                            "8": "rgb(50,205,50)",
-                            "9": "rgb(165,65,65)",
-                            "10": "rgb(255,140,0)",
-                            "11": "rgb(0,0,255)"
-                          };
+                        const colors: Record<string, string> = {
+                          "-1": "#646464",
+                          "0": "#A0A0A0",
+                          "1": "#3C3C3C",
+                          "2": "#DCDCDC",
+                          "3": "#808080",
+                          "4": "#ADFF2F",
+                          "5": "#8B4513",
+                          "6": "#87CEEB",
+                          "7": "#90EE90",
+                          "8": "#32CD32",
+                          "9": "#A54141",
+                          "10": "#FF8C00",
+                          "11": "#0000FF",
+                        };
 
-                          const percent = Math.floor(value * 10000) / 100; 
-                          return (
-                            <div key={key} className="space-y-1">
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-700">{labels[key] || key}</span>
-                                <span className="font-medium">{percent}%</span>
-                              </div>
-                                <Progress
-                                  value={percent}
-                                  className={`h-2 ${colors[key]}`}
-                                />
+                        const percent = Math.floor(value * 10000) / 100;
+
+                        return (
+                          <div key={key} className="space-y-1">
+                            {/* 텍스트 + 색상 원 */}
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-4 h-4 rounded-full border border-gray-300 inline-block"
+                                style={{ backgroundColor: colors[key] }}
+                              />
+                              <span className="text-gray-700">{labels[key] || key}: {percent}%</span>
                             </div>
-                          );
-                        })}
+                            {/* 퍼센트 막대 */}
+                            <div className="w-full h-2 bg-gray-200 rounded overflow-hidden">
+                              <div
+                                className="h-full"
+                                style={{ width: `${percent}%`, backgroundColor: colors[key] }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </CardContent>
                   </Card>
                 </div>

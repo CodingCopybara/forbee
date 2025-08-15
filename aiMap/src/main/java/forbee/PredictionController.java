@@ -15,6 +15,11 @@ import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
+
+// import java.util.HashMap;  // ✅ 추가
+// import java.util.Map;      // ✅ 추가
+
+
 // @CrossOrigin(origins = "*")
 @RestController
 public class PredictionController {
@@ -24,6 +29,41 @@ public class PredictionController {
     @PostMapping(value = "/predict-and-get-info", consumes = MediaType.ALL_VALUE)
     public ResponseEntity<PredictionResult> predictAndGetInfo(HttpServletRequest request) {
         String inputFilePath = null;
+
+        // try {
+        //     System.out.println("[임시모드] 요청 수신 완료");
+
+        //     String sampleBase64 = "data:image/png;base64," +
+        //             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAA1JREFUGFdj+P///" +
+        //             "38ACfsD/QpZLqAAAAAASUVORK5CYII=";
+
+        //     // ✅ 픽셀 비율 Map (Double로 변경)
+        //     Map<String, Double> sampleRatios = new HashMap<>();
+        //     sampleRatios.put("기타", 0.10);
+        //     sampleRatios.put("건물", 0.05);
+        //     sampleRatios.put("주차장", 0.03);
+        //     sampleRatios.put("도로", 0.20);
+        //     sampleRatios.put("가로수", 0.02);
+        //     sampleRatios.put("논", 0.30);
+        //     sampleRatios.put("비닐하우스", 0.05);
+        //     sampleRatios.put("밭", 0.15);
+        //     sampleRatios.put("활엽수림", 0.05);
+        //     sampleRatios.put("침엽수림", 0.03);
+        //     sampleRatios.put("나지", 0.01);
+        //     sampleRatios.put("수역", 0.01);
+
+        //     // ✅ DTO 생성
+        //     PredictionResult result = new PredictionResult();
+        //     result.setImageData(sampleBase64);
+        //     result.setPixelRatios(sampleRatios);
+
+        //     System.out.println("[임시모드] 데이터 반환 완료");
+        //     return ResponseEntity.ok(result);
+
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        //     return ResponseEntity.status(500).body(null);
+        // }
 
         try (InputStream inputStream = request.getInputStream()) {
             System.out.println("[1] 컨트롤러 진입");

@@ -37,7 +37,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link href="/area-analysis" className="hover:text-amber-400 transition-colors">
-                    지역 분석
+                    양봉지 분석
                   </Link>
                 </li>
                 <li>

@@ -20,7 +20,7 @@ export default function Header() {
             진단 서비스
           </Link>
           <Link href="/area-analysis" className="text-gray-600 hover:text-amber-600 transition-colors">
-            지역 분석
+            양봉지 분석
           </Link>
           <Link href="/bloom-prediction" className="text-gray-600 hover:text-amber-600 transition-colors">
             개화 예측

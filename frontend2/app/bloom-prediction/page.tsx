@@ -235,7 +235,7 @@ export default function BloomPredictionPage() {
         </div>
 
         {/* 메인 지도 영역 */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative grid place-items-center p-4">
           <BloomMap
             locations={locations}
             onMarkerClick={handleLocationSelect}
