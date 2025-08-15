@@ -1,6 +1,5 @@
 "use client"
 
-// /app/community/[tab]/[page]/page.tsx
 import React, { use, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -35,7 +34,12 @@ type PostRow = {
   views?: number
   likes?: number
   comments?: number
-  category?: string
+  // board는 free/notice/qna (기존 필드)
+  board?: "free" | "notice" | "qna" | string
+  // ✅ 세부 카테고리(일반/수확후기/…)
+  subCategory?: string
+  // ✅ 태그(있으면 사용)
+  tags?: string[]
   isPinned?: boolean
   isImportant?: boolean
   status?: string
@@ -62,8 +66,27 @@ const authHeaders = () => {
   return { Role: role, ...(token ? { Authorization: `Bearer ${token}` } : {}) }
 }
 
-// ✅ 작성자 마스킹: 앞 3글자만 노출, 나머지는 *로 대체
-// 이메일이면 로컬파트( @ 앞 )만 마스킹
+// ✅ 세부 카테고리 라벨 매핑 (write 페이지와 동일 set)
+const categoryLabelMap: Record<string, string> = {
+  // free
+  general: "일반",
+  harvest: "수확후기",
+  question: "질문",
+  info: "정보공유",
+  review: "후기",
+  // notice
+  announcement: "공지사항",
+  update: "업데이트",
+  event: "이벤트",
+  // qna
+  disease: "질병진단",
+  management: "관리문의",
+  "ai-service": "AI서비스",
+  equipment: "장비문의",
+  location: "위치선정",
+}
+
+// 작성자 마스킹
 function maskId(value?: string): string {
   const v = (value || "").trim()
   if (!v) return "익명"
@@ -110,7 +133,7 @@ export default function CommunityPage({
     setActiveTab(CURRENT_TAB)
   }, [CURRENT_TAB])
 
-  // 데이터 로드 (전체 받아 최신순 정렬)
+  // 데이터 로드
   async function load(category: Tab) {
     if (!GW) return
     setLoading(true)
@@ -138,7 +161,11 @@ export default function CommunityPage({
         views: pick<number>(p.views, p.viewCount) ?? 0,
         likes: pick<number>(p.likes, p.likeCount) ?? 0,
         comments: pick<number>(p.comments, p.commentCount, p.replyCount) ?? 0,
-        category: category === "free" ? "자유" : category === "notice" ? "공지" : "QnA",
+        // 기존 board(대분류)
+        board: pick<string>(p.category, p.board, category) ?? category,
+        // ✅ 서버가 내려주는 필드 추론적으로 수집
+        subCategory: pick<string>(p.subCategory, p.sub_category, p.subcategory, p.topic, p.cat),
+        tags: Array.isArray(p.tags) ? p.tags : undefined,
         isPinned: !!p.isPinned,
         isImportant: !!p.isImportant,
         status: p.status,
@@ -146,12 +173,12 @@ export default function CommunityPage({
         content: pick<string>(p.content, p.body, p.description, p.text) ?? "",
       }))
 
+      // 최신순 정렬
       mapped.sort((a, b) => {
         const ad = a.createdAt ? new Date(a.createdAt).getTime() : 0
         const bd = b.createdAt ? new Date(b.createdAt).getTime() : 0
         if (bd !== ad) return bd - ad
-        const ai = Number(a.id),
-          bi = Number(b.id)
+        const ai = Number(a.id), bi = Number(b.id)
         if (!Number.isNaN(ai) && !Number.isNaN(bi)) return bi - ai
         return String(b.id).localeCompare(String(a.id))
       })
@@ -207,7 +234,7 @@ export default function CommunityPage({
   const start = (CURRENT_PAGE - 1) * PAGE_SIZE
   const paged = filtered.slice(start, start + PAGE_SIZE)
 
-  // 페이지 버튼 (최대 5개 노출)
+  // 페이지 버튼 (최대 5개)
   const pageButtons = useMemo(() => {
     const max = 5
     let first = Math.max(1, CURRENT_PAGE - 2)
@@ -247,9 +274,7 @@ export default function CommunityPage({
           <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
-                  번호
-                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">번호</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제목</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작성자</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작성일</th>
@@ -262,6 +287,7 @@ export default function CommunityPage({
                 const number = totalPosts - start - idx
                 const title = locked ? "🔒 잠긴 글입니다." : post.title
                 const maskedAuthor = maskId(post.author)
+                const subLabel = post.subCategory ? (categoryLabelMap[post.subCategory] || post.subCategory) : null
                 return (
                   <tr key={post.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-sm text-gray-500">{number}</td>
@@ -269,18 +295,21 @@ export default function CommunityPage({
                       <div className="flex items-center gap-2">
                         {post.isPinned && <Pin className="h-3 w-3 text-amber-500 flex-shrink-0" />}
                         {post.isImportant && (
-                          <Badge variant="destructive" className="text-xs px-1 py-0">
-                            중요
-                          </Badge>
+                          <Badge variant="destructive" className="text-xs px-1 py-0">중요</Badge>
                         )}
                         {post.status && (
                           <Badge className={`text-xs px-1 py-0 ${getStatusColor(post.status)}`}>{post.status}</Badge>
                         )}
-                        {post.category && (
+                        {/* ✅ 세부 카테고리 배지 (대분류 배지 대신) */}
+                        {subLabel && (
                           <Badge variant="outline" className="text-xs px-1 py-0 text-amber-600 border-amber-200">
-                            {post.category}
+                            {subLabel}
                           </Badge>
                         )}
+                        {/* 태그 한두 개만 미리보기 (옵션) */}
+                        {Array.isArray(post.tags) && post.tags.slice(0, 2).map((tg) => (
+                          <Badge key={tg} variant="secondary" className="text-[10px]">{`#${tg}`}</Badge>
+                        ))}
                       </div>
                       <Link href={`/community/post/${post.id}`} className="hover:text-amber-600 block mt-1">
                         <span className="font-medium text-sm line-clamp-1">{title}</span>
@@ -290,9 +319,7 @@ export default function CommunityPage({
                       <div className="flex items-center gap-2">
                         <Avatar className="h-5 w-5">
                           <AvatarImage src={post.avatar || "/placeholder.svg"} />
-                          <AvatarFallback className="text-xs">
-                            {String(post.author || "익명")[0]}
-                          </AvatarFallback>
+                          <AvatarFallback className="text-xs">{String(post.author || "익명")[0]}</AvatarFallback>
                         </Avatar>
                         <span className="text-sm text-gray-700">{maskedAuthor}</span>
                       </div>
@@ -336,23 +363,25 @@ export default function CommunityPage({
         {paged.map((post) => {
           const title = locked ? "🔒 잠긴 글입니다." : post.title
           const maskedAuthor = maskId(post.author)
+          const subLabel = post.subCategory ? (categoryLabelMap[post.subCategory] || post.subCategory) : null
           return (
             <div key={post.id} className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     {post.isPinned && <Pin className="h-4 w-4 text-amber-500" />}
-                    {post.isImportant && (
-                      <Badge variant="destructive" className="text-xs">
-                        중요
-                      </Badge>
-                    )}
+                    {post.isImportant && <Badge variant="destructive" className="text-xs">중요</Badge>}
                     {post.status && <Badge className={`text-xs ${getStatusColor(post.status)}`}>{post.status}</Badge>}
-                    {post.category && (
+                    {/* ✅ 세부 카테고리 배지 */}
+                    {subLabel && (
                       <Badge variant="outline" className="text-xs text-amber-600 border-amber-200">
-                        {post.category}
+                        {subLabel}
                       </Badge>
                     )}
+                    {/* 태그 프리뷰 */}
+                    {Array.isArray(post.tags) && post.tags.slice(0, 3).map((tg) => (
+                      <Badge key={tg} variant="secondary" className="text-[11px]">{`#${tg}`}</Badge>
+                    ))}
                   </div>
                   <Link href={`/community/post/${post.id}`} className="hover:text-amber-600">
                     <h3 className="font-semibold text-lg mb-2 line-clamp-2">{title}</h3>
@@ -361,9 +390,7 @@ export default function CommunityPage({
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
                         <AvatarImage src={post.avatar || "/placeholder.svg"} />
-                        <AvatarFallback className="text-xs">
-                          {String(post.author || "익명")[0]}
-                        </AvatarFallback>
+                        <AvatarFallback className="text-xs">{String(post.author || "익명")[0]}</AvatarFallback>
                       </Avatar>
                       <span>{maskedAuthor}</span>
                     </div>
@@ -513,7 +540,7 @@ export default function CommunityPage({
                 variant="outline"
                 size="sm"
                 onClick={() => gotoPage(Math.max(1, CURRENT_PAGE - 1))}
-                disabled={prevDisabled}
+                disabled={CURRENT_PAGE === 1}
               >
                 이전
               </Button>
@@ -534,7 +561,7 @@ export default function CommunityPage({
                 variant="outline"
                 size="sm"
                 onClick={() => gotoPage(Math.min(totalPages, CURRENT_PAGE + 1))}
-                disabled={nextDisabled}
+                disabled={CURRENT_PAGE === totalPages}
               >
                 다음
               </Button>
