@@ -36,6 +36,8 @@ export default function MapPredict() {
   const markerRef = useRef<any>(null);
   const honeycombIconRef = useRef<any>(null);
   const [analysisCoordinates, setAnalysisCoordinates] = useState<string>("")
+  const [address, setAddress] = useState<string>("주소를 로드 중...");
+
 
   useEffect(() => {
     if (mapInstance.current && !markerLayerRef.current) {
@@ -55,7 +57,7 @@ export default function MapPredict() {
     }
   }, []);
 
-  const updateCoordinates = () => {
+  const updateCoordinates = async () => {
     if (!mapInstance.current || !markerLayerRef.current) return;
 
     const center = mapInstance.current.getCenter();
@@ -71,21 +73,30 @@ export default function MapPredict() {
       lat = latlng[1];
       lng = latlng[0];
     }
-
+    console.error("좌표 수정");
     setCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-    setAnalysisCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`)
+    setAnalysisCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
 
     const utmkPos = window.sop.utmk(center.x, center.y);
-
-    if (!markerLayerRef.current) return;
 
     markerLayerRef.current.clearLayers();
     const newMarker = new window.sop.Marker(utmkPos, { icon: honeycombIconRef.current });
     newMarker.addTo(markerLayerRef.current);
     markerRef.current = newMarker;
+
+    // 주소 조회
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_GW_URL}/reverse-geocode`, {
+        params: { x_coor: center.x, y_coor: center.y  },
+      });
+      // 서버에서 받아온 JSON 구조에 맞춰서 필요한 주소만 추출
+      const addr = res.data.fullAddress || JSON.stringify(res.data);
+      setAddress(addr);
+    } catch (err) {
+      console.error("주소 조회 실패", err);
+      setAddress("주소를 불러오지 못했습니다.");
+    }
   };
-
-
 
   // 추천 점수 계산
   const calculateRecommendation = (ratios: PixelRatios) => {
@@ -369,10 +380,16 @@ export default function MapPredict() {
             {/* 분석할 지역 */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">분석할 지역</label>
-              <div className="pb-6 flex items-center space-x-2">
-                <MapPin className="w-5 h-5 text-gray-400" />
-                <span className="text-sm text-gray-600">{coordinates}</span>
-              </div>
+                <div className="pb-6 flex flex-col">
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-5 h-5 text-gray-400" />
+                    <span className="text-sm text-gray-600">{coordinates}</span>
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    {address}
+                  </div>
+                </div>
+
               
               
               <label className="block text-sm font-medium text-gray-700 mb-2">이용 안내</label>
