@@ -147,28 +147,39 @@ export default function MapPredict() {
 
     const gradeBadgeColor =
       grade === "A" ? "#28a745" : grade === "B" ? "#ffc107" : "#dc3545"
-    const badgeHtml = `<div style="background-color: ${gradeBadgeColor}; font-weight:bold;font-size:18px;color:white;padding:6px 12px;border-radius:8px;display:inline-block;margin-bottom:10px;">예측 등급: ${grade}</div>`
+    const badgeHtml = `<div style="background-color: ${gradeBadgeColor}; font-weight:bold;font-size:18px;color:white;padding:6px 12px;border-radius:8px;display:inline-block;margin-bottom:20px;">예측 등급: ${grade}</div>`
 
     // 레이블별 설명 - 보완 필요
     const labelDescriptions: Record<string, string> = {
-      "활엽수림": "활엽수림은 꿀벌이 꽃을 채집하기에 최적의 장소입니다. 다양한 꽃이 있어 꿀 생산량과 품질 향상에 도움이 됩니다.",
-      "침엽수림": "침엽수림은 꿀벌이 이동하거나 꽃을 찾기에 제한적입니다. 채집량은 적을 수 있으나, 꿀벌이 쉬거나 .",
-      "논": "논은 봄/여름 동안 꿀벌 활동에 영향을 줄 수 있으며, 농약 살포 시기가 맞물리면 피해 위험이 있습니다. 등급과 상관없이 양봉장과 가까운 논이 있다면 피하는게 좋습니다.",
-      "밭": "밭은 작물 종류와 농약 사용 패턴에 따라 위험도가 다릅니다. 주로 농약 살포 시기를 확인하고 주의가 필요합니다. 등급과 상관없이 양봉장과 가까운 밭이 있다면 피하는게 좋습니다.",
-      "비닐하우스": "밀폐된 비닐하우스는 꿀벌 접근이 어려워 영양소를 공급 받기 어려우며, 내부 환경이 농약으로 위험할 수 있습니다.",
+      "활엽수림": "활엽수림은 꿀벌이 꽃을 채집하기에 최적의 장소입니다. 다양한 밀원 식물이 계절별로 꽃을 피워 안정적인 꿀 공급이 가능합니다. 특히 봄과 초여름에 풍부한 화분과 꿀을 제공해 꿀벌의 건강과 꿀 생산량, 품질 향상에 큰 도움이 됩니다.",
+      "침엽수림": "침엽수림은 꿀벌이 이동하거나 꽃을 찾기에 제한적입니다. 채집량은 적을 수 있으나, 꿀벌이 쉬거나 천적을 피하는 은신처로 활용될 수 있습니다. 하지만 밀원 식물이 적기 때문에 장기간 머무르기에는 부적합합니다.",
+      "논": "논은 벼 재배 시기 동안 물이 많아 꿀벌이 접근하기 어렵고, 특히 모내기·병충해 방제 시기에는 농약 살포가 집중되어 꿀벌 피해 위험이 크며, 이 시기는 꿀벌의 주요 활동기와 겹칩니다. 농약 중 일부는 꿀벌에게 치명적이며, 피해 후 회복에도 시간이 오래 걸립니다. 따라서 논이 가까운 위치는 등급과 상관없이 피하는 것이 안전합니다.",
+      "밭": "밭은 작물 종류에 따라 꽃 자원이 제공되기도 하지만, 대부분 농약 살포 빈도가 높습니다. 특히 살충제와 제초제는 꿀벌에게 직접적이고 치명적인 영향을 줄 수 있습니다. 주변 농가의 농약 사용 패턴을 확인해야 하며, 밭이 밀집된 지역은 꿀벌의 생존과 꿀 품질 모두에 부정적입니다. 따라서 논이 가까운 위치는 등급과 상관없이 피하는 것이 안전합니다.",
+      "비닐하우스": "밀폐된 비닐하우스는 꿀벌이 내부 작물에 접근할 수 없고, 내부에서 사용되는 약제나 훈증제가 외부로 퍼질 경우 꿀벌에게 위험합니다. 비닐하우스가 많은 지역은 꿀벌의 채집 경로가 제한되고 먹이 자원이 줄어드는 문제가 발생할 수 있으며, 꿀벌이 비닐하우스에 들어가더라도 빠져나오기 어려워 생존에 영향을 줍니다.",
       "수역": "호수, 강, 습지 등 수역은 꿀벌 활동에 직접적 영향이 적지만, 주변 꽃 식생과 조합해 고려할 수 있습니다.",
-    }
+    };
 
     // 라벨별 HTML 생성
     const labelHtml = Object.entries(ratios)
       .filter(([label, ratio]) => labelDescriptions[label])
+      .sort((a, b) => b[1] - a[1]) // ratio 기준 내림차순 정렬
       .map(([label, ratio]) => {
-        const percent = Math.floor(ratio * 10000) / 100
-        return `<h2>분석된 반경 중 ${label}이 <span style="color:#ff5722; font-weight:bold;">${percent}%</span> 차지합니다.<br>${labelDescriptions[label]}</h2>`;
+        const percent = Math.floor(ratio * 10000) / 100;
+        return `
+          <div style="padding:4px 0;">
+            <h2 style="font-weight:bold;">
+              분석된 반경 중 ${label}이 
+              <span style="color:#ff5722; font-weight:bold;">${percent}%</span> 차지합니다.
+            </h2>
+            <p style="margin: 4px 0; font-size:14px; color:#555555;">
+              ${labelDescriptions[label]}
+            </p>
+          </div>
+        `;
       })
-      .join("")
+      .join("");
 
-    return badgeHtml + labelHtml
+    return badgeHtml + labelHtml;
   }
 
   // 지도 초기화
@@ -491,15 +502,15 @@ export default function MapPredict() {
 
           {showResultPopup && resultImageSrc && (
             <div className="absolute inset-0 grid place-items-center z-[1000] bg-white rounded-lg shadow-lg p-4 h-full overflow-auto">
-              {/* 닫기 버튼 - 바꿔야함 개 별로임*/}
+              {/* 닫기 버튼*/}
               <button
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                className="absolute top-2 right-2 p-0 text-gray-500 bg-transparent"
                 onClick={() => setShowResultPopup(false)}
               >
-                ✕
+                <img src="/icons/x.png" alt="닫기" className="w-12 h-12 object-contain" />
               </button>
 
-              <div className="flex flex-col md:flex-row gap-4 w-full items-stretch">
+              <div className="flex flex-col md:flex-row gap-4 w-full items-stretch mt-8">
                 <div className="md:w-6/10">
                   {/* 분석 보고서 */}
                   <Card className="w-full">
