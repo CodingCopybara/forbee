@@ -219,6 +219,30 @@ export default function WritePage() {
 
   const isFromDiagnosis = searchParams.get("board") === "qna"
 
+  // 도커 빌드 시 사용
+  // useEffect(() => {
+  //   const styleId = "contenteditable-placeholder-style";
+    
+  //   if (document.getElementById(styleId)) return;
+
+  //   const style = document.createElement("style");
+  //   style.id = styleId;
+  //   style.innerHTML = `
+  //     [data-placeholder]:empty:before {
+  //       content: attr(data-placeholder);
+  //       color: #9ca3af; /* gray-400 */
+  //     }
+  //   `;
+  //   document.head.appendChild(style);
+
+  //   return () => {
+  //     const styleElement = document.getElementById(styleId);
+  //     if (styleElement) {
+  //       document.head.removeChild(styleElement);
+  //     }
+  //   };
+  // }, []);
+
   const handleAddTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim()) && tags.length < 5) {
       setTags([...tags, tagInput.trim()])
@@ -650,6 +674,7 @@ export default function WritePage() {
 }
 
 /* 간단한 placeholder 스타일 (contenteditable 전용) */
+// 도커 빌드 시 주석 처리
 const style = document?.createElement?.("style")
 if (style) {
   style.innerHTML = `

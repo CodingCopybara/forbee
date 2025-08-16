@@ -4,7 +4,7 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat
 
 # Enable pnpm via Corepack (pin pnpm 8.x)
-RUN corepack enable && corepack prepare pnpm@8.15.8 --activate
+RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
 
 COPY pnpm-lock.yaml package.json ./
 RUN pnpm install --frozen-lockfile
@@ -13,7 +13,7 @@ FROM node:20-alpine AS builder
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
-RUN corepack enable && corepack prepare pnpm@8.15.8 --activate
+RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

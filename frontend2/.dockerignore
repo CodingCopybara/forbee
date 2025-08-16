@@ -1,0 +1,4 @@
+.next/
+kubernetes/
+node_modules/
+.gitignore

@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // output: 'standalone',  // 도커 빌드 시 사용
   eslint: {
     ignoreDuringBuilds: true,
   },
