@@ -1,6 +1,5 @@
 "use client"
 
-// /app/community/post/[id]/page.tsx
 import React, { use, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -19,6 +18,23 @@ export const fetchCache = "force-no-store"
 
 const GW = (process.env.NEXT_PUBLIC_GW_URL || "").replace(/\/+$/, "")
 
+// ✅ 세부 카테고리 라벨 매핑
+const categoryLabelMap: Record<string, string> = {
+  general: "일반",
+  harvest: "수확후기",
+  question: "질문",
+  info: "정보공유",
+  review: "후기",
+  announcement: "공지사항",
+  update: "업데이트",
+  event: "이벤트",
+  disease: "질병진단",
+  management: "관리문의",
+  "ai-service": "AI서비스",
+  equipment: "장비문의",
+  location: "위치선정",
+}
+
 type Post = {
   id: string | number
   title: string
@@ -28,8 +44,9 @@ type Post = {
   views?: number
   likes?: number
   comments?: number
-  category?: "free" | "notice" | "qna" | string
-  tags?: string[]
+  category?: "free" | "notice" | "qna" | string   // 대분류(서버 기존)
+  subCategory?: string                             // ✅ 세부 카테고리
+  tags?: string[]                                  // ✅ 태그
 }
 
 type Comment = {
@@ -53,7 +70,7 @@ const authHeaders = () => {
 }
 const abs = (u?: string) => (!u ? u : /^https?:\/\//i.test(u) ? u : `${GW}${u.startsWith("/") ? u : `/${u}`}`)
 
-// 작성자/댓글 작성자 아이디 마스킹 (앞 3글자만 노출)
+// 작성자 마스킹
 function maskId(value?: string): string {
   const v = (value || "").trim()
   if (!v) return "익명"
@@ -176,8 +193,11 @@ export default function PostDetailPage({
     }
   }
 
-  const categoryBadge = (c?: string) =>
-    c ? <Badge variant="outline">{c === "free" ? "자유" : c === "notice" ? "공지" : "QnA"}</Badge> : null
+  const subCategoryBadge = (sc?: string) => {
+    if (!sc) return null
+    const label = categoryLabelMap[sc] || sc
+    return <Badge variant="outline" className="border-amber-200 text-amber-600">{label}</Badge>
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -201,13 +221,13 @@ export default function PostDetailPage({
         <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {categoryBadge(post?.category)}
-                {(post?.tags || []).map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-xs">
-                    #{tag}
-                  </Badge>
-                ))}
+              {/* ✅ 카테고리 & 태그 영역 */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {subCategoryBadge(post?.subCategory)}
+                {Array.isArray(post?.tags) &&
+                  post!.tags!.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="text-xs">#{tag}</Badge>
+                  ))}
               </div>
               <Button variant="ghost" size="sm">
                 <MoreVertical className="h-4 w-4" />
@@ -288,7 +308,6 @@ export default function PostDetailPage({
             <h3 className="text-lg font-semibold">댓글 {commentsLocked ? 0 : comments.length}개</h3>
           </CardHeader>
           <CardContent>
-            {/* ✅ 입력 폼: 권한 없으면 항상 "댓글 권한이 없습니다." */}
             {canComment && !commentsLocked ? (
               <form onSubmit={submitComment} className="mb-6">
                 <Textarea
@@ -310,7 +329,6 @@ export default function PostDetailPage({
 
             <Separator className="mb-6" />
 
-            {/* ✅ 목록 영역: 권한 없으면 댓글 유무에 따라 문구 분기 */}
             {commentsLocked ? (
               <div className="text-sm text-gray-500">
                 {comments.length > 0 ? "잠긴 댓글입니다." : "댓글이 없습니다."}

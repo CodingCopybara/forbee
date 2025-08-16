@@ -24,30 +24,68 @@ interface PixelRatios {
 export default function MapPredict() {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstance = useRef<any>(null)
+  const resultsRef = useRef<HTMLDivElement>(null)
   const [isMapInitialized, setIsMapInitialized] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [coordinates, setCoordinates] = useState("위치 정보를 로드 중...")
   const [resultImageSrc, setResultImageSrc] = useState("")
   const [pixelRatios, setPixelRatios] = useState<PixelRatios>({})
   const [recommendationText, setRecommendationText] = useState("")
+  const [showResultPopup, setShowResultPopup] = useState(false);
+  const markerLayerRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  const honeycombIconRef = useRef<any>(null);
+  const [analysisCoordinates, setAnalysisCoordinates] = useState<string>("")
 
-  // SOP 지도 중심 좌표 갱신
-  const updateCoordinates = () => {
-    if (!mapInstance.current) return
-    const center = mapInstance.current.getCenter()
-    let lat: number, lng: number
-    if (typeof center.getLat === "function") {
-      lat = center.getLat()
-      lng = center.getLng()
-    } else {
-      const utmkX = center.x
-      const utmkY = center.y
-      const latlng = proj4("EPSG:5179", "EPSG:4326", [utmkX, utmkY])
-      lat = latlng[1]
-      lng = latlng[0]
+  useEffect(() => {
+    if (mapInstance.current && !markerLayerRef.current) {
+      const layer = new window.sop.LayerGroup();
+      layer.addTo(mapInstance.current); 
+      markerLayerRef.current = layer;
     }
-    setCoordinates(`${lat.toFixed(6)}, ${lng.toFixed(6)}`)
-  }
+  }, [mapInstance.current]);
+
+  useEffect(() => {
+    if (typeof window.sop !== "undefined") {
+      honeycombIconRef.current = new window.sop.icon({
+        iconUrl: '/markers/honeycomb.png',
+        iconSize: [64, 64],
+        iconAnchor: [16, 32],
+      });
+    }
+  }, []);
+
+  const updateCoordinates = () => {
+    if (!mapInstance.current || !markerLayerRef.current) return;
+
+    const center = mapInstance.current.getCenter();
+    let lat: number, lng: number;
+
+    if (typeof center.getLat === "function") {
+      lat = center.getLat();
+      lng = center.getLng();
+    } else {
+      const utmkX = center.x;
+      const utmkY = center.y;
+      const latlng = proj4("EPSG:5179", "EPSG:4326", [utmkX, utmkY]);
+      lat = latlng[1];
+      lng = latlng[0];
+    }
+
+    setCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+    setAnalysisCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`)
+
+    const utmkPos = window.sop.utmk(center.x, center.y);
+
+    if (!markerLayerRef.current) return;
+
+    markerLayerRef.current.clearLayers();
+    const newMarker = new window.sop.Marker(utmkPos, { icon: honeycombIconRef.current });
+    newMarker.addTo(markerLayerRef.current);
+    markerRef.current = newMarker;
+  };
+
+
 
   // 추천 점수 계산
   const calculateRecommendation = (ratios: PixelRatios) => {
@@ -69,28 +107,30 @@ export default function MapPredict() {
     else if (score >= 0.25) grade = "B"
     else grade = "C"
 
-    const lines = [
-      "예측 결과는 참고용입니다. 실제와 다를 수 있습니다.",
-      "- A/B/C 3등급으로 분류되어 있으며, 알파벳 순서대로 등급입니다.",
-      "- C 등급은 꿀벌에게 부정적인 환경으로 양봉지로 적합하지 않습니다.",
-    ]
     const gradeBadgeColor =
       grade === "A" ? "#28a745" : grade === "B" ? "#ffc107" : "#dc3545"
     const badgeHtml = `<div style="background-color: ${gradeBadgeColor}; font-weight:bold;font-size:18px;color:white;padding:6px 12px;border-radius:8px;display:inline-block;margin-bottom:10px;">예측 등급: ${grade}</div>`
-    const lineHtml = lines.map((line) => `<p>${line}</p>`).join("")
-    return badgeHtml + lineHtml
-  }
 
-  const waitForTilesLoaded = async (map: any) => {
-    // console.log("타일 로딩 대기 시작 (임시 delay)")
-    await new Promise(r => setTimeout(r, 300))
-    // console.log("타일 로딩 대기 완료")
-  }
+    // 레이블별 설명 - 보완 필요
+    const labelDescriptions: Record<string, string> = {
+      "활엽수림": "활엽수림은 꿀벌의 주요 서식지이며, 꽃의 다양성이 풍부합니다.",
+      "침엽수림": "침엽수림은 꿀벌 활동이 제한적일 수 있습니다.",
+      "논": "논은 주로 벼를 심고, 꿀벌 활동기와 농약 사용이 겹쳐 주의가 필요합니다.",
+      "밭": "밭은 작물의 파종시기와 농약 살포 시기가 불규칙해 주의가 필요합니다.",
+      "비닐하우스": "비닐하우스는 밀폐된 환경으로 꿀벌 활동에 제한이 있을뿐 아니라, 농약의 위험도 있습니다.",
+      "수역": "수역은 꿀벌의 활동에 영향을 미치지 않습니다.",
+    }
 
-  const calculateOffsetCenter = (originalCenter: any, dx: number, dy: number) => {
-    const utmkX = originalCenter.x + dx;
-    const utmkY = originalCenter.y + dy;
-    return window.sop.utmk(utmkX, utmkY);
+    // 라벨별 HTML 생성
+    const labelHtml = Object.entries(ratios)
+      .filter(([label, ratio]) => labelDescriptions[label])
+      .map(([label, ratio]) => {
+        const percent = Math.floor(ratio * 10000) / 100
+        return `<p>분석된 반경 중 ${label}이 ${percent}% 차지합니다.<br>${labelDescriptions[label]}</p>`
+      })
+      .join("")
+
+    return badgeHtml + labelHtml
   }
 
   // 지도 초기화
@@ -173,6 +213,15 @@ export default function MapPredict() {
     }
   }, [])
 
+  useEffect(() => {
+    if (resultImageSrc && resultsRef.current) {
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [resultImageSrc]);
+
+  // 입지 분석
   const captureAndPredict = async () => {
     if (!mapRef.current || !mapInstance.current) return;
     setIsLoading(true);
@@ -182,7 +231,7 @@ export default function MapPredict() {
       el.dataset.prevDisplay = el.style.display;
       el.style.display = 'none';
     });
-
+    markerLayerRef.current?.remove();
 
     const map = mapInstance.current;
     const originalCenter = map.getCenter();
@@ -190,7 +239,7 @@ export default function MapPredict() {
 
     const captureZoom = 18;
     map.setZoom(captureZoom);
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 999));
 
     const mapElement = mapRef.current;
     const tileWidth = mapElement.offsetWidth;
@@ -210,16 +259,16 @@ export default function MapPredict() {
     console.log("캡처 최소 목표 크기:", minTargetSize);
     console.log("가로/세로 타일 수:", tilesPerSideX, tilesPerSideY);
     console.log("최종 캡처 이미지 크기 (px):", finalWidth, "x", finalHeight);
-    console.log("각 타일 캡처 해상도:", tileWidth*2, "x", tileHeight*2);
-
+    
+    // 타일 스티칭
     for (let y = 0; y < tilesPerSideY; y++) {
       for (let x = 0; x < tilesPerSideX; x++) {
         const dx = (startOffsetX + x) * tileWidth;
         const dy = (startOffsetY + y) * tileHeight;
 
-        const newCenter = calculateOffsetCenter(originalCenter, dx, dy);
-        map.setView(newCenter, captureZoom, { animate: false });
-        await waitForTilesLoaded(map);
+        map.setView(originalCenter, captureZoom, { animate: false });
+        map.panBy([dx, dy], { animate: false });
+        await new Promise(r => setTimeout(r, 999));
 
         const canvas = await html2canvas(mapRef.current!, {
           useCORS: true,
@@ -233,6 +282,7 @@ export default function MapPredict() {
       }
     }
 
+    // 타일 합치기
     const finalCanvas = document.createElement("canvas");
     finalCanvas.width = finalWidth;
     finalCanvas.height = finalHeight;
@@ -242,13 +292,43 @@ export default function MapPredict() {
       const y = Math.floor(i / tilesPerSideX) * tileHeight;
       ctx.drawImage(c, x, y, tileWidth, tileHeight);
     });
+    
+    // 꿀벌 행동 반경을 위한 원형 마스킹
+    const radius = Math.min(finalWidth, finalHeight) / 2;
+    const centerX = finalWidth / 2;
+    const centerY = finalHeight / 2;
+
+    const circularCanvas = document.createElement("canvas");
+    circularCanvas.width = radius * 2;
+    circularCanvas.height = radius * 2;
+    const ctx2 = circularCanvas.getContext("2d")!;
+
+    ctx2.clearRect(0, 0, radius, radius);
+
+    ctx2.beginPath();
+    ctx2.arc(radius, radius, radius, 0, Math.PI * 2);
+    ctx2.closePath();
+    ctx2.clip();
+
+    ctx2.drawImage(
+      finalCanvas,
+      centerX - radius,
+      centerY - radius,
+      radius * 2,
+      radius * 2,
+      0,
+      0,
+      radius * 2,
+      radius * 2
+    );
 
     const blob: Blob | null = await new Promise(resolve =>
-      finalCanvas.toBlob(resolve as any, "image/png")
+      circularCanvas.toBlob(resolve as any, "image/png")
     )
     if (!blob) throw new Error("Blob 생성 실패");
 
     try {
+      console.log("분석을 위해 이미지를 서버로 전송합니다.", { size: blob.size, type: blob.type });
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_GW_URL}/predict-and-get-info`,
         blob,
@@ -260,10 +340,11 @@ export default function MapPredict() {
           responseType: "json",
         }
       );
+      console.log("서버로부터 분석 결과를 받았습니다:", response.data);
 
-      setResultImageSrc(response.data.imageUrl || "")
-      setPixelRatios(response.data.pixelRatios || {})
-      setRecommendationText(calculateRecommendation(response.data.pixelRatios || {}))
+      setResultImageSrc(response.data.image_data || "")
+      setPixelRatios(response.data.pixel_ratios || {})
+      setRecommendationText(calculateRecommendation(response.data.pixel_ratios || {}))
     } catch (error) {
       console.error('예측 실패:', error)
     } finally {
@@ -271,32 +352,41 @@ export default function MapPredict() {
         el.style.display = el.dataset.prevDisplay || '';
         delete el.dataset.prevDisplay;
       });
+      markerLayerRef.current?.addTo(mapInstance.current);
       map.setView(originalCenter, originalZoom)
       setIsLoading(false)
     }
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex h-screen">
         {/* 좌측 사이드바 */}
         <div className="w-80 bg-white shadow-lg overflow-y-auto">
           <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">양봉 지역 분석</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">양봉지 분석</h1>
 
             {/* 분석할 지역 */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">분석할 지역</label>
-              <div className="flex items-center space-x-2">
+              <div className="pb-6 flex items-center space-x-2">
                 <MapPin className="w-5 h-5 text-gray-400" />
                 <span className="text-sm text-gray-600">{coordinates}</span>
               </div>
+              
+              
+              <label className="block text-sm font-medium text-gray-700 mb-2">이용 안내</label>
+              <p className="text-sm text-amber-800">AI 양봉 입지 분석 서비스입니다.</p>
+              <p className="text-sm text-amber-800">지도의 중앙에 분석을 원하는 장소를 두세요.</p>
+              <p className="text-sm text-amber-800">꿀벌이 활동하기 좋은 <span className="text-red-400 font-semibold">최적의 반경 600~800m</span>에 대해서 선택하신 중심을 기준으로 분석합니다.</p>
+              <p className="text-sm text-amber-800">선택한 지역에 대해, 부정적인 요소와 긍정적인 요소를 판단하고 등급을 산정합니다.</p>
+              <p className="text-sm text-amber-800">각 요소에 대한 비율을 확인 할 수 있고, 그에 따른 안내도 드릴 수 있어요.</p>
             </div>
 
             {/* 분석 버튼 */}
             <Button
               onClick={captureAndPredict}
-              disabled={isLoading || !isMapInitialized}
+              disabled={isLoading || !isMapInitialized || showResultPopup}
               className="w-full bg-amber-500 hover:bg-amber-600 text-white mb-6"
             >
               {isLoading ? (
@@ -312,69 +402,135 @@ export default function MapPredict() {
               )}
             </Button>
 
-            {/* 분석 결과 */}
-            {resultImageSrc && (
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">분석 이미지</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <img src={resultImageSrc} alt="예측 결과" className="w-full rounded-md shadow-sm" />
-                  </CardContent>
-                </Card>
+            <Button
+              onClick={() => setShowResultPopup(true)}
+              disabled={!resultImageSrc || showResultPopup} // 결과 없을 때, 팝업 보고 있을 때 비활성화
+              className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800">
+              결과 보기
+            </Button>
 
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">추천 점수</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div
-                      className="text-sm text-gray-700"
-                      dangerouslySetInnerHTML={{ __html: recommendationText }}
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">토지 이용 현황</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {Object.entries(pixelRatios).map(([key, value]) => {
-                      const labels: Record<string, string> = {
-                        "논": "논", "밭": "밭", "건물": "건물",
-                        "산림": "산림", "수역": "수역", "비닐하우스": "비닐하우스"
-                      };
-                      const colors: Record<string, string> = {
-                        "논": "bg-blue-500", "밭": "bg-green-500",
-                        "건물": "bg-gray-500", "산림": "bg-emerald-600",
-                        "수역": "bg-cyan-500", "비닐하우스": "bg-purple-500"
-                      };
-                      return (
-                        <div key={key} className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-700">{labels[key] || key}</span>
-                            <span className="font-medium">{value.toFixed(2)}%</span>
-                          </div>
-                          <Progress
-                            value={value}
-                            className="h-2"
-                            style={{ "--progress-background": colors[key] } as React.CSSProperties}
-                          />
-                        </div>
-                      );
-                    })}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
           </div>
         </div>
 
         {/* 메인 지도 영역 */}
-        <div className="flex-1 relative">
-          <div className="w-full h-full" ref={mapRef}></div>
+        <div className="flex-1 relative grid place-items-center p-4">
+          <div className="relative w-full h-full">
+            <div className="w-full h-full" ref={mapRef}></div>
+            {isLoading && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-50" style={{ backgroundColor: "rgba(0,0,0,0.8)",}}>
+                <Loader2 className="w-16 h-16 animate-spin mb-4" />
+                <p className="text-xl">분석 중입니다. 잠시만 기다려주세요...</p>
+              </div>
+            )}
+          </div>
+
+          {showResultPopup && resultImageSrc && (
+            <div className="absolute inset-0 grid place-items-center z-[1000] bg-white rounded-lg shadow-lg p-4 h-full overflow-auto">
+              {/* 닫기 버튼 - 바꿔야함 개 별로임*/}
+              <button
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowResultPopup(false)}
+              >
+                ✕
+              </button>
+
+              <div className="flex flex-col md:flex-row gap-4 w-full items-stretch">
+                <div className="md:w-6/10">
+                  {/* 분석 보고서 */}
+                  <Card className="w-full">
+                    <CardHeader className="flex justify-between items-center">
+                      <CardTitle className="text-lg pb-4">분석 보고서</CardTitle>
+                      {analysisCoordinates && (
+                        <span className="text-s text-gray-500">
+                          ({analysisCoordinates})
+                        </span>
+                      )}
+                    </CardHeader>
+                    <CardContent>
+                      <div dangerouslySetInnerHTML={{ __html: recommendationText }} />
+                    </CardContent>
+                  </Card>
+                </div>    
+
+                <div className="md:w-4/10 h-full">
+                  <div className="flex flex-col gap-4 w-full items-stretch md:flex-col">
+                    {/* 비율 */}
+                    <Card className="h-full flex flex-col">
+                      <CardHeader>
+                        <CardTitle className="text-lg">토지 비율 분석</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2 overflow-auto flex-grow">
+                        {Object.entries(pixelRatios)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([key, value]) => {
+                          console.log("key type:", typeof key, "key:", key, "value:", value);
+                          const labels: Record<string, string> = {
+                            "-1": "무시",
+                            "0": "기타",
+                            "1": "건물",
+                            "2": "주차장",
+                            "3": "도로",
+                            "4": "가로수",
+                            "5": "논",
+                            "6": "비닐하우스",
+                            "7": "밭",
+                            "8": "활엽수림",
+                            "9": "침엽수림",
+                            "10": "나지",
+                            "11": "수역",
+                          };
+
+                          const colors: Record<string, string> = {
+                            "무시": "bg-[#646464]",
+                            "기타": "bg-[#A0A0A0]",
+                            "건물": "bg-[#3C3C3C]",
+                            "주차장": "bg-[#DCDCDC]",
+                            "도로": "bg-[#808080]",
+                            "가로수": "bg-[#ADFF2F]",
+                            "논": "bg-[#8B4513]",
+                            "비닐하우스": "bg-[#87CEEB]",
+                            "밭": "bg-[#90EE90]",
+                            "활엽수림": "bg-[#32CD32]",
+                            "침엽수림": "bg-[#A54141]",
+                            "나지": "bg-[#FF8C00]",
+                            "수역": "bg-[#0000FF]",
+                          };
+
+                          const percent = Math.floor(value * 10000) / 100;
+
+                          return (
+                            <div key={key} className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-4 h-4 rounded-full border border-gray-300 inline-block ${colors[key]}`} />
+                                <span className="text-gray-700">{key}: {percent}%</span>
+                              </div>
+                              <div className="w-full h-2 bg-gray-200 rounded overflow-hidden">
+                                <div className={`h-full ${colors[key]}`} style={{ width: `${percent}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+
+                    {/* 분석 이미지 */}
+                    <Card className="mb-6 mt-6 w-full flex flex-col">
+                      <CardHeader>
+                        <CardTitle className="text-lg">분석 이미지</CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex-grow">
+                        <img
+                          src={resultImageSrc}
+                          alt="예측 결과"
+                          className="w-full h-full rounded-full object-cover shadow-sm"
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

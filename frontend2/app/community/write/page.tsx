@@ -433,6 +433,7 @@ export default function WritePage() {
         author,
         attachments, // PDF만
         tags,
+        subCategory: category,
       }
 
       const res = await fetch(`${GW}/posts/writepost`, {

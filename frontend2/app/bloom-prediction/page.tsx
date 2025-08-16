@@ -29,6 +29,13 @@ interface BloomResult {
   avgBloomDate: string
 }
 
+const flowerIcon = [
+  { id: 1, name: "아카시아", image: "/icons/flower1.png" },
+  { id: 2, name: "개나리", image: "/icons/flower2.png" },
+  { id: 3, name: "매화", image: "/icons/flower3.png" },
+  { id: 4, name: "벚꽃", image: "/icons/flower4.png" },
+];
+
 const locations: Location[] = [
   { id: "2", name: "강화", coordinates: [37.7074, 126.4463], station: "강화기상관측소, 인천광역시 강화군 불은면 중앙로 630" },
   { id: "4", name: "거제", coordinates: [34.8882, 128.6046], station: "거제기상관측소, 경상남도 거제시 장평2로2길 47" },
@@ -107,10 +114,11 @@ const flowers = [
 export default function BloomPredictionPage() {
   const [searchKeyword, setSearchKeyword] = useState("") 
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
-  const [selectedFlower, setSelectedFlower] = useState<string>("")
+  const [selectedFlower, setSelectedFlower] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<BloomResult | null>(null)
   const [showLocationPopup, setShowLocationPopup] = useState(false)
+  
 
   const handleLocationSelect = (location: Location) => {
     setSelectedLocation(location)
@@ -130,7 +138,7 @@ export default function BloomPredictionPage() {
     setIsLoading(true)
     setResult(null)
 
-    const flowerInfo = flowers.find((f) => f.id === selectedFlower)
+    const flowerInfo = flowerIcon.find(f => f.id === selectedFlower)
 
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_GW_URL}/plants/predict-bloom`;
@@ -235,7 +243,7 @@ export default function BloomPredictionPage() {
         </div>
 
         {/* 메인 지도 영역 */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative grid place-items-center p-4">
           <BloomMap
             locations={locations}
             onMarkerClick={handleLocationSelect}
@@ -361,18 +369,34 @@ export default function BloomPredictionPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">예측할 밀원수를 선택하세요</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {flowers.map((flower) => (
-                    <Button
-                      key={flower.id}
-                      variant={selectedFlower === flower.id ? "default" : "outline"}
-                      className={`${selectedFlower === flower.id ? "bg-amber-500 hover:bg-amber-600" : ""}`}
-                      onClick={() => setSelectedFlower(flower.id)}
-                    >
-                      {flower.name}
-                    </Button>
-                  ))}
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                    예측할 밀원수를 선택하세요
+                  </label>
+                  <div className="flex flex-col gap-3">
+                    {flowerIcon.map((flower) => (
+                      <Card
+                        key={flower.id}
+                        className={`p-3 cursor-pointer border rounded-lg transition ${
+                          selectedFlower === flower.id
+                            ? "border-amber-500 bg-amber-50 shadow-md"
+                            : "border-gray-200 hover:bg-gray-50"
+                        }`}
+                        onClick={() => setSelectedFlower(flower.id)}
+                      >
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={flower.image}
+                            alt={flower.name}
+                            className="w-12 h-12 rounded object-cover"
+                          />
+                          <div>
+                            <span className="text-gray-800 items-center self-center font-medium text-lg">{flower.name}</span>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               </div>
 

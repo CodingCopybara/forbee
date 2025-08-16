@@ -79,20 +79,42 @@ def predict_img(net,
     return mask
 
 
-def mask_to_image(mask):
+def mask_circle(mask, center=None, radius=None):
+    """
+    원형 영역만 남기고 나머지는 -1로 처리
+    """
     h, w = mask.shape
-    color_mask = np.zeros((h, w, 3), dtype=np.uint8)
+    if center is None:
+        center = (w // 2, h // 2)
+    if radius is None:
+        radius = min(h, w) // 2
+
+    Y, X = np.ogrid[:h, :w]
+    dist_from_center = np.sqrt((X - center[0])**2 + (Y - center[1])**2)
+    circular_mask = dist_from_center <= radius
+
+    masked_mask = mask.copy()
+    masked_mask[~circular_mask] = -1
+    return masked_mask
+
+
+def mask_to_image_with_transparency(mask):
+    """
+    -1인 영역은 투명, 나머지는 클래스별 색상 적용
+    """
+    h, w = mask.shape
+    color_mask = np.zeros((h, w, 4), dtype=np.uint8)  # RGBA
     for class_idx, color in visible_mapping.items():
         if class_idx == -1:
             continue
-        color_mask[mask == class_idx] = color
+        color_mask[mask == class_idx, :3] = color
+        color_mask[mask == class_idx, 3] = 255  # 불투명
     return Image.fromarray(color_mask)
 
 
 if __name__ == "__main__":
     original_stderr = sys.stderr
     sys.stderr = io.StringIO()
-    # logging.basicConfig(stream=sys.stderr, level=logging.INFO, format='%(levelname)s: %(message)s')
 
     args = argparse.ArgumentParser(description='Predict masks from input images',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -103,36 +125,35 @@ if __name__ == "__main__":
 
     net = UNet(n_channels=NUM_CHANNELS, n_classes=NUM_CLASSES)
 
-    # logging.info(f"Loading model {args.model}")
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # logging.info(f'Using device {device}')
     net.to(device=device)
     net.load_state_dict(torch.load(args.model, map_location=device))
-    # logging.info("Model loaded!")
 
     for i, fn in enumerate(args.input):
-        # logging.info(f"Predicting image {fn} ...")
-
         if NUM_CHANNELS == 3:
             img = Image.open(fn).convert('RGB')
         elif NUM_CHANNELS == 4:
             img = Image.open(fn).convert('RGBA')
         else:
-            # logging.error(f"NUM_CHANNELS is wrong: {NUM_CHANNELS}. Only 3 or 4 are supported.")
             sys.exit(1)
 
+        # 예측 + 원형 마스크
         mask = predict_img(net=net, full_img=img, scale_factor=1, out_threshold=0.5, device=device)
+        mask = mask_circle(mask)
 
-        total_pixels = mask.size
+        # 이미지 변환 (투명 처리)
+        result_image = mask_to_image_with_transparency(mask)
+
+        # 픽셀 비율 계산 (원 밖 제외)
+        total_pixels = np.sum(mask != -1)
         class_ratios = {}
-        # logging.info("Class pixel ratios:")
         for class_idx in range(NUM_CLASSES):
             count = np.sum(mask == class_idx)
             name = class_names[class_idx] if class_idx < len(class_names) else f"Unknown Class {class_idx}"
             class_ratios[name] = float(count / total_pixels)
 
-        result_image = mask_to_image(mask)
+        # 이미지 Base64 변환
         buffered = io.BytesIO()
         result_image.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')

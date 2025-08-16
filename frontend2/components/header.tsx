@@ -4,7 +4,7 @@ import { Shield, Settings, LogOut, UserCog } from "lucide-react"
 
 export default function Header() {
   return (
-    <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-[2000]">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
           <div className="w-10 h-10 bg-amber-400 rounded-lg flex items-center justify-center">
@@ -20,7 +20,7 @@ export default function Header() {
             진단 서비스
           </Link>
           <Link href="/area-analysis" className="text-gray-600 hover:text-amber-600 transition-colors">
-            지역 분석
+            양봉지 분석
           </Link>
           <Link href="/bloom-prediction" className="text-gray-600 hover:text-amber-600 transition-colors">
             개화 예측
