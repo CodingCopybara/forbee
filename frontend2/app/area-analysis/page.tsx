@@ -88,8 +88,11 @@ export default function MapPredict() {
 
     // 주소 조회
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_GW_URL}/reverse-geocode`, {
-        params: { x_coor: center.x, y_coor: center.y  },
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_GW_URL}/maps/reverse-geocode`, {
+        params: { x_coor: center.x, y_coor: center.y },
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("accessToken"),
+        },
       });
       // 서버에서 받아온 JSON 구조에 맞춰서 필요한 주소만 추출
       const addr = res.data.full_addr || "주소를 불러오지 못했습니다.";
@@ -107,7 +110,7 @@ export default function MapPredict() {
   //   if (!searchAddress || !mapInstance.current) return;
 
   //   try {
-  //     const res = await axios.get(`${process.env.NEXT_PUBLIC_GW_URL}/search-address`, { params: { query: searchAddress } });
+  //     const res = await axios.get(`${process.env.NEXT_PUBLIC_GW_URL}/maps/search-address`, { params: { query: searchAddress } });
   //     const data = res.data;
 
   //     if (data && data.x != null && data.y != null) {
@@ -148,12 +151,12 @@ export default function MapPredict() {
 
     // 레이블별 설명 - 보완 필요
     const labelDescriptions: Record<string, string> = {
-      "활엽수림": "활엽수림은 꿀벌의 주요 서식지이며, 꽃의 다양성이 풍부합니다.",
-      "침엽수림": "침엽수림은 꿀벌 활동이 제한적일 수 있습니다.",
-      "논": "논은 주로 벼를 심고, 꿀벌 활동기와 농약 사용이 겹쳐 주의가 필요합니다.",
-      "밭": "밭은 작물의 파종시기와 농약 살포 시기가 불규칙해 주의가 필요합니다.",
-      "비닐하우스": "비닐하우스는 밀폐된 환경으로 꿀벌 활동에 제한이 있을뿐 아니라, 농약의 위험도 있습니다.",
-      "수역": "수역은 꿀벌의 활동에 영향을 미치지 않습니다.",
+      "활엽수림": "활엽수림은 꿀벌이 꽃을 채집하기에 최적의 장소입니다. 다양한 꽃이 있어 꿀 생산량과 품질 향상에 도움이 됩니다.",
+      "침엽수림": "침엽수림은 꿀벌이 이동하거나 꽃을 찾기에 제한적입니다. 채집량은 적을 수 있으나, 꿀벌이 쉬거나 .",
+      "논": "논은 봄/여름 동안 꿀벌 활동에 영향을 줄 수 있으며, 농약 살포 시기가 맞물리면 피해 위험이 있습니다. 등급과 상관없이 양봉장과 가까운 논이 있다면 피하는게 좋습니다.",
+      "밭": "밭은 작물 종류와 농약 사용 패턴에 따라 위험도가 다릅니다. 주로 농약 살포 시기를 확인하고 주의가 필요합니다. 등급과 상관없이 양봉장과 가까운 밭이 있다면 피하는게 좋습니다.",
+      "비닐하우스": "밀폐된 비닐하우스는 꿀벌 접근이 어려워 영양소를 공급 받기 어려우며, 내부 환경이 농약으로 위험할 수 있습니다.",
+      "수역": "호수, 강, 습지 등 수역은 꿀벌 활동에 직접적 영향이 적지만, 주변 꽃 식생과 조합해 고려할 수 있습니다.",
     }
 
     // 라벨별 HTML 생성
@@ -161,7 +164,7 @@ export default function MapPredict() {
       .filter(([label, ratio]) => labelDescriptions[label])
       .map(([label, ratio]) => {
         const percent = Math.floor(ratio * 10000) / 100
-        return `<p>분석된 반경 중 ${label}이 ${percent}% 차지합니다.<br>${labelDescriptions[label]}</p>`
+        return `<h2>분석된 반경 중 ${label}이 <span style="color:#ff5722; font-weight:bold;">${percent}%</span> 차지합니다.<br>${labelDescriptions[label]}</h2>`;
       })
       .join("")
 
@@ -366,7 +369,7 @@ export default function MapPredict() {
     try {
       console.log("분석을 위해 이미지를 서버로 전송합니다.", { size: blob.size, type: blob.type });
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_GW_URL}/predict-and-get-info`,
+        `${process.env.NEXT_PUBLIC_GW_URL}/maps/predict-and-get-info`,
         blob,
         {
           headers: {
@@ -406,14 +409,14 @@ export default function MapPredict() {
           </div>  
 
           {/* 분석할 지역 */}
-          <div className="p-4 border-b">
+          <div className="border-b pt-4 pr-4 pl-4">
             <h3 className="font-semibold text-gray-900 mb-3">분석할 지역</h3>
-            <div className="pb-6 flex flex-col">
+            <div className="pb-4 flex flex-col">
               <div className="flex items-center space-x-2">
                 <MapPin className="w-5 h-5 text-gray-400" />
-                <span className="text-sm text-gray-600">{address}</span>
+                <span className="text-m text-gray-600">{address}</span>
               </div>
-              <div className="text-sm text-gray-500 mt-1">{coordinates}</div>
+              <div className="text-sm text-gray-500 mt-1">({coordinates})</div>
             </div>
             {/* 검색 입력창
             <input
@@ -504,7 +507,9 @@ export default function MapPredict() {
                       <CardTitle className="text-lg pb-4">분석 보고서</CardTitle>
                       {analysisCoordinates && (
                         <div>
-                          <span className="text-m text-gray-500">{analysisAddress}</span>
+                          {analysisAddress && analysisAddress !== "주소를 찾을 수 없습니다." && (
+                            <span className="text-m text-gray-500">{analysisAddress}</span>
+                          )}
                           <span className="text-s text-gray-500">({analysisCoordinates})</span>
                         </div>
                       )}

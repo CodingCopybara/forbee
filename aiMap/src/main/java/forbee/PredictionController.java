@@ -20,13 +20,13 @@ import javax.servlet.http.HttpServletRequest;
 // import java.util.Map;      // ✅ 추가
 
 
-@CrossOrigin(origins = "*")
+// @CrossOrigin(origins = "*")
 @RestController
 public class PredictionController {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @PostMapping(value = "/predict-and-get-info", consumes = MediaType.ALL_VALUE)
+    @PostMapping(value = "/maps/predict-and-get-info", consumes = MediaType.ALL_VALUE)
     public ResponseEntity<PredictionResult> predictAndGetInfo(HttpServletRequest request) {
         String inputFilePath = null;
 

@@ -78,13 +78,13 @@ export default function HomePage() {
                   <MapPin className="w-6 h-6 text-amber-600" />
                 </div>
                 <CardTitle className="text-xl">양봉 지역 분석</CardTitle>
-                <CardDescription>지도 기반으로 1.2km 반경 내 양봉 최적 환경을 분석합니다</CardDescription>
+                <CardDescription>지도 기반으로 선택한 양봉지 중심 반경 800m 이내 환경을 분석합니다</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm text-gray-600">
-                  <li>• 토지 이용 현황 분석</li>
+                  <li>• 토지 비율 분석</li>
                   <li>• 유해 요소 탐지</li>
-                  <li>• 지역별 점수 리포트</li>
+                  <li>• 양봉지 분석 리포트</li>
                 </ul>
                 <Link href="/area-analysis">
                   <Button className="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-white">지역 분석하기</Button>
@@ -98,16 +98,16 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
                   <Flower className="w-6 h-6 text-amber-600" />
                 </div>
-                <CardTitle className="text-xl">밀원수 개화 예측</CardTitle>
+                <CardTitle className="text-xl">전국 개화시기 예측</CardTitle>
                 <CardDescription>
-                  AI 기반 실시간 밀원수 개화시기 예측으로 최적의 채밀 시기를 알려드립니다
+                  AI 기반 개화시기 예측으로 주변 관측소의 개화시기를 확인하세요
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm text-gray-600">
                   <li>• 실시간 개화 예측</li>
-                  <li>• 지역별 맞춤 정보</li>
-                  <li>• 채밀 최적 타이밍</li>
+                  <li>• 매화, 개나리, 벚꽃, 아카시아 지원</li>
+                  <li>• 채밀 최적 타이밍 파악</li>
                 </ul>
                 <Link href="/bloom-prediction">
                   <Button className="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-white">개화 정보 보기</Button>

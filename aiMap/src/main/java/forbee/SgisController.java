@@ -26,7 +26,7 @@ public class SgisController {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // 리버스 지오코딩
-    @GetMapping("/reverse-geocode")
+    @GetMapping("/maps/reverse-geocode")
     public ResponseEntity<Map<String, Object>> reverseGeocode(
             @RequestParam("x_coor") double x,
             @RequestParam("y_coor") double y) {
@@ -98,7 +98,7 @@ public class SgisController {
     }
 
     // // 주소 검색
-    // @GetMapping("/search-address")
+    // @GetMapping("/maps/search-address")
     // public ResponseEntity<Map<String, Object>> searchAddress(
     //         @RequestParam("query") String query) {
     //     try {
