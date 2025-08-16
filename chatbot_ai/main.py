@@ -1,17 +1,13 @@
-# main.py
-import os, json, asyncio, traceback
+import os, json, asyncio, traceback, re
 from datetime import datetime
 from dotenv import load_dotenv
-from fastapi import FastAPI, Form, Request, Query
+from fastapi import FastAPI, Request, Query
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from pydantic import BaseModel
-
-import re
-
 
 from services.custom_functions import provide_recommendation_url
 from services.openai_client import client, aclient, FILE_SEARCH_RES
@@ -75,10 +71,6 @@ def get_url(question: str = Query(..., description="사용자 질문")):
 
 # --- 불필요 문구 제거 함수 ---
 def clean_ai_answer(raw_answer: str) -> str:
-    """
-    AI 응답에서 '모른다' 류의 불필요한 안내 문구 제거 (정규식 기반 확장)
-    """
-    # 제거 패턴 목록 (대소문자 구분 없음)
     patterns = [
         r"업로드.*문서.*(포함|확인).{0,20}않습니다",
         r"자료.*제공.*확인.*드리겠습니다",
@@ -86,15 +78,13 @@ def clean_ai_answer(raw_answer: str) -> str:
         r"현재.*문서.*내용.*없습니다",
         r"불확실.*추가정보.*요청",
     ]
-
-    # 줄 단위로 검사
     lines = raw_answer.splitlines()
     cleaned_lines = []
     for line in lines:
         if not any(re.search(p, line, re.IGNORECASE) for p in patterns):
             cleaned_lines.append(line.strip())
-
-    return "\n".join([l for l in cleaned_lines if l]).strip()
+    cleaned = "\n".join([l for l in cleaned_lines if l]).strip()
+    return cleaned or "현재 정확한 정보를 찾지 못했어요. 다른 질문을 해보시겠어요?"
 
 # --- 동기 헬프센터 실행 ---
 def run_help_center_sync(messages: list[dict]) -> str:
@@ -135,7 +125,7 @@ def run_help_center_sync(messages: list[dict]) -> str:
     for c in msgs.data[0].content:
         if getattr(c, "type", None) == "text" and getattr(c, "text", None):
             parts.append(c.text.value)
-    return "\n\n".join(parts) if parts else "[WARN] 빈 응답"
+    return "\n\n".join(parts) if parts else "[WARN] 빈 응답 (OpenAI 응답 없음)"
 
 # --- 메시지 빌드 ---
 def _build_messages(history, user_text: str):
@@ -159,25 +149,17 @@ async def stream_help_center(messages):
 
 # --- /api/help ---
 @app.post("/api/help", response_model=ChatResponse)
-async def help_api(req: ChatRequest, request: Request):
-    session_history = request.session.setdefault("history", [])
-    session_history.append({"role": "user", "content": req.question})
-
-    messages = _build_messages(session_history[:-1], req.question)
+async def help_api(req: ChatRequest):
+    messages = [{"role": "system", "content": HELP_SYSTEM}, {"role": "user", "content": req.question}]
     raw_answer = await asyncio.to_thread(run_help_center_sync, messages)
+    print("🧪 raw_answer:", repr(raw_answer)) 
     answer = clean_ai_answer(raw_answer)
 
-    # 2) URL 추천
+    # URL 추천
     url = provide_recommendation_url(req.question)
     if url:
         answer += f"\n\n🔗 관련 상품/정보: {url}"
 
-    session_history.append({
-        "role": "assistant",
-        "content": answer,
-        "time": datetime.now().strftime("%H:%M")
-    })
-    request.session["history"] = session_history
     return ChatResponse(answer=answer)
 
 # --- /api/help/stream ---
@@ -192,7 +174,6 @@ async def help_stream(req: ChatRequest, request: Request):
         async for chunk in stream_help_center(messages):
             collected += chunk
             yield chunk
-        # 스트리밍 끝나고 세션 저장
         final_answer = clean_ai_answer(collected)
         url = provide_recommendation_url(req.question)
         if url:
@@ -238,10 +219,14 @@ def root():
     return {"status": "ok", "see": ["/docs", "/api/health", "/api/help"]}
 
 @app.get("/api/health")
-def health_api():
-    return {"ok": True}
+async def health():
+    return {"status": "ok"}
 
 @app.exception_handler(Exception)
 async def _all_exc_handler(request: Request, exc: Exception):
     traceback.print_exc()
     return JSONResponse(status_code=500, content={"error": type(exc).__name__, "detail": str(exc)})
+
+@app.post("/api/chat", response_model=ChatResponse)
+async def chat_api(req: ChatRequest):
+    return await help_api(req)
