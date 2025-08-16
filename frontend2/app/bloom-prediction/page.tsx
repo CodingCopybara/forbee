@@ -205,7 +205,7 @@ export default function BloomPredictionPage() {
           <div className="p-4 border-b">
             <input
               type="text"
-              placeholder="지역 검색..."
+              placeholder="관측소 검색..."
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
               className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400"

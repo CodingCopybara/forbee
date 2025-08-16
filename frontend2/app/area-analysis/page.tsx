@@ -37,7 +37,9 @@ export default function MapPredict() {
   const honeycombIconRef = useRef<any>(null);
   const [analysisCoordinates, setAnalysisCoordinates] = useState<string>("")
   const [address, setAddress] = useState<string>("주소를 로드 중...");
-
+  const [analysisAddress, setAnalysisAddress] = useState<string>("");
+  const isCapturingRef = useRef(false);
+  const [searchAddress, setSearchAddress] = useState("");
 
   useEffect(() => {
     if (mapInstance.current && !markerLayerRef.current) {
@@ -59,6 +61,7 @@ export default function MapPredict() {
 
   const updateCoordinates = async () => {
     if (!mapInstance.current || !markerLayerRef.current) return;
+    if (isCapturingRef.current) return;
 
     const center = mapInstance.current.getCenter();
     let lat: number, lng: number;
@@ -73,7 +76,6 @@ export default function MapPredict() {
       lat = latlng[1];
       lng = latlng[0];
     }
-    console.error("좌표 수정");
     setCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
     setAnalysisCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
 
@@ -90,13 +92,35 @@ export default function MapPredict() {
         params: { x_coor: center.x, y_coor: center.y  },
       });
       // 서버에서 받아온 JSON 구조에 맞춰서 필요한 주소만 추출
-      const addr = res.data.fullAddress || JSON.stringify(res.data);
+      const addr = res.data.full_addr || "주소를 불러오지 못했습니다.";
       setAddress(addr);
+      setAnalysisAddress(addr);
     } catch (err) {
       console.error("주소 조회 실패", err);
       setAddress("주소를 불러오지 못했습니다.");
+      setAnalysisAddress("주소를 불러오지 못했습니다.");
     }
   };
+
+  // // 지도 검색 기능
+  // const handleSearch = async () => {
+  //   if (!searchAddress || !mapInstance.current) return;
+
+  //   try {
+  //     const res = await axios.get(`${process.env.NEXT_PUBLIC_GW_URL}/search-address`, { params: { query: searchAddress } });
+  //     const data = res.data;
+
+  //     if (data && data.x != null && data.y != null) {
+  //       const utmkPos = proj4("EPSG:4326", "EPSG:5179", [data.x, data.y]);
+  //       mapInstance.current.setView(window.sop.utmk(utmkPos[0], utmkPos[1]), 16); 
+  //     } else {
+  //       alert("검색 결과가 없습니다.");
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     alert("주소 검색 실패");
+  //   }
+  // };
 
   // 추천 점수 계산
   const calculateRecommendation = (ratios: PixelRatios) => {
@@ -243,6 +267,7 @@ export default function MapPredict() {
       el.style.display = 'none';
     });
     markerLayerRef.current?.remove();
+    isCapturingRef.current = true;
 
     const map = mapInstance.current;
     const originalCenter = map.getCenter();
@@ -357,15 +382,16 @@ export default function MapPredict() {
       setPixelRatios(response.data.pixel_ratios || {})
       setRecommendationText(calculateRecommendation(response.data.pixel_ratios || {}))
     } catch (error) {
-      console.error('예측 실패:', error)
+      console.error('예측 실패:', error);
     } finally {
       widgetElements.forEach(el => {
         el.style.display = el.dataset.prevDisplay || '';
         delete el.dataset.prevDisplay;
       });
       markerLayerRef.current?.addTo(mapInstance.current);
-      map.setView(originalCenter, originalZoom)
-      setIsLoading(false)
+      map.setView(originalCenter, originalZoom);
+      setIsLoading(false);
+      isCapturingRef.current = false;
     }
   }
 
@@ -374,33 +400,53 @@ export default function MapPredict() {
       <div className="flex h-screen">
         {/* 좌측 사이드바 */}
         <div className="w-80 bg-white shadow-lg overflow-y-auto">
-          <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">양봉지 분석</h1>
+          <div className="p-6 border-b">
+            <h1 className="text-2xl font-bold text-gray-900">양봉지 분석</h1>
+            <p className="text-sm text-gray-600 mt-2">AI를 이용해 원하는 위치가 양봉지에 적합한지 분석해드려요.</p>
+          </div>  
 
-            {/* 분석할 지역 */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">분석할 지역</label>
-                <div className="pb-6 flex flex-col">
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="w-5 h-5 text-gray-400" />
-                    <span className="text-sm text-gray-600">{coordinates}</span>
-                  </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {address}
-                  </div>
-                </div>
-
-              
-              
-              <label className="block text-sm font-medium text-gray-700 mb-2">이용 안내</label>
-              <p className="text-sm text-amber-800">AI 양봉 입지 분석 서비스입니다.</p>
-              <p className="text-sm text-amber-800">지도의 중앙에 분석을 원하는 장소를 두세요.</p>
-              <p className="text-sm text-amber-800">꿀벌이 활동하기 좋은 <span className="text-red-400 font-semibold">최적의 반경 600~800m</span>에 대해서 선택하신 중심을 기준으로 분석합니다.</p>
-              <p className="text-sm text-amber-800">선택한 지역에 대해, 부정적인 요소와 긍정적인 요소를 판단하고 등급을 산정합니다.</p>
-              <p className="text-sm text-amber-800">각 요소에 대한 비율을 확인 할 수 있고, 그에 따른 안내도 드릴 수 있어요.</p>
+          {/* 분석할 지역 */}
+          <div className="p-4 border-b">
+            <h3 className="font-semibold text-gray-900 mb-3">분석할 지역</h3>
+            <div className="pb-6 flex flex-col">
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-5 h-5 text-gray-400" />
+                <span className="text-sm text-gray-600">{address}</span>
+              </div>
+              <div className="text-sm text-gray-500 mt-1">{coordinates}</div>
             </div>
+            {/* 검색 입력창
+            <input
+              type="text"
+              placeholder="지역 검색..."
+              value={searchAddress}
+              onChange={(e) => setSearchAddress(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearch();
+              }}
+              className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+            <Button
+              onClick={handleSearch}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white mt-2"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              검색
+            </Button> */}
+          </div>
+          
+          {/* 이용 안내 */}
+          <div className="p-4">   
+            <h3 className="font-semibold text-gray-900 mb-3">이용 안내</h3>
+            <p className="text-sm text-amber-800">AI 양봉 입지 분석 서비스입니다.</p>
+            <p className="text-sm text-amber-800">지도의 중앙에 분석을 원하는 장소를 두세요.</p>
+            <p className="text-sm text-amber-800">꿀벌이 활동하기 좋은 <span className="text-red-400 font-semibold">최적의 반경 600~800m</span>에 대해서 선택하신 중심을 기준으로 분석합니다.</p>
+            <p className="text-sm text-amber-800">선택한 지역에 대해, 부정적인 요소와 긍정적인 요소를 판단하고 등급을 산정합니다.</p>
+            <p className="text-sm text-amber-800">각 요소에 대한 비율을 확인 할 수 있고, 그에 따른 안내도 드릴 수 있어요.</p>
+          </div>
 
-            {/* 분석 버튼 */}
+          {/* 분석 버튼 */}
+          <div className="p-4">
             <Button
               onClick={captureAndPredict}
               disabled={isLoading || !isMapInitialized || showResultPopup}
@@ -425,7 +471,6 @@ export default function MapPredict() {
               className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800">
               결과 보기
             </Button>
-
           </div>
         </div>
 
@@ -458,9 +503,10 @@ export default function MapPredict() {
                     <CardHeader className="flex justify-between items-center">
                       <CardTitle className="text-lg pb-4">분석 보고서</CardTitle>
                       {analysisCoordinates && (
-                        <span className="text-s text-gray-500">
-                          ({analysisCoordinates})
-                        </span>
+                        <div>
+                          <span className="text-m text-gray-500">{analysisAddress}</span>
+                          <span className="text-s text-gray-500">({analysisCoordinates})</span>
+                        </div>
                       )}
                     </CardHeader>
                     <CardContent>

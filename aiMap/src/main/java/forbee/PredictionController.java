@@ -20,7 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 // import java.util.Map;      // ✅ 추가
 
 
-// @CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 public class PredictionController {
 
