@@ -12,6 +12,8 @@ interface Message {
   timestamp: Date
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_GW_URL ?? ""
+
 export default function MessengerStyleChatbot() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
@@ -39,10 +41,13 @@ export default function MessengerStyleChatbot() {
     setLoading(true)
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userMsg.content }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + localStorage.getItem("accessToken"),
+        },
+        body: JSON.stringify({ question: inputMessage }),
       })
       const data = await res.json()
 
