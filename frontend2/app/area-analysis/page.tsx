@@ -409,6 +409,18 @@ export default function MapPredict() {
     }
   }
 
+  // 결과 보고서 UI 테스트 진입로
+  const dummyRatios: PixelRatios = {
+  "활엽수림": 0.35,
+  "침엽수림": 0.15,
+  "논": 0.20,
+  "밭": 0.10,
+  "비닐하우스": 0.10,
+  "수역": 0.10,
+};
+
+const dummyImage = "/images/dummy_result.png";
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex h-screen">
@@ -485,6 +497,21 @@ export default function MapPredict() {
               className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800">
               결과 보기
             </Button>
+            
+            {/* 임시 진입로 - 실제 서비스에서는 제거 */}
+            <Button
+              onClick={() => {
+                const recommendation = calculateRecommendation(dummyRatios);
+                setRecommendationText(recommendation);
+                setPixelRatios(dummyRatios);
+                setResultImageSrc(dummyImage);
+                setShowResultPopup(true);
+              }}
+              className="w-full bg-green-500 hover:bg-green-600 text-white mt-2"
+            >
+              임시 진입
+            </Button>
+
           </div>
         </div>
 
@@ -510,7 +537,7 @@ export default function MapPredict() {
                 <img src="/icons/x.png" alt="닫기" className="w-12 h-12 object-contain" />
               </button>
 
-              <div className="flex flex-col md:flex-row gap-4 w-full items-stretch mt-8">
+              <div className="flex flex-col md:flex-row gap-4 w-full items-stretch mt-10">
                 <div className="md:w-6/10">
                   {/* 분석 보고서 */}
                   <Card className="w-full">
@@ -518,8 +545,10 @@ export default function MapPredict() {
                       <CardTitle className="text-lg pb-4">분석 보고서</CardTitle>
                       {analysisCoordinates && (
                         <div>
-                          {analysisAddress && analysisAddress !== "주소를 찾을 수 없습니다." && (
-                            <span className="text-m text-gray-500">{analysisAddress}</span>
+                          {analysisAddress &&
+                            analysisAddress !== "주소를 찾을 수 없습니다." &&
+                            analysisAddress !== "주소를 불러오지 못했습니다." && (
+                              <span className="text-m text-gray-500">{analysisAddress}</span>
                           )}
                           <span className="text-s text-gray-500">({analysisCoordinates})</span>
                         </div>
