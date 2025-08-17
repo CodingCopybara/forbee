@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Shield, User, Mail, MapPin, Edit, Camera, BarChart3, Flower } from "lucide-react"
 import Link from "next/link"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // 사용자 정보 타입을 정의합니다.
 interface UserProfile {
@@ -64,8 +65,66 @@ export default function MyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>로딩 중...</p>
+      <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          {/* Profile Skeleton */}
+          <Card className="mb-8">
+            <CardHeader className="pb-6">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-10 w-24" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row items-start gap-6">
+                <Skeleton className="w-24 h-24 rounded-full" />
+                <div className="flex-1 space-y-5">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-12" />
+                      <Skeleton className="h-6 w-24" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-12" />
+                      <Skeleton className="h-6 w-48" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-12" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-6 w-24" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-6 w-64" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Stats Skeleton */}
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <Card><CardContent className="p-4"><Skeleton className="h-20 w-full" /></CardContent></Card>
+            <Card><CardContent className="p-4"><Skeleton className="h-20 w-full" /></CardContent></Card>
+            <Card><CardContent className="p-4"><Skeleton className="h-20 w-full" /></CardContent></Card>
+          </div>
+
+          {/* Membership Skeleton */}
+          <Card className="mb-8"><CardContent className="p-4"><Skeleton className="h-28 w-full" /></CardContent></Card>
+
+          {/* Activity Skeleton */}
+          <Card>
+            <CardHeader><Skeleton className="h-8 w-48" /></CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }

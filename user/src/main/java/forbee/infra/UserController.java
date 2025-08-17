@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 
+import org.springframework.http.ResponseEntity;
+
 //<<< Clean Arch / Inbound Adaptor
 
 @RestController
@@ -19,6 +21,19 @@ import javax.transaction.Transactional;
 public class UserController {
     @Autowired
     UserRepository userRepository;
+
+    @PutMapping("/users/{id}/approve")
+    public ResponseEntity<User> approveMember(@PathVariable("id") Long id) {
+        Optional<User> userOptional = userRepository.findById(id);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            user.setRole("MEMBER");
+            User updatedUser = userRepository.save(user);
+            return ResponseEntity.ok(updatedUser);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     @RequestMapping(value = "/users/{id}/editinfo",
         method = RequestMethod.PUT,
