@@ -252,6 +252,30 @@ export default function MembershipRequestDetail() {
     }
   };
 
+  const handleDownload = async (docUrl: string, docName: string) => {
+    if (!docUrl || !docName) {
+      alert("다운로드할 파일 정보가 없습니다.");
+      return;
+    }
+    try {
+      const response = await fetch(docUrl);
+      if (!response.ok) throw new Error('파일 다운로드에 실패했습니다.');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = docName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert('파일을 다운로드하는 데 실패했습니다.');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "PENDING":
@@ -485,7 +509,7 @@ export default function MembershipRequestDetail() {
                             </div>
                             <span className="font-medium">{doc.name}</span>
                           </div>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => handleDownload(doc.url, doc.name)}>
                             <Download className="h-4 w-4 mr-2" />
                             다운로드
                           </Button>

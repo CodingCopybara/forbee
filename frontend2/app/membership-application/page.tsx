@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Upload, MapPin, FileText, CheckCircle, AlertCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { access } from "fs"
 
 declare global {
   interface Window {
@@ -33,7 +32,7 @@ export default function MembershipApplication() {
   })
   
   const [isUploading, setIsUploading] = useState(false);
-  const [documentUrl, setDocumentUrl] = useState(""); // 파일 URL 저장
+  const [uploadedFile, setUploadedFile] = useState<{ url: string; name: string } | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -83,7 +82,7 @@ export default function MembershipApplication() {
       }
 
       const result = await response.json();
-      setDocumentUrl(result.url); 
+      setUploadedFile({ url: result.url, name: file.name }); 
       alert("파일이 성공적으로 업로드되었습니다.");
 
     } catch (error) {
@@ -107,7 +106,7 @@ export default function MembershipApplication() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!documentUrl) {
+    if (!uploadedFile) {
       alert("양봉농가등록증 파일을 업로드해주세요.");
       return;
     }
@@ -132,7 +131,7 @@ export default function MembershipApplication() {
           hiveCount: Number(formData.hiveCount),
           annualProduction: Number(formData.annualProduction),
           etc: formData.notes,
-          documents: documentUrl, 
+          documents: uploadedFile ? [{ name: uploadedFile.name, url: uploadedFile.url }] : [],
       };
 
       const response = await fetch(`${gatewayUrl}/memberRequestLists/upgradetomemberrequest`, {
@@ -306,15 +305,15 @@ export default function MembershipApplication() {
                         <label htmlFor="certificate" className={`cursor-pointer ${isUploading ? 'cursor-not-allowed' : ''}`}>
                           <Upload className="w-8 h-8 text-amber-600 mx-auto mb-2" />
                           <p className="text-gray-600">
-                            {isUploading ? "업로드 중..." : (documentUrl ? "파일이 업로드되었습니다." : "파일을 선택하거나 드래그해주세요")}
+                            {isUploading ? "업로드 중..." : (uploadedFile ? uploadedFile.name : "파일을 선택하거나 드래그해주세요")}
                           </p>
                           <p className="text-sm text-gray-500 mt-1">JPG, PNG, PDF (최대 10MB)</p>
                         </label>
                       </div>
-                      {documentUrl && (
+                      {uploadedFile && (
                         <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
                           <CheckCircle className="w-4 h-4" />
-                          <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">업로드된 파일 확인</a>
+                          <a href={uploadedFile.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{uploadedFile.name}</a>
                         </div>
                       )}
                     </div>
