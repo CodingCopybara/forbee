@@ -134,45 +134,88 @@ export default function MapPredict() {
       "밭": -3,
       "비닐하우스": -1,
       "수역": 0.5,
-    }
-    let score = 0
+    };
+
+    let score = 0;
     for (const [label, ratio] of Object.entries(ratios)) {
-      if (weights[label] !== undefined) score += ratio * weights[label]
+      if (weights[label] !== undefined) score += ratio * weights[label];
     }
 
-    let grade
-    if (score >= 0.5) grade = "A"
-    else if (score >= 0.25) grade = "B"
-    else grade = "C"
+    let grade;
+    if (score >= 0.5) grade = "A";
+    else if (score >= 0.25) grade = "B";
+    else grade = "C";
 
     const gradeBadgeColor =
-      grade === "A" ? "#28a745" : grade === "B" ? "#ffc107" : "#dc3545"
-    const badgeHtml = `<div style="background-color: ${gradeBadgeColor}; font-weight:bold;font-size:18px;color:white;padding:6px 12px;border-radius:8px;display:inline-block;margin-bottom:20px;">예측 등급: ${grade}</div>`
+      grade === "A" ? "#28a745" : grade === "B" ? "#ffc107" : "#dc3545";
+    const badgeHtml = `<div style="background-color: ${gradeBadgeColor}; font-weight:bold;font-size:18px;color:white;padding:6px 12px;border-radius:8px;display:inline-block;margin-bottom:20px;">예측 등급: ${grade}</div>`;
 
-    // 레이블별 설명 - 보완 필요
-    const labelDescriptions: Record<string, string> = {
-      "활엽수림": "활엽수림은 꿀벌이 꽃을 채집하기에 최적의 장소입니다. 다양한 밀원 식물이 계절별로 꽃을 피워 안정적인 꿀 공급이 가능합니다. 특히 봄과 초여름에 풍부한 화분과 꿀을 제공해 꿀벌의 건강과 꿀 생산량, 품질 향상에 큰 도움이 됩니다.",
-      "침엽수림": "침엽수림은 꿀벌이 이동하거나 꽃을 찾기에 제한적입니다. 채집량은 적을 수 있으나, 꿀벌이 쉬거나 천적을 피하는 은신처로 활용될 수 있습니다. 하지만 밀원 식물이 적기 때문에 장기간 머무르기에는 부적합합니다.",
-      "논": "논은 벼 재배 시기 동안 물이 많아 꿀벌이 접근하기 어렵고, 특히 모내기·병충해 방제 시기에는 농약 살포가 집중되어 꿀벌 피해 위험이 크며, 이 시기는 꿀벌의 주요 활동기와 겹칩니다. 농약 중 일부는 꿀벌에게 치명적이며, 피해 후 회복에도 시간이 오래 걸립니다. 따라서 논이 가까운 위치는 등급과 상관없이 피하는 것이 안전합니다.",
-      "밭": "밭은 작물 종류에 따라 꽃 자원이 제공되기도 하지만, 대부분 농약 살포 빈도가 높습니다. 특히 살충제와 제초제는 꿀벌에게 직접적이고 치명적인 영향을 줄 수 있습니다. 주변 농가의 농약 사용 패턴을 확인해야 하며, 밭이 밀집된 지역은 꿀벌의 생존과 꿀 품질 모두에 부정적입니다. 따라서 논이 가까운 위치는 등급과 상관없이 피하는 것이 안전합니다.",
-      "비닐하우스": "밀폐된 비닐하우스는 꿀벌이 내부 작물에 접근할 수 없고, 내부에서 사용되는 약제나 훈증제가 외부로 퍼질 경우 꿀벌에게 위험합니다. 비닐하우스가 많은 지역은 꿀벌의 채집 경로가 제한되고 먹이 자원이 줄어드는 문제가 발생할 수 있으며, 꿀벌이 비닐하우스에 들어가더라도 빠져나오기 어려워 생존에 영향을 줍니다.",
-      "수역": "호수, 강, 습지 등 수역은 꿀벌 활동에 직접적 영향이 적지만, 주변 꽃 식생과 조합해 고려할 수 있습니다.",
+    // 라벨별 퍼센트 임계값
+    const labelThresholds: Record<string, { high: number; mid: number }> = {
+      "활엽수림": { high: 20, mid: 10 },
+      "침엽수림": { high: 20, mid: 10 },
+      "논": { high: 10, mid: 3 },
+      "밭": { high: 10, mid: 3 },
+      "비닐하우스": { high: 8, mid: 3 },
+      "수역": { high: 30, mid: 10 }
+    };
+
+    // 라벨별 가변 설명 (high/mid/low)
+    const labelDescriptions: Record<string, { high: string; mid: string; low: string }> = {
+      "활엽수림": {
+        high: "활엽수림은 다양한 나무들이 계절마다 풍부한 꽃가루와 꿀을 제공해 꿀벌에게 최고의 먹이 환경을 조성합니다. 안정적인 밀원 공급 덕분에 꿀벌의 생존, 번식, 꿀 생산에 매우 유리합니다.",
+        mid: "활엽수림이 적절히 분포하여 일정 수준의 꽃가루와 꿀을 제공해 채집 활동에 도움을 줍니다. 다만, 더 넓은 활엽수림이 있을 경우 더욱 이상적인 환경이 될 것입니다.",
+        low: "활엽수림이 거의 없어 꿀벌이 기대할 수 있는 밀원이 부족합니다. 다른 식생에 의존해야 하므로 먹이 확보에 어려움이 있을 가능성이 큽니다."
+      },
+      "침엽수림": {
+        high: "침엽수림이 넓게 분포해 있지만 대부분의 침엽수는 꿀벌에게 풍부한 꿀을 제공하지 않습니다. 그러나 그늘과 은신처 역할은 충분히 할 수 있어 기후 완화에는 긍정적입니다.",
+        mid: "침엽수림이 일부 존재하여 꿀벌에게 일정한 은신처 역할은 하지만, 밀원 식물이 부족해 먹이 공급에는 제한적입니다.",
+        low: "침엽수림이 거의 없어 꿀벌의 활동에 큰 영향은 없습니다. 밀원 확보는 다른 식생에 의존해야 합니다."
+      },
+      "논": {
+        high: "논이 넓게 분포하고 있어 농약 사용으로 인한 꿀벌 피해 위험이 매우 큽니다. 특히 살충제나 제초제 사용 시 대량 폐사 가능성이 있습니다.",
+        mid: "논이 주변에 일부 분포해 농약 피해 가능성이 존재합니다. 꿀벌 관리와 채밀 시기에 주의가 필요합니다.",
+        low: "논이 거의 없어 농약 피해 가능성이 낮습니다. 주변 환경은 상대적으로 안전합니다."
+      },
+      "밭": {
+        high: "밭이 광범위하게 분포해 농약 사용 가능성이 매우 큽니다. 농약 노출은 꿀벌의 생존율을 크게 낮추므로 위험 관리가 필요합니다.",
+        mid: "밭이 일부 분포하여 농약에 의한 꿀벌 피해 가능성이 있습니다. 꿀벌 이동 반경과 농약 살포 시기를 반드시 확인해야 합니다.",
+        low: "밭이 거의 없어 농약으로 인한 꿀벌 피해 위험은 낮습니다."
+      },
+      "비닐하우스": {
+        high: "비닐하우스가 넓게 분포해 있어 꿀벌의 자유로운 이동을 방해할 가능성이 큽니다. 또한 내부에서 농약을 사용하는 경우 꿀벌에게 치명적일 수 있습니다.",
+        mid: "비닐하우스가 주변에 일부 있어 꿀벌 이동에 부분적인 제약이 있을 수 있습니다. 꿀벌 관리에 신경을 써야 합니다.",
+        low: "비닐하우스가 거의 없어 꿀벌 활동에 미치는 영향은 미미합니다."
+      },
+      "수역": {
+        high: "해당 분석은 민물과 바다를 구분하지 못하니 이 점 참고하시기 바랍니다. 수역이 넓으면 꿀벌이 활동할 수 있는 면적이 제한됩니다. 이는 꿀벌의 주요 식량인 밀원(꿀과 꽃가루를 얻는 식물)이 부족해져 꿀 생산량이 줄어들 수 있다는 뜻입니다. 또한, 넓은 수역 주변의 높은 습도는 벌집 내 질병이나 곰팡이 번식 가능성을 높일 수 있습니다.",
+        mid: "해당 분석은 민물과 바다를 구분하지 못하니 이 점 참고하시기 바랍니다. 이 지역은 꿀벌이 필요로 하는 물을 얻기 좋은 환경을 갖추고 있습니다. 물은 꿀벌이 벌통의 온도와 습도를 조절하고, 꿀의 농도를 맞추는 데 필수적인 자원입니다. 적절한 수원은 꿀벌 군집을 건강하게 유지하고 꿀 생산량을 늘리는 데 긍정적인 영향을 줍니다.",
+        low: "해당 분석은 민물과 바다를 구분하지 못하니 이 점 참고하시기 바랍니다. 이 지역은 꿀벌이 물을 얻기 어려운 환경입니다. 물은 벌통의 온도와 꿀의 농도를 조절하는 데 꼭 필요하며, 꿀벌 군집의 건강에 큰 영향을 미칩니다. 따라서 양봉업자가 별도로 물을 공급해주는 노력이 필요합니다."
+      }
+    };
+
+    const getLabelDescription = (label: string, percent: number) => {
+      const thresholds = labelThresholds[label];
+      if (!thresholds) return "";
+      if (percent >= thresholds.high) return labelDescriptions[label].high;
+      if (percent >= thresholds.mid) return labelDescriptions[label].mid;
+      return labelDescriptions[label].low;
     };
 
     // 라벨별 HTML 생성
     const labelHtml = Object.entries(ratios)
-      .filter(([label, ratio]) => labelDescriptions[label])
-      .sort((a, b) => b[1] - a[1]) // ratio 기준 내림차순 정렬
+      .filter(([label]) => labelDescriptions[label])
+      .sort((a, b) => b[1] - a[1])
       .map(([label, ratio]) => {
         const percent = Math.floor(ratio * 10000) / 100;
         return `
-          <div style="padding:4px 0;">
+          <div style="padding:6px 0;">
             <h2 style="font-weight:bold;">
               분석된 반경 중 ${label}이 
               <span style="color:#ff5722; font-weight:bold;">${percent}%</span> 차지합니다.
             </h2>
             <p style="margin: 4px 0; font-size:14px; color:#555555;">
-              ${labelDescriptions[label]}
+              ${getLabelDescription(label, percent)}
             </p>
           </div>
         `;
@@ -180,7 +223,7 @@ export default function MapPredict() {
       .join("");
 
     return badgeHtml + labelHtml;
-  }
+  };
 
   // 지도 초기화
   useEffect(() => {
@@ -413,10 +456,11 @@ export default function MapPredict() {
   const dummyRatios: PixelRatios = {
   "활엽수림": 0.35,
   "침엽수림": 0.15,
-  "논": 0.20,
+  "논": 0.10,
   "밭": 0.10,
   "비닐하우스": 0.10,
   "수역": 0.10,
+  "나지": 0.05,
 };
 
 const dummyImage = "/images/dummy_result.png";
