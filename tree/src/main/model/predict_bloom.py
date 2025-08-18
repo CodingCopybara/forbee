@@ -11,9 +11,9 @@ from models.nn_chill_operator import NNChillModel
 
 SPECIES_MODEL_MAP = {
     "개나리": "MyForsythiaModel18.pth",
-    "벚꽃": "MyCherryModel42.pth",
-    "아카시아": "MyAcaciaModel22.pth",
-    "매화": "MyPlumModel18.pth",
+    "벚꽃": "MyCherryModel88.pth",
+    "아카시아": "MyAcaciaModel88.pth",
+    "매화": "MyPlumModel88.pth",
 }
 
 # 기본값 서울, 예측에 영향 안줌
