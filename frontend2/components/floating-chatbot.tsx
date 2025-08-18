@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Send, X } from "lucide-react"
@@ -10,6 +10,38 @@ interface Message {
   content: string
   sender: "user" | "bot"
   timestamp: Date
+}
+
+const API_BASE = process.env.NEXT_PUBLIC_GW_URL ?? ""
+
+// 🔗 메시지 내용 중 URL을 "허니몰 바로가기", "금융상품 바로가기" 등으로 치환
+function renderMessage(content: string) {
+  const linkRegex = /(https?:\/\/[^\s]+)/g
+  const parts = content.split(linkRegex)
+
+  return parts.map((part, i) => {
+    if (part.match(linkRegex)) {
+      let label = "🔗 링크 열기"
+      if (part.includes("yangbongnh.com/html/money.html")) {
+        label = "금융상품 바로가기"
+      } else if (part.includes("yangbongnh.com")) {
+        label = "허니몰 바로가기"
+      }
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-800 hover:underline inline-block"
+        >
+          {label}
+        </a>
+      )
+    } else {
+      return <span key={i}>{part}</span>
+    }
+  })
 }
 
 export default function MessengerStyleChatbot() {
@@ -24,6 +56,11 @@ export default function MessengerStyleChatbot() {
   ])
   const [inputMessage, setInputMessage] = useState("")
   const [loading, setLoading] = useState(false)
+  const bottomRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
   const handleSend = async () => {
     if (!inputMessage.trim() || loading) return
@@ -39,10 +76,13 @@ export default function MessengerStyleChatbot() {
     setLoading(true)
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userMsg.content }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + localStorage.getItem("accessToken"),
+        },
+        body: JSON.stringify({ question: inputMessage }),
       })
       const data = await res.json()
 
@@ -108,13 +148,14 @@ export default function MessengerStyleChatbot() {
                       : "bg-gray-200 text-black rounded-bl-sm"
                   }`}
                 >
-                  {msg.content}
+                  {renderMessage(msg.content)}
                 </div>
               </div>
             ))}
             {loading && (
               <div className="text-xs text-gray-500 px-2">응답 작성 중…</div>
             )}
+            <div ref={bottomRef} />
           </div>
 
           {/* 입력창 */}

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Shield, User, Mail, MapPin, Edit, Camera, BarChart3, Flower } from "lucide-react"
 import Link from "next/link"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // 사용자 정보 타입을 정의합니다.
 interface UserProfile {
@@ -64,8 +65,66 @@ export default function MyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>로딩 중...</p>
+      <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          {/* Profile Skeleton */}
+          <Card className="mb-8">
+            <CardHeader className="pb-6">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-10 w-24" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row items-start gap-6">
+                <Skeleton className="w-24 h-24 rounded-full border-amber-500" />
+                <div className="flex-1 space-y-5">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-12" />
+                      <Skeleton className="h-6 w-24" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-12" />
+                      <Skeleton className="h-6 w-48" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-12" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-6 w-24" />
+                    </div>
+                  </div>
+                  {/* <div className="space-y-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-6 w-64" />
+                  </div> */}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Stats Skeleton */}
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <Card><CardContent className="p-4"><Skeleton className="h-20 w-full" /></CardContent></Card>
+            <Card><CardContent className="p-4"><Skeleton className="h-20 w-full" /></CardContent></Card>
+            <Card><CardContent className="p-4"><Skeleton className="h-20 w-full" /></CardContent></Card>
+          </div>
+
+          {/* Membership Skeleton */}
+          <Card className="mb-8"><CardContent className="p-4"><Skeleton className="h-28 w-full" /></CardContent></Card>
+
+          {/* Activity Skeleton */}
+          <Card>
+            <CardHeader><Skeleton className="h-8 w-48" /></CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -101,8 +160,8 @@ export default function MyPage() {
             <div className="flex flex-col md:flex-row items-start gap-6">
               {/* Profile Image */}
               <div className="relative">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src="https://picsum.photos/140" alt="프로필 사진" />
+                <Avatar className="w-24 h-24 border-3 border-amber-500">
+                  <AvatarImage src="https://cdn-store.leagueoflegends.co.kr/images/v2/emotes/3153.png" alt="프로필 사진" />
                   <AvatarFallback className="bg-amber-100 text-amber-700 text-xl font-semibold">{user.name.substring(0, 2)}</AvatarFallback>
                 </Avatar>
                 {/* <Button
@@ -145,13 +204,13 @@ export default function MyPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <MapPin className="w-4 h-4" />
                     <span>양봉장 위치</span>
                   </div>
                   <p className="text-lg text-gray-900">{user.address || '주소 정보 없음'}</p>
-                </div>
+                </div> */}
               </div>
             </div>
           </CardContent>
@@ -214,9 +273,15 @@ export default function MyPage() {
                   <li>• 꿀 판매 지원 프로그램</li>
                 </ul>
               </div>
-              <Link href="/membership-application">
-                <Button className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3">조합원 신청하기</Button>
-              </Link>
+              {user && user.role === 'USER' ? (
+                <Link href="/membership-application">
+                  <Button className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3">조합원 신청하기</Button>
+                </Link>
+              ) : (
+                <Button disabled className="bg-gray-400 cursor-not-allowed text-white px-6 py-3">
+                  이미 조합원입니다
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -36,6 +36,10 @@ export default function MapPredict() {
   const markerRef = useRef<any>(null);
   const honeycombIconRef = useRef<any>(null);
   const [analysisCoordinates, setAnalysisCoordinates] = useState<string>("")
+  const [address, setAddress] = useState<string>("주소를 로드 중...");
+  const [analysisAddress, setAnalysisAddress] = useState<string>("");
+  const isCapturingRef = useRef(false);
+  const [searchAddress, setSearchAddress] = useState("");
 
   useEffect(() => {
     if (mapInstance.current && !markerLayerRef.current) {
@@ -55,8 +59,9 @@ export default function MapPredict() {
     }
   }, []);
 
-  const updateCoordinates = () => {
+  const updateCoordinates = async () => {
     if (!mapInstance.current || !markerLayerRef.current) return;
+    if (isCapturingRef.current) return;
 
     const center = mapInstance.current.getCenter();
     let lat: number, lng: number;
@@ -71,21 +76,54 @@ export default function MapPredict() {
       lat = latlng[1];
       lng = latlng[0];
     }
-
     setCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-    setAnalysisCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`)
+    setAnalysisCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
 
     const utmkPos = window.sop.utmk(center.x, center.y);
-
-    if (!markerLayerRef.current) return;
 
     markerLayerRef.current.clearLayers();
     const newMarker = new window.sop.Marker(utmkPos, { icon: honeycombIconRef.current });
     newMarker.addTo(markerLayerRef.current);
     markerRef.current = newMarker;
+
+    // 주소 조회
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_GW_URL}/maps/reverse-geocode`, {
+        params: { x_coor: center.x, y_coor: center.y },
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("accessToken"),
+        },
+      });
+      // 서버에서 받아온 JSON 구조에 맞춰서 필요한 주소만 추출
+      const addr = res.data.full_addr || "주소를 불러오지 못했습니다.";
+      setAddress(addr);
+      setAnalysisAddress(addr);
+    } catch (err) {
+      console.error("주소 조회 실패", err);
+      setAddress("주소를 불러오지 못했습니다.");
+      setAnalysisAddress("주소를 불러오지 못했습니다.");
+    }
   };
 
+  // // 지도 검색 기능
+  // const handleSearch = async () => {
+  //   if (!searchAddress || !mapInstance.current) return;
 
+  //   try {
+  //     const res = await axios.get(`${process.env.NEXT_PUBLIC_GW_URL}/maps/search-address`, { params: { query: searchAddress } });
+  //     const data = res.data;
+
+  //     if (data && data.x != null && data.y != null) {
+  //       const utmkPos = proj4("EPSG:4326", "EPSG:5179", [data.x, data.y]);
+  //       mapInstance.current.setView(window.sop.utmk(utmkPos[0], utmkPos[1]), 16); 
+  //     } else {
+  //       alert("검색 결과가 없습니다.");
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     alert("주소 검색 실패");
+  //   }
+  // };
 
   // 추천 점수 계산
   const calculateRecommendation = (ratios: PixelRatios) => {
@@ -96,42 +134,96 @@ export default function MapPredict() {
       "밭": -3,
       "비닐하우스": -1,
       "수역": 0.5,
-    }
-    let score = 0
+    };
+
+    let score = 0;
     for (const [label, ratio] of Object.entries(ratios)) {
-      if (weights[label] !== undefined) score += ratio * weights[label]
+      if (weights[label] !== undefined) score += ratio * weights[label];
     }
 
-    let grade
-    if (score >= 0.5) grade = "A"
-    else if (score >= 0.25) grade = "B"
-    else grade = "C"
+    let grade;
+    if (score >= 0.5) grade = "A";
+    else if (score >= 0.25) grade = "B";
+    else grade = "C";
 
     const gradeBadgeColor =
-      grade === "A" ? "#28a745" : grade === "B" ? "#ffc107" : "#dc3545"
-    const badgeHtml = `<div style="background-color: ${gradeBadgeColor}; font-weight:bold;font-size:18px;color:white;padding:6px 12px;border-radius:8px;display:inline-block;margin-bottom:10px;">예측 등급: ${grade}</div>`
+      grade === "A" ? "#28a745" : grade === "B" ? "#ffc107" : "#dc3545";
+    const badgeHtml = `<div style="background-color: ${gradeBadgeColor}; font-weight:bold;font-size:18px;color:white;padding:6px 12px;border-radius:8px;display:inline-block;margin-bottom:20px;">예측 등급: ${grade}</div>`;
 
-    // 레이블별 설명 - 보완 필요
-    const labelDescriptions: Record<string, string> = {
-      "활엽수림": "활엽수림은 꿀벌의 주요 서식지이며, 꽃의 다양성이 풍부합니다.",
-      "침엽수림": "침엽수림은 꿀벌 활동이 제한적일 수 있습니다.",
-      "논": "논은 주로 벼를 심고, 꿀벌 활동기와 농약 사용이 겹쳐 주의가 필요합니다.",
-      "밭": "밭은 작물의 파종시기와 농약 살포 시기가 불규칙해 주의가 필요합니다.",
-      "비닐하우스": "비닐하우스는 밀폐된 환경으로 꿀벌 활동에 제한이 있을뿐 아니라, 농약의 위험도 있습니다.",
-      "수역": "수역은 꿀벌의 활동에 영향을 미치지 않습니다.",
-    }
+    // 라벨별 퍼센트 임계값
+    const labelThresholds: Record<string, { high: number; mid: number }> = {
+      "활엽수림": { high: 20, mid: 10 },
+      "침엽수림": { high: 20, mid: 10 },
+      "논": { high: 10, mid: 3 },
+      "밭": { high: 10, mid: 3 },
+      "비닐하우스": { high: 8, mid: 3 },
+      "수역": { high: 30, mid: 10 }
+    };
+
+    // 라벨별 가변 설명 (high/mid/low)
+    const labelDescriptions: Record<string, { high: string; mid: string; low: string }> = {
+      "활엽수림": {
+        high: "이 지역은 활엽수림이 풍부한 것으로 보입니다. 활엽수림은 꿀벌에게 가장 이상적인 환경입니다. 다양한 활엽수종은 계절에 따라 꽃을 피워 꿀벌에게 연중 안정적인 꿀과 꽃가루를 공급합니다. 이는 꿀벌 군집의 생존과 번식, 그리고 꿀 생산량을 극대화하는 데 매우 유리합니다.",
+        mid: "활엽수림이 적절히 분포하여 꿀벌의 채집 활동에 도움을 줍니다. 하지만 더 넓은 활엽수림이 있을 때만큼 풍부한 밀원(꿀과 꽃가루를 얻는 식물)을 기대하기는 어렵습니다. 따라서 다른 주변 식생에 대한 의존도가 높아질 수 있습니다.",
+        low: "활엽수림이 거의 없어 꿀벌이 기대할 수 있는 자연적인 밀원이 부족합니다. 꿀벌이 먹이를 확보하기 위해 다른 식생이나 인공적인 먹이 공급원에 의존해야 하므로, 군집의 건강과 꿀 생산량에 부정적인 영향을 미칠 수 있습니다."
+      },
+      "침엽수림": {
+        high: "침엽수림이 넓게 분포해 있지만 대부분의 침엽수는 꿀벌에게 풍부한 꿀을 제공하지 않습니다. 그러나 그늘과 은신처 역할은 충분히 할 수 있어 기후 완화에는 긍정적입니다.",
+        mid: "침엽수림이 일부 존재하여 꿀벌에게 일정한 은신처 역할은 하지만, 밀원 식물이 부족해 먹이 공급에는 제한적입니다. 추가적인 밀원 확보가 필요합니다.",
+        low: "침엽수림이 거의 없지만, 꿀벌의 활동에 큰 영향은 없습니다. 밀원 확보는 다른 식생에 의존해야 합니다."
+      },
+      "논": {
+        high: "이 지역은 농약 사용량이 많아 꿀벌에게 치명적인 위험이 될 수 있습니다. 특히, 벼농사에 주로 사용되는 살충제나 제초제는 꿀벌의 활동 시기와 겹치는 경우가 많아 대규모 폐사로 이어질 수 있습니다. 넓은 논은 꿀벌이 활동할 수 있는 밀원이 거의 없어 꿀벌이 먹이를 찾기 어렵게 만듭니다.",
+        mid: "논이 주변에 일부 분포해 있어 농약 피해 가능성이 존재합니다. 꿀벌이 주로 활동하는 채집 반경과 논의 농약 살포 시기를 반드시 확인하고, 꿀벌 군집 관리에 주의를 기울여야 합니다.",
+        low: "논이 거의 없어 농약 피해 가능성이 낮습니다. 주변 환경은 상대적으로 안전하지만, 분포 비율과 상관없이 양봉장과 가까운 위치에 논이 존재할 경우, 주의가 필요합니다."
+      },
+      "밭": {
+        high: "이 지역은 농약 사용 가능성이 매우 커 꿀벌에게 치명적인 위험이 될 수 있습니다. 밭은 겉으로 보기에 꿀벌의 먹이(밀원)를 제공하는 것처럼 보이지만, 꿀벌이 농약에 노출될 경우 생존율이 급격히 낮아지고, 여왕벌과 애벌레에게까지 피해를 입혀 벌집 전체가 붕괴될 위험이 있습니다.",
+        mid: "밭이 일부 분포하여 농약에 의한 꿀벌 피해 가능성이 있습니다. 꿀벌이 주로 활동하는 채집 반경과 밭의 농약 살포 시기를 반드시 확인하고, 필요시 꿀벌을 다른 곳으로 옮기는 등 관리에 신경 써야 합니다.",
+        low: "밭이 거의 없어 농약으로 인한 꿀벌 피해 위험이 낮습니다. 꿀벌이 자유롭게 먹이를 찾을 수 있는 환경이라 군집 건강에 긍정적인 영향을 줍니다. 하지만, 분포 비율과 상관없이 양봉장과 가까운 위치에 밭이 존재할 경우, 주의가 필요합니다."
+      },
+      "비닐하우스": {
+        high: "이 지역은 꿀벌이 활동하기에 매우 불리한 환경입니다. 비닐하우스는 꿀벌의 자유로운 비행을 방해하며, 일단 안으로 들어간 꿀벌은 출구를 찾지 못해 죽을 위험이 높습니다. 또한, 외부에서는 비닐하우스 내부의 작물 재배 시기와 농약 살포 시기를 파악하기 어려워 꿀벌이 치명적인 피해를 입을 가능성이 큽니다.",
+        mid: "비닐하우스가 부분적으로 분포해 있어 꿀벌의 이동에 어느 정도 제약이 생길 수 있습니다. 꿀벌이 비닐하우스 안으로 들어갔을 때 길을 잃거나 농약에 노출될 위험이 있으므로, 양봉 관리 시 주의가 필요합니다.",
+        low: "비닐하우스가 거의 없어 꿀벌이 자유롭게 날아다니며 먹이를 구할 수 있습니다. 하지만, 분포 비율과 상관없이 양봉장과 가까운 위치에 비닐하우스가 존재할 경우, 주의가 필요합니다."
+      },
+      "수역": {
+        high: "해당 분석은 민물과 바다를 구분하지 못하니 이 점 참고하시기 바랍니다. 수역이 넓으면 꿀벌이 활동할 수 있는 면적이 제한됩니다. 이는 꿀벌의 주요 식량인 밀원(꿀과 꽃가루를 얻는 식물)이 부족해져 꿀 생산량이 줄어들 수 있다는 뜻입니다. 또한, 넓은 수역 주변의 높은 습도는 벌집 내 질병이나 곰팡이 번식 가능성을 높일 수 있습니다.",
+        mid: "해당 분석은 민물과 바다를 구분하지 못하니 이 점 참고하시기 바랍니다. 이 지역은 꿀벌이 필요로 하는 물을 얻기 좋은 환경을 갖추고 있습니다. 물은 꿀벌이 벌통의 온도와 습도를 조절하고, 꿀의 농도를 맞추는 데 필수적인 자원입니다. 적절한 수원은 꿀벌 군집을 건강하게 유지하고 꿀 생산량을 늘리는 데 긍정적인 영향을 줍니다.",
+        low: "해당 분석은 민물과 바다를 구분하지 못하니 이 점 참고하시기 바랍니다. 이 지역은 꿀벌이 물을 얻기 어려운 환경입니다. 물은 벌통의 온도와 꿀의 농도를 조절하는 데 꼭 필요하며, 꿀벌 군집의 건강에 큰 영향을 미칩니다. 따라서 양봉업자가 별도로 물을 공급해주는 노력이 필요합니다."
+      }
+    };
+
+    const getLabelDescription = (label: string, percent: number) => {
+      const thresholds = labelThresholds[label];
+      if (!thresholds) return "";
+      if (percent >= thresholds.high) return labelDescriptions[label].high;
+      if (percent >= thresholds.mid) return labelDescriptions[label].mid;
+      return labelDescriptions[label].low;
+    };
 
     // 라벨별 HTML 생성
     const labelHtml = Object.entries(ratios)
-      .filter(([label, ratio]) => labelDescriptions[label])
+      .filter(([label]) => labelDescriptions[label])
+      .sort((a, b) => b[1] - a[1])
       .map(([label, ratio]) => {
-        const percent = Math.floor(ratio * 10000) / 100
-        return `<p>분석된 반경 중 ${label}이 ${percent}% 차지합니다.<br>${labelDescriptions[label]}</p>`
+        const percent = Math.floor(ratio * 10000) / 100;
+        return `
+          <div style="padding:6px 0;">
+            <h2 style="font-weight:bold;">
+              분석된 반경 중 ${label}이 
+              <span style="color:#ff5722; font-weight:bold;">${percent}%</span> 차지합니다.
+            </h2>
+            <p style="margin: 4px 0; font-size:14px; color:#555555;">
+              ${getLabelDescription(label, percent)}
+            </p>
+          </div>
+        `;
       })
-      .join("")
+      .join("");
 
-    return badgeHtml + labelHtml
-  }
+    return badgeHtml + labelHtml;
+  };
 
   // 지도 초기화
   useEffect(() => {
@@ -232,6 +324,7 @@ export default function MapPredict() {
       el.style.display = 'none';
     });
     markerLayerRef.current?.remove();
+    isCapturingRef.current = true;
 
     const map = mapInstance.current;
     const originalCenter = map.getCenter();
@@ -330,7 +423,7 @@ export default function MapPredict() {
     try {
       console.log("분석을 위해 이미지를 서버로 전송합니다.", { size: blob.size, type: blob.type });
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_GW_URL}/predict-and-get-info`,
+        `${process.env.NEXT_PUBLIC_GW_URL}/maps/predict-and-get-info`,
         blob,
         {
           headers: {
@@ -346,44 +439,84 @@ export default function MapPredict() {
       setPixelRatios(response.data.pixel_ratios || {})
       setRecommendationText(calculateRecommendation(response.data.pixel_ratios || {}))
     } catch (error) {
-      console.error('예측 실패:', error)
+      console.error('예측 실패:', error);
     } finally {
       widgetElements.forEach(el => {
         el.style.display = el.dataset.prevDisplay || '';
         delete el.dataset.prevDisplay;
       });
       markerLayerRef.current?.addTo(mapInstance.current);
-      map.setView(originalCenter, originalZoom)
-      setIsLoading(false)
+      map.setView(originalCenter, originalZoom);
+      setIsLoading(false);
+      isCapturingRef.current = false;
     }
   }
+
+  // 결과 보고서 UI 테스트 진입로
+  const dummyRatios: PixelRatios = {
+  "활엽수림": 0.35,
+  "침엽수림": 0.15,
+  "논": 0.10,
+  "밭": 0.10,
+  "비닐하우스": 0.10,
+  "수역": 0.10,
+  "나지": 0.05,
+};
+
+const dummyImage = "/images/dummy_result.png";
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex h-screen">
         {/* 좌측 사이드바 */}
         <div className="w-80 bg-white shadow-lg overflow-y-auto">
-          <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">양봉지 분석</h1>
+          <div className="p-6 border-b">
+            <h1 className="text-2xl font-bold text-gray-900">양봉지 분석</h1>
+            <p className="text-sm text-gray-600 mt-2">AI를 이용해 원하는 위치가 양봉지에 적합한지 분석해드려요.</p>
+          </div>  
 
-            {/* 분석할 지역 */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">분석할 지역</label>
-              <div className="pb-6 flex items-center space-x-2">
+          {/* 분석할 지역 */}
+          <div className="border-b pt-4 pr-4 pl-4">
+            <h3 className="font-semibold text-gray-900 mb-3">분석할 지역</h3>
+            <div className="pb-4 flex flex-col">
+              <div className="flex items-center space-x-2">
                 <MapPin className="w-5 h-5 text-gray-400" />
-                <span className="text-sm text-gray-600">{coordinates}</span>
+                <span className="text-m text-gray-600">{address}</span>
               </div>
-              
-              
-              <label className="block text-sm font-medium text-gray-700 mb-2">이용 안내</label>
-              <p className="text-sm text-amber-800">AI 양봉 입지 분석 서비스입니다.</p>
-              <p className="text-sm text-amber-800">지도의 중앙에 분석을 원하는 장소를 두세요.</p>
-              <p className="text-sm text-amber-800">꿀벌이 활동하기 좋은 <span className="text-red-400 font-semibold">최적의 반경 600~800m</span>에 대해서 선택하신 중심을 기준으로 분석합니다.</p>
-              <p className="text-sm text-amber-800">선택한 지역에 대해, 부정적인 요소와 긍정적인 요소를 판단하고 등급을 산정합니다.</p>
-              <p className="text-sm text-amber-800">각 요소에 대한 비율을 확인 할 수 있고, 그에 따른 안내도 드릴 수 있어요.</p>
+              <div className="text-sm text-gray-500 mt-1">({coordinates})</div>
             </div>
+            {/* 검색 입력창
+            <input
+              type="text"
+              placeholder="지역 검색..."
+              value={searchAddress}
+              onChange={(e) => setSearchAddress(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearch();
+              }}
+              className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+            <Button
+              onClick={handleSearch}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white mt-2"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              검색
+            </Button> */}
+          </div>
+          
+          {/* 이용 안내 */}
+          <div className="p-4">   
+            <h3 className="font-semibold text-gray-900 mb-3">이용 안내</h3>
+            <p className="text-sm text-amber-800">AI 양봉 입지 분석 서비스입니다.</p>
+            <p className="text-sm text-amber-800">지도의 중앙에 분석을 원하는 장소를 두세요.</p>
+            <p className="text-sm text-amber-800">꿀벌이 활동하기 좋은 <span className="text-red-400 font-semibold">최적의 반경 600~800m</span>에 대해서 선택하신 중심을 기준으로 분석합니다.</p>
+            <p className="text-sm text-amber-800">선택한 지역에 대해, 부정적인 요소와 긍정적인 요소를 판단하고 등급을 산정합니다.</p>
+            <p className="text-sm text-amber-800">각 요소에 대한 비율을 확인 할 수 있고, 그에 따른 안내도 드릴 수 있어요.</p>
+          </div>
 
-            {/* 분석 버튼 */}
+          {/* 분석 버튼 */}
+          <div className="p-4">
             <Button
               onClick={captureAndPredict}
               disabled={isLoading || !isMapInitialized || showResultPopup}
@@ -408,6 +541,20 @@ export default function MapPredict() {
               className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800">
               결과 보기
             </Button>
+            
+            {/* 임시 진입로 - 실제 서비스에서는 제거 */}
+            <Button
+              onClick={() => {
+                const recommendation = calculateRecommendation(dummyRatios);
+                setRecommendationText(recommendation);
+                setPixelRatios(dummyRatios);
+                setResultImageSrc(dummyImage);
+                setShowResultPopup(true);
+              }}
+              className="w-full bg-green-500 hover:bg-green-600 text-white mt-2"
+            >
+              임시 진입
+            </Button>
 
           </div>
         </div>
@@ -426,24 +573,29 @@ export default function MapPredict() {
 
           {showResultPopup && resultImageSrc && (
             <div className="absolute inset-0 grid place-items-center z-[1000] bg-white rounded-lg shadow-lg p-4 h-full overflow-auto">
-              {/* 닫기 버튼 - 바꿔야함 개 별로임*/}
+              {/* 닫기 버튼*/}
               <button
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                className="absolute top-2 right-2 p-0 text-gray-500 bg-transparent"
                 onClick={() => setShowResultPopup(false)}
               >
-                ✕
+                <img src="/icons/x.png" alt="닫기" className="w-12 h-12 object-contain" />
               </button>
 
-              <div className="flex flex-col md:flex-row gap-4 w-full items-stretch">
+              <div className="flex flex-col md:flex-row gap-4 w-full items-stretch mt-10">
                 <div className="md:w-6/10">
                   {/* 분석 보고서 */}
                   <Card className="w-full">
                     <CardHeader className="flex justify-between items-center">
                       <CardTitle className="text-lg pb-4">분석 보고서</CardTitle>
                       {analysisCoordinates && (
-                        <span className="text-s text-gray-500">
-                          ({analysisCoordinates})
-                        </span>
+                        <div>
+                          {analysisAddress &&
+                            analysisAddress !== "주소를 찾을 수 없습니다." &&
+                            analysisAddress !== "주소를 불러오지 못했습니다." && (
+                              <span className="text-m text-gray-500">{analysisAddress}</span>
+                          )}
+                          <span className="text-s text-gray-500">({analysisCoordinates})</span>
+                        </div>
                       )}
                     </CardHeader>
                     <CardContent>

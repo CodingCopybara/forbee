@@ -1,17 +1,13 @@
-# main.py
-import os, json, asyncio, traceback
+import os, json, asyncio, traceback, re
 from datetime import datetime
 from dotenv import load_dotenv
-from fastapi import FastAPI, Form, Request, Query
+from fastapi import FastAPI, Request, Query
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from pydantic import BaseModel
-
-import re
-
 
 from services.custom_functions import provide_recommendation_url
 from services.openai_client import client, aclient, FILE_SEARCH_RES
@@ -37,11 +33,27 @@ templates = Jinja2Templates(directory="templates")
 # --- 시스템 프롬프트 ---
 HELP_SYSTEM = "\n".join([
     "너는 우리 사이트의 '이용 센터' 챗봇이다.",
-    "우선순위: (1) 지식문서(File Search) 근거 기반 답변 (2) 요청 시 은행/허니몰 링크 제공 (3) 불확실하면 추가정보 요청.",
-    "약관/공지/이용방법 질문에는 관련 조항을 간단히 요약하고, [출처: 문서명/버전] 한 줄로 표시한다.",
-    "링크 요청 시 open_link 도구를 호출해 화이트리스트 URL만 제공한다.",
-    "항상 존댓말, 불필요한 수다 금지."
+
+    "우선순위:",
+    "1) 지식문서(File Search)에 관련 내용이 있으면 반드시 그것을 바탕으로 답변한다.",
+    "2) 문서에 없으면 일반적인 지식을 정리하여 답변한다 (예: 꿀의 효능, 은행 기본정보).",
+    "3) 관련 링크가 있다면 '허니몰 바로가기', '금융상품 바로가기' 같은 앵커 텍스트로 제공한다.",
+    "4) 그래도 불확실하면 추가 정보를 요청한다.",
+
+    "출력 규칙:",
+    "1) 질문에 직접 해당하는 조항/정보만 답변하며, '...관련하여 있습니다' 같은 서두 문구는 쓰지 않는다.",
+    "2) 답변은 반드시 간결하게 요약하고, 불릿(•) 3개 이하 또는 번호 목록 3개 이하를 사용한다.",
+    "3) 약관/공지/이용방법 질문에는 관련 조항 요약 후 마지막 줄에 [출처: 문서명/버전]을 표기한다.",
+    "4) PDF 파일명 등 사용자가 보기 불편한 표기는 제거하고, 출처는 간단하게 정리한다.",
+    "5) 링크는 open_link 도구를 통해 화이트리스트 URL만 제공하며, 반드시 앵커 텍스트로 표시한다.",
+
+    "대화 스타일:",
+    "1) 항상 존댓말을 사용한다.",
+    "2) 불필요한 수다나 장황한 설명은 하지 않는다."
 ])
+
+
+
 
 # --- 툴 설정 ---
 TOOLS_BASE = [{
@@ -75,10 +87,6 @@ def get_url(question: str = Query(..., description="사용자 질문")):
 
 # --- 불필요 문구 제거 함수 ---
 def clean_ai_answer(raw_answer: str) -> str:
-    """
-    AI 응답에서 '모른다' 류의 불필요한 안내 문구 제거 (정규식 기반 확장)
-    """
-    # 제거 패턴 목록 (대소문자 구분 없음)
     patterns = [
         r"업로드.*문서.*(포함|확인).{0,20}않습니다",
         r"자료.*제공.*확인.*드리겠습니다",
@@ -86,15 +94,13 @@ def clean_ai_answer(raw_answer: str) -> str:
         r"현재.*문서.*내용.*없습니다",
         r"불확실.*추가정보.*요청",
     ]
-
-    # 줄 단위로 검사
     lines = raw_answer.splitlines()
     cleaned_lines = []
     for line in lines:
         if not any(re.search(p, line, re.IGNORECASE) for p in patterns):
             cleaned_lines.append(line.strip())
-
-    return "\n".join([l for l in cleaned_lines if l]).strip()
+    cleaned = "\n".join([l for l in cleaned_lines if l]).strip()
+    return cleaned or "현재 정확한 정보를 찾지 못했어요. 다른 질문을 해보시겠어요?"
 
 # --- 동기 헬프센터 실행 ---
 def run_help_center_sync(messages: list[dict]) -> str:
@@ -135,7 +141,7 @@ def run_help_center_sync(messages: list[dict]) -> str:
     for c in msgs.data[0].content:
         if getattr(c, "type", None) == "text" and getattr(c, "text", None):
             parts.append(c.text.value)
-    return "\n\n".join(parts) if parts else "[WARN] 빈 응답"
+    return "\n\n".join(parts) if parts else "[WARN] 빈 응답 (OpenAI 응답 없음)"
 
 # --- 메시지 빌드 ---
 def _build_messages(history, user_text: str):
@@ -159,25 +165,17 @@ async def stream_help_center(messages):
 
 # --- /api/help ---
 @app.post("/api/help", response_model=ChatResponse)
-async def help_api(req: ChatRequest, request: Request):
-    session_history = request.session.setdefault("history", [])
-    session_history.append({"role": "user", "content": req.question})
-
-    messages = _build_messages(session_history[:-1], req.question)
+async def help_api(req: ChatRequest):
+    messages = [{"role": "system", "content": HELP_SYSTEM}, {"role": "user", "content": req.question}]
     raw_answer = await asyncio.to_thread(run_help_center_sync, messages)
+    print("🧪 raw_answer:", repr(raw_answer)) 
     answer = clean_ai_answer(raw_answer)
 
-    # 2) URL 추천
+    # URL 추천
     url = provide_recommendation_url(req.question)
     if url:
         answer += f"\n\n🔗 관련 상품/정보: {url}"
 
-    session_history.append({
-        "role": "assistant",
-        "content": answer,
-        "time": datetime.now().strftime("%H:%M")
-    })
-    request.session["history"] = session_history
     return ChatResponse(answer=answer)
 
 # --- /api/help/stream ---
@@ -192,7 +190,6 @@ async def help_stream(req: ChatRequest, request: Request):
         async for chunk in stream_help_center(messages):
             collected += chunk
             yield chunk
-        # 스트리밍 끝나고 세션 저장
         final_answer = clean_ai_answer(collected)
         url = provide_recommendation_url(req.question)
         if url:
@@ -238,10 +235,14 @@ def root():
     return {"status": "ok", "see": ["/docs", "/api/health", "/api/help"]}
 
 @app.get("/api/health")
-def health_api():
-    return {"ok": True}
+async def health():
+    return {"status": "ok"}
 
 @app.exception_handler(Exception)
 async def _all_exc_handler(request: Request, exc: Exception):
     traceback.print_exc()
     return JSONResponse(status_code=500, content={"error": type(exc).__name__, "detail": str(exc)})
+
+@app.post("/api/chat", response_model=ChatResponse)
+async def chat_api(req: ChatRequest):
+    return await help_api(req)

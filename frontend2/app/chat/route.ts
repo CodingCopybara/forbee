@@ -1,25 +1,31 @@
-// app/api/chat/route.ts
-import { NextRequest, NextResponse } from "next/server"
+// /workspace/forbee/frontend2/app/chat/route.ts
 
-const API_BASE = process.env.API_BASE ?? "http://localhost:8082" // Spring Boot
+const GW = process.env.NEXT_PUBLIC_GW_BASE || "http://127.0.0.1:8088";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await req.json() as { question: string }
-    const res = await fetch(`${API_BASE}/api/chat`, {
+    const body = await req.json();
+
+    const response = await fetch(`${GW}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    })
+    });
 
-    if (!res.ok) {
-      const text = await res.text()
-      return NextResponse.json({ error: "SPRING_ERROR", detail: text }, { status: 502 })
-    }
+    const contentType = response.headers.get("content-type") || "application/json";
+    const data = await response.text();
 
-    const data = await res.json()
-    return NextResponse.json(data)
-  } catch (e: any) {
-    return NextResponse.json({ error: "GATEWAY_ERROR", detail: String(e?.message ?? e) }, { status: 500 })
+    return new Response(data, {
+      status: response.status,
+      headers: { "Content-Type": contentType },
+    });
+  } catch (error: any) {
+    return new Response(
+      JSON.stringify({ error: "NEXT_PROXY_ERROR", detail: error?.message || String(error) }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }

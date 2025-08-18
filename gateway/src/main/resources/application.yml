@@ -24,7 +24,7 @@ spring:
          - id: ai-map
            uri: http://localhost:8081
            predicates:
-            - Path=/predict-and-get-info
+            - Path=/maps/**
          - id: tree
            uri: http://localhost:8087
            predicates:
@@ -45,10 +45,37 @@ spring:
            uri: http://localhost:0
            predicates:
             - Path=/maps/**
+         # 챗봇
          - id: chatbot
            uri: http://localhost:0
            predicates:
             - Path=/chatbots/**
+
+         # Spring → FastAPI 프록시
+         - id: chat_to_spring
+           uri: http://127.0.0.1:8082
+           predicates:
+            - Path=/api/chat
+            - Method=POST
+
+         - id: health_to_spring
+           uri: http://127.0.0.1:8082
+           predicates:
+            - Path=/api/health
+            - Method=GET
+
+         # FastAPI
+         - id: help_to_fastapi
+           uri: http://127.0.0.1:8002
+           predicates:
+            - Path=/api/help
+            - Method=POST
+
+         - id: health_fastapi
+           uri: http://127.0.0.1:8002
+           predicates:
+            - Path=/api/health-fast
+            - Method=GET
          - id: ai
            uri: http://localhost:8083
            predicates:
