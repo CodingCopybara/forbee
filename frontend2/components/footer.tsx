@@ -4,9 +4,11 @@ import Link from "next/link"
 import Image from "next/image"
 import { useState } from "react"
 import PrivacyPolicyModal from "./privacy-policy-modal"
+import TermsOfServiceModal from "./terms-of-service-modal" // 새로 추가
 
 export default function Footer() {
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false)
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false) // 새로 추가
 
   return (
     <>
@@ -81,9 +83,9 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-amber-400 transition-colors">
+                  <button onClick={() => setIsTermsModalOpen(true)} className="hover:text-amber-400 transition-colors text-left">
                     이용약관
-                  </Link>
+                  </button>
                 </li>
                 <li>
                   <button
@@ -107,6 +109,7 @@ export default function Footer() {
       </footer>
 
       <PrivacyPolicyModal isOpen={isPrivacyModalOpen} onClose={() => setIsPrivacyModalOpen(false)} />
+      <TermsOfServiceModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
     </>
   )
 }

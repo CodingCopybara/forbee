@@ -1,13 +1,15 @@
 "use client"
 
 import type React from "react"
-
+import { Hexagon } from "lucide-react"
 import { useState } from "react"
 import { jwtDecode } from "jwt-decode"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import PrivacyPolicyModal from "@/components/privacy-policy-modal"
+import TermsOfServiceModal from "@/components/terms-of-service-modal"
 import { register } from "module"
 
 interface DecodedToken {
@@ -19,11 +21,13 @@ interface DecodedToken {
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login")
   const [isLoading, setIsLoading] = useState(false)
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false)
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
 
   const [loginForm, setLoginForm] = useState({
     email: "",
     password: "",
-    remember: false,
+    remember: true,
   })
 
   const [registerForm, setRegisterForm] = useState({
@@ -216,15 +220,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-500 rounded-full mb-4">
-            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1L9 7V9C9 10 8 11 7 11V13C8 13 9 14 9 15V19C9 20.1 9.9 21 11 21H13C14.1 21 15 20.1 15 19V15C15 14 16 13 17 13V11C16 11 15 10 15 9Z" />
-            </svg>
-          </div>
+          {/* <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-500 rounded-full mb-4">
+            <Shield className="w-8 h-8 text-amber-900" />
+          </div> */}
           <h1 className="text-2xl font-bold text-gray-900 mb-2">양봉 AI 서비스</h1>
           <p className="text-gray-600">양봉농협과 함께하는 스마트 양봉 솔루션</p>
         </div>
@@ -285,9 +288,9 @@ export default function LoginPage() {
                   />
                   <span className="ml-2 text-sm text-gray-600">로그인 상태 유지</span>
                 </label>
-                <a href="#" className="text-sm text-amber-600 hover:text-amber-700">
+                {/* <a href="#" className="text-sm text-amber-600 hover:text-amber-700">
                   비밀번호 찾기
-                </a>
+                </a> */}
               </div>
               <Button
                 type="submit"
@@ -348,7 +351,7 @@ export default function LoginPage() {
                     value={registerForm.phone}
                     onChange={(e) => handleRegisterFormChange("phone", e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                    placeholder="010-0000-0000"
+                    placeholder="01012345678"
                   />
                 </div>
               </div>
@@ -404,13 +407,13 @@ export default function LoginPage() {
                   className="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500 mt-1"
                 />
                 <span className="ml-2 text-sm text-gray-600">
-                  <a href="#" className="text-amber-600 hover:text-amber-700">
+                  <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-amber-600 hover:text-amber-700 underline">
                     서비스 이용약관
-                  </a>{" "}
+                  </button>{" "}
                   및{" "}
-                  <a href="#" className="text-amber-600 hover:text-amber-700">
+                  <button type="button" onClick={() => setIsPrivacyModalOpen(true)} className="text-amber-600 hover:text-amber-700 underline">
                     개인정보처리방침
-                  </a>
+                  </button>
                   에 동의합니다.
                 </span>
               </div>
@@ -457,5 +460,8 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    <PrivacyPolicyModal isOpen={isPrivacyModalOpen} onClose={() => setIsPrivacyModalOpen(false)} />
+    <TermsOfServiceModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
+    </>
   )
 }
