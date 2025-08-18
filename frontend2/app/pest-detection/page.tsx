@@ -165,10 +165,6 @@ export default function PestDetectionPage() {
     }
   }, [GW_URL, userId])
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, isAnalyzing, isBotLoading, analysisComplete])
-
   const pushMessage = (msg: Omit<Message, "id" | "timestamp">) => {
     setMessages((prev) => [
       ...prev,
