@@ -12,6 +12,6 @@ public class UpgradeToMemberRequestCommand {
     private Long career;          // 경력
     private Long hiveCount;          // 보유 벌통 수
     private Long annualProduction; // 연간 생산량
-    private String documents;       // 서류
+    private List<Document> documents;       // 서류
     private String etc;             // 기타 사항
 }

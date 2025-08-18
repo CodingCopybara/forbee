@@ -176,8 +176,10 @@ export default function MembershipRequestDetail() {
     setIsProcessing(true);
     try {
       const accessToken = localStorage.getItem('accessToken');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_GW_URL}/memberRequestLists/${requestId}/requestapproval`, {
-        method: 'PUT', // Assuming PATCH for partial update
+
+      // 1. 가입 요청 승인 API
+      const approveRequestPromise = fetch(`${process.env.NEXT_PUBLIC_GW_URL}/memberRequestLists/${requestId}/requestapproval`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`
@@ -185,12 +187,31 @@ export default function MembershipRequestDetail() {
         body: JSON.stringify({ status: 'APPROVED', processMessage: adminNote || null })
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // 2. 사용자 역할 변경 API
+      const updateUserRolePromise = fetch(`${process.env.NEXT_PUBLIC_GW_URL}/users/${requestData.userId}/approve`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      // 두 요청을 동시에 실행
+      const [approveRequestResponse, updateUserRoleResponse] = await Promise.all([
+        approveRequestPromise,
+        updateUserRolePromise
+      ]);
+
+      if (!approveRequestResponse.ok) {
+        throw new Error(`가입 요청 승인에 실패했습니다: ${approveRequestResponse.statusText}`);
       }
 
-      alert("조합원 가입이 승인되었습니다.");
+      if (!updateUserRoleResponse.ok) {
+        throw new Error(`사용자 역할 변경에 실패했습니다: ${updateUserRoleResponse.statusText}`);
+      }
+
+      alert("조합원 가입이 승인되고 역할이 성공적으로 변경되었습니다.");
       router.push("/admin");
+
     } catch (error: any) {
       alert(`승인 처리 중 오류가 발생했습니다: ${error.message}`);
       console.error("Failed to approve request:", error);
@@ -228,6 +249,30 @@ export default function MembershipRequestDetail() {
       console.error("Failed to reject request:", error);
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleDownload = async (docUrl: string, docName: string) => {
+    if (!docUrl || !docName) {
+      alert("다운로드할 파일 정보가 없습니다.");
+      return;
+    }
+    try {
+      const response = await fetch(docUrl);
+      if (!response.ok) throw new Error('파일 다운로드에 실패했습니다.');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = docName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert('파일을 다운로드하는 데 실패했습니다.');
     }
   };
 
@@ -405,7 +450,7 @@ export default function MembershipRequestDetail() {
                     </div>
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 mr-3 text-gray-400" />
-                      <span>{requestData.phone}</span>
+                      <span>{requestData.phone.substring(0,3)}-{requestData.phone.substring(3, 7)}-{requestData.phone.substring(7, 11)}</span>
                     </div>
                     <div className="flex items-center">
                       <MapPin className="h-4 w-4 mr-3 text-gray-400" />
@@ -413,7 +458,7 @@ export default function MembershipRequestDetail() {
                     </div>
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-3 text-gray-400" />
-                      <span>신청일: {requestData.submittedAt}</span>
+                      <span>신청일: {requestData.submittedAt.substring(0, 10)}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -464,7 +509,7 @@ export default function MembershipRequestDetail() {
                             </div>
                             <span className="font-medium">{doc.name}</span>
                           </div>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => handleDownload(doc.url, doc.name)}>
                             <Download className="h-4 w-4 mr-2" />
                             다운로드
                           </Button>

@@ -8,7 +8,7 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 
 export const metadata: Metadata = {
-  title: "v0 App",
+  title: "Forbee AI",
   description: "Created with v0",
   generator: "v0.dev",
 }

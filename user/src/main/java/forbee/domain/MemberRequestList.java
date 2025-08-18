@@ -8,13 +8,14 @@ import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "MemberRequestList_table")
 @Data
 @EntityListeners(AuditingEntityListener.class) // JPA Auditing 리스너 추가
 public class MemberRequestList {
-
-    
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -30,8 +31,9 @@ public class MemberRequestList {
 
     private Long annualProduction; // 연간 생산량
 
-    @Lob
-    private String documents;       // 서류
+    @ElementCollection
+    @CollectionTable(name = "member_request_documents", joinColumns = @JoinColumn(name = "request_id"))
+    private List<Document> documents = new ArrayList<>();       // 서류
 
     @Lob
     private String etc;             // 기타 사항

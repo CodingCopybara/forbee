@@ -462,20 +462,20 @@ export default function AdminPage() {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
                               <div>📧 {request.email}</div>
-                              <div>📞 {request.phone}</div>
+                              <div>📞 {request.phone.substring(0,3)}-{request.phone.substring(3, 7)}-{request.phone.substring(7, 11)}</div>
                               <div>📍 {request.beehiveLocation?.split(' ').slice(0, 2).join(' ')}</div>
                             </div>
                             <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                               {activeTab === "membership" ? (
                                 <>
                                   <span>경력: {(request as MembershipRequest).experience}</span>
-                                  <span>신청일: {request.submittedAt}</span>
+                                  <span>신청일: {request.submittedAt.substring(0, 10)}</span>
                                 </>
                               ) : (
                                 <>
                                   <span>밀원수: {(request as NectarRequest).nectarType}</span>
                                   <span>수량: {(request as NectarRequest).quantity}그루</span>
-                                  <span>신청일: {request.submittedAt}</span>
+                                  <span>신청일: {request.submittedAt.substring(0, 10)}</span>
                                 </>
                               )}
                             </div>
