@@ -16,22 +16,35 @@ spec:
     spec:
       containers:
         - name: user
-          image: "username/user:latest"
+          image: forbeeregistry.azurecr.io/user:08200147
           ports:
             - containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 15
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 10
-          livenessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 15
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 5
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret # Name of your DB Secret
+                  key: DB_PASSWORD # Key within the Secret
+            - name: AZURE_STORAGE_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: azure-storage-secret # Name of your Azure Storage Secret
+                  key: AZURE_STORAGE_CONNECTION_STRING # Key within the Secret
+          # readinessProbe:
+          #   httpGet:
+          #     path: '/actuator/health'
+          #     port: 8080
+          #   initialDelaySeconds: 15
+          #   timeoutSeconds: 2
+          #   periodSeconds: 5
+          #   failureThreshold: 10
+          # livenessProbe:
+          #   httpGet:
+          #     path: '/actuator/health'
+          #     port: 8080
+          #   initialDelaySeconds: 15
+          #   timeoutSeconds: 2
+          #   periodSeconds: 5
+          #   failureThreshold: 5
+      imagePullSecrets: # Add this section
+        - name: acr-secret # Name of your image pull secret

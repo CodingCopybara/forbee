@@ -663,14 +663,17 @@ export default function WritePage() {
   )
 }
 
-/* 간단한 placeholder 스타일 (contenteditable 전용) */
-const style = document?.createElement?.("style")
-if (style) {
-  style.innerHTML = `
-  [data-placeholder]:empty:before {
-    content: attr(data-placeholder);
-    color: #9ca3af; /* gray-400 */
-  }
-  `
-  document.head.appendChild(style)
-}
+  useEffect(() => {
+    const style = document?.createElement?.("style")
+    if (style) {
+      style.innerHTML = `
+      [data-placeholder]:empty:before {
+        content: attr(data-placeholder);
+        color: #9ca3af; /* gray-400 */
+      }
+      `
+      document.head.appendChild(style)
+    }
+  }, [])
+
+

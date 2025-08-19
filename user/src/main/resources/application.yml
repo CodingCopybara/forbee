@@ -113,5 +113,10 @@ spring:
 api:
   url: 
     user: user:8080 
+
+azure:
+  storage:
+    connection-string: ${AZURE_STORAGE_CONNECTION_STRING}
+    container-name: blob 
     
 

@@ -15,6 +15,9 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat
 RUN corepack enable && corepack prepare pnpm@8.15.8 --activate
 
+ARG NEXT_PUBLIC_GW_URL
+ENV NEXT_PUBLIC_GW_URL=$NEXT_PUBLIC_GW_URL
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm build

@@ -8,6 +8,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod; // Add this import
 
 import java.util.Arrays;
 
@@ -31,7 +32,32 @@ public class SecurityConfiguration {
                 "/posts/**",
                 "/comments/**",
                 "/ai/**",
-                "/actuator/**"
+                "/actuator/**",
+                // Frontend specific paths
+                "/",              // Root path for frontend
+                "/login",
+                "/login/**",
+                "/admin",
+                "/admin/**",
+                "/area-analysis",
+                "/area-analysis/**",
+                "/bloom-prediction",
+                "/bloom-prediction/**",
+                "/chat",
+                "/chat/**",
+                "/community",
+                "/community/**",
+                "/membership-application",
+                "/membership-application/**",
+                "/mypage",
+                "/mypage/**",
+                "/nectar-support",
+                "/nectar-support/**",
+                "/pest-detection",
+                "/pest-detection/**",
+                "/_next/**",      // Next.js internal assets
+                "/favicon.ico",   // Favicon
+                "/assets/**"      // Custom assets if any
             )
             .permitAll()
             .anyExchange()
