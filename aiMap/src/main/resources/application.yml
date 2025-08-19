@@ -46,6 +46,11 @@ logging:
 server:
   port: 8081
 
+sgis:
+  api:
+    consumer-key: 81e5e7f2bafc41a5a506
+    secret-key: 16f9b16102ca4732946c
+
 ---
 
 spring:
