@@ -55,26 +55,26 @@ spring:
          - id: chat_to_spring
            uri: http://127.0.0.1:8082
            predicates:
-            - Path=/api/chat
+            - Path=/chatbot/chat
             - Method=POST
 
          - id: health_to_spring
            uri: http://127.0.0.1:8082
            predicates:
-            - Path=/api/health
+            - Path=/chatbot/health
             - Method=GET
 
          # FastAPI
          - id: help_to_fastapi
            uri: http://127.0.0.1:8002
            predicates:
-            - Path=/api/help
+            - Path=/chatbot/help
             - Method=POST
 
          - id: health_fastapi
            uri: http://127.0.0.1:8002
            predicates:
-            - Path=/api/health-fast
+            - Path=/chatbot/health-fast
             - Method=GET
          - id: ai
            uri: http://localhost:8083

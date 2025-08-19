@@ -163,8 +163,8 @@ async def stream_help_center(messages):
         elif et in ("response.completed", "response.done"):
             break
 
-# --- /api/help ---
-@app.post("/api/help", response_model=ChatResponse)
+# --- /chatbot/help ---
+@app.post("/chatbot/help", response_model=ChatResponse)
 async def help_api(req: ChatRequest):
     messages = [{"role": "system", "content": HELP_SYSTEM}, {"role": "user", "content": req.question}]
     raw_answer = await asyncio.to_thread(run_help_center_sync, messages)
@@ -178,8 +178,8 @@ async def help_api(req: ChatRequest):
 
     return ChatResponse(answer=answer)
 
-# --- /api/help/stream ---
-@app.post("/api/help/stream")
+# --- /chatbot/help/stream ---
+@app.post("/chatbot/help/stream")
 async def help_stream(req: ChatRequest, request: Request):
     session_history = request.session.setdefault("history", [])
     session_history.append({"role": "user", "content": req.question})
@@ -232,9 +232,9 @@ def whereami():
 
 @app.get("/", include_in_schema=False)
 def root():
-    return {"status": "ok", "see": ["/docs", "/api/health", "/api/help"]}
+    return {"status": "ok", "see": ["/docs", "/chatbot/health", "/chatbot/help"]}
 
-@app.get("/api/health")
+@app.get("/chatbot/health")
 async def health():
     return {"status": "ok"}
 
@@ -243,6 +243,6 @@ async def _all_exc_handler(request: Request, exc: Exception):
     traceback.print_exc()
     return JSONResponse(status_code=500, content={"error": type(exc).__name__, "detail": str(exc)})
 
-@app.post("/api/chat", response_model=ChatResponse)
+@app.post("/chatbot/chat", response_model=ChatResponse)
 async def chat_api(req: ChatRequest):
     return await help_api(req)

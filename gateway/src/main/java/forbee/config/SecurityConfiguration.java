@@ -24,8 +24,8 @@ public class SecurityConfiguration {
             .pathMatchers(
                 "/oauth/**",      // oauth 관련 모든 경로 허용
                 "/files/**",      // 파일 업로드 경로 허용
-                "/api/**",
-                "/api/chat",
+                "/chatbot/**",
+                "/chatbot/chat",
                 "/api/health",       
                 "/users/**",
                 "/posts/**",

@@ -90,7 +90,7 @@ function ChatHistoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     try {
       const token = (typeof window !== "undefined" && localStorage.getItem("accessToken")) || ""
       type RawMsg = { sender: "user" | "bot"; type: "text" | "image"; text?: string | null; url?: string | null; ts?: number }
-      const data = await getJSON<{ messages?: RawMsg[] }>(`${GW_URL}/api/chat-sessions/latest`, {
+      const data = await getJSON<{ messages?: RawMsg[] }>(`${GW_URL}/chatbot/chat-sessions/latest`, {
         userId: currentUserId(),
         Authorization: `Bearer ${token}`,
       })
@@ -333,19 +333,23 @@ export default function WritePage() {
     e.target.value = ""
     if (!files.length) return
 
+    const MAX_IMAGE_SIZE = 512 * 1024 
+
     for (const f of files) {
       if (!(f.type === "image/png" || f.type === "image/jpeg")) {
         alert("PNG 또는 JPG 파일만 업로드할 수 있습니다.")
         continue
       }
-      if (f.size > 10 * 1024 * 1024) {
-        alert(`${f.name} 파일이 10MB를 초과합니다.`)
+
+      if (f.size > MAX_IMAGE_SIZE) {
+        alert(`500KB를 초과하여 업로드할 수 없습니다.`)
         continue
       }
+
       try {
         const { publicUrl } = await uploadViaSas(f)
         insertHtmlAtCaret(
-          `<img src="${publicUrl}" alt="${f.name}" style="max-width:100%;height:auto;display:block;margin:0.5rem 0;" />`,
+          `<img src="${publicUrl}" alt="${f.name}" style="max-width:100%;height:auto;display:block;margin:0.5rem 0;" />`
         )
         syncFromEditor()
       } catch (err) {
@@ -354,6 +358,7 @@ export default function WritePage() {
       }
     }
   }
+
 
   // PDF 첨부 (본문 X, 첨부목록에만)
   const onPickPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -392,6 +397,14 @@ export default function WritePage() {
 
     const el = editorRef.current
     const contentHtml = (el?.innerHTML || "").trim()
+
+    // ✅ 본문 길이 제한 추가 (HTML 포함 기준)
+    const MAX_CONTENT_LENGTH = 10000
+    if (contentHtml.length > MAX_CONTENT_LENGTH) {
+      alert(`본문이 너무 깁니다. ${MAX_CONTENT_LENGTH.toLocaleString()}자 이하로 작성해 주세요.`)
+      return
+    }
+
     if (!title.trim() || !contentHtml) {
       alert("제목과 내용을 입력해 주세요.")
       return
@@ -404,10 +417,10 @@ export default function WritePage() {
 
       const payload = {
         title,
-        content: contentHtml, // HTML 본문 (이미지 <img> 포함)
-        category: boardType, // "free" | "notice" | "qna"
+        content: contentHtml,
+        category: boardType,
         author,
-        attachments, // PDF만
+        attachments,
         tags,
         subCategory: category,
       }
@@ -429,13 +442,13 @@ export default function WritePage() {
       }
 
       alert("작성 완료!")
-      // 최신 글이 1페이지 상단에 보이도록 해당 탭 1페이지로 이동
       router.replace(`/community/${boardType}/1`)
     } catch (err) {
       console.error(err)
       alert("작성에 실패했습니다.")
     }
   }
+
 
   return (
     <div className="min-h-screen bg-gray-50">
