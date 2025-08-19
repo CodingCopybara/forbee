@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const response = await fetch(`${GW}/api/chat`, {
+    const response = await fetch(`${GW}/chatbot/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

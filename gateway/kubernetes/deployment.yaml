@@ -16,9 +16,6 @@ spec:
     spec:
       containers:
         - name: gateway
-          image: forbeeregistry.azurecr.io/gateway:latest
-          env:
-          - name: SPRING_PROFILES_ACTIVE
-            value: docker
+          image: forbeeregistry.azurecr.io/gateway:08200214
           ports:
             - containerPort: 8080

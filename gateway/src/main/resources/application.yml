@@ -55,26 +55,26 @@ spring:
          - id: chat_to_spring
            uri: http://127.0.0.1:8082
            predicates:
-            - Path=/api/chat
+            - Path=/chatbot/chat
             - Method=POST
 
          - id: health_to_spring
            uri: http://127.0.0.1:8082
            predicates:
-            - Path=/api/health
+            - Path=/chatbot/health
             - Method=GET
 
          # FastAPI
          - id: help_to_fastapi
            uri: http://127.0.0.1:8002
            predicates:
-            - Path=/api/help
+            - Path=/chatbot/help
             - Method=POST
 
          - id: health_fastapi
            uri: http://127.0.0.1:8002
            predicates:
-            - Path=/api/health-fast
+            - Path=/chatbot/health-fast
             - Method=GET
          - id: ai
            uri: http://localhost:8083
@@ -112,30 +112,22 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: community
-          uri: http://community:8080
-          predicates:
-            - Path=/posts/**/comments/**//**//** 
-        - id: tree
-          uri: http://tree:8080
-          predicates:
-            - Path=/plants/** 
-        - id: user
-          uri: http://user:8080
-          predicates:
-            - Path=/users/**/memberRequestLists/** 
-        - id: dashboard
-          uri: http://dashboard:8080
-          predicates:
-            - Path= /maps/**
-        - id: chatbot
-          uri: http://chatbot:8080
-          predicates:
-            - Path=/chatbots/** 
-        - id: ai
-          uri: http://ai:8080
-          predicates:
-            - Path=/ai/** 
+         - id: user
+           uri: http://user:8080
+           predicates:
+            - Path=/users/**
+         - id: oauth-register
+           uri: http://oauth:8080
+           predicates:
+            - Path=/oauth/users/register
+         - id: oauth-token
+           uri: http://oauth:8080
+           predicates:
+            - Path=/oauth/token
+         - id: frontend2
+           uri: http://frontend2:80
+           predicates:
+            - Path=/**
       globalcors:
         corsConfigurations:
           '[/**]':

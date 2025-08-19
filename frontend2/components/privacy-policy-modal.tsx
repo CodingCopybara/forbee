@@ -11,7 +11,7 @@ export default function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyMod
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-900">개인정보처리방침</h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -19,7 +19,7 @@ export default function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyMod
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
           <div className="prose max-w-none">
             <div className="mb-6">
               <p className="text-sm text-gray-600 mb-4">시행일자: 2024년 1월 1일 | 최종 수정일: 2024년 8월 13일</p>

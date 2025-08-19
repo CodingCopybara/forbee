@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth
+  labels:
+    app: oauth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth
+  template:
+    metadata:
+      labels:
+        app: oauth
+    spec:
+      containers:
+        - name: oauth
+          image: forbeeregistry.azurecr.io/oauth:08200125 # Replace with your actual image name and tag
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret # Name of your DB Secret
+                  key: DB_PASSWORD # Key within the Secret
+            - name: GW_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: oauth-config
+                  key: GW_URL
+          imagePullPolicy: IfNotPresent # Change to Always for production
+      imagePullSecrets: # Add this section
+        - name: acr-secret # Name of your image pull secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth
+  labels:
+    app: oauth
+spec:
+  selector:
+    app: oauth
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP # Change to LoadBalancer for external access

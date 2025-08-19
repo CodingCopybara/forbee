@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: frontend2
-        image: forbeeregistry.azurecr.io/frontend2:latest # ACR 이미지 주소 예시
+        image: forbeeregistry.azurecr.io/frontend2:08200236
         ports:
         - containerPort: 3000
         envFrom:

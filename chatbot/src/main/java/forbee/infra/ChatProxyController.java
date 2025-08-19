@@ -25,7 +25,7 @@ public class ChatProxyController {
         this.rest = rest;
     }
 
-    @PostMapping("/api/chat")
+    @PostMapping("/chatbot/chat")
     public ResponseEntity<?> chat(@RequestBody ChatRequest body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -34,7 +34,7 @@ public class ChatProxyController {
     
         try {
             ResponseEntity<Map<String, Object>> response = rest.exchange(
-                fastapiBase + "/api/help",
+                fastapiBase + "/chatbot/help",
                 HttpMethod.POST,
                 entity,
                 new ParameterizedTypeReference<>() {}
@@ -61,11 +61,11 @@ public class ChatProxyController {
     }
     
 
-    @GetMapping("/api/health")
+    @GetMapping("/chatbot/health")
     public ResponseEntity<?> health() {
         try {
             ResponseEntity<Map<String, Object>> response = rest.exchange(
-                    fastapiBase + "/api/health",
+                    fastapiBase + "/chatbot/health",
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<>() {}

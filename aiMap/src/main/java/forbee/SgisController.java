@@ -1,6 +1,7 @@
 package forbee;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,8 +18,10 @@ import java.util.concurrent.atomic.AtomicReference;
 @RestController
 public class SgisController {
 
-    private static final String CLIENT_ID = "81e5e7f2bafc41a5a506";
-    private static final String CLIENT_SECRET = "16f9b16102ca4732946c";
+    @Value("${sgis.api.consumer-key}")
+    private String clientId;
+    @Value("${sgis.api.secret-key}")
+    private String clientSecret;
 
     private static final AtomicReference<String> accessToken = new AtomicReference<>(null);
     private static volatile long tokenExpireTime = 0;
@@ -173,8 +176,8 @@ public class SgisController {
 
                     // 인증 API URL (GET 방식)
                     String authUrl = "https://sgisapi.kostat.go.kr/OpenAPI3/auth/authentication.json"
-                            + "?consumer_key=" + CLIENT_ID
-                            + "&consumer_secret=" + CLIENT_SECRET;
+                            + "?consumer_key=" + clientId
+                            + "&consumer_secret=" + clientSecret;
 
                     URL url = new URL(authUrl);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();

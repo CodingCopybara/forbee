@@ -76,7 +76,7 @@ export default function MessengerStyleChatbot() {
     setLoading(true)
 
     try {
-      const res = await fetch(`${API_BASE}/api/chat`, {
+      const res = await fetch(`${API_BASE}/chatbot/help`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

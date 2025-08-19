@@ -129,6 +129,30 @@ export default function MyPage() {
     );
   }
 
+  // Helper function to mask name
+  const maskName = (name: string): string => {
+    if (!name) return '';
+    if (name.length <= 1) return '*';
+    return name.substring(0, name.length - 1) + '*';
+  };
+
+  // Helper function to mask email
+  const maskEmail = (email: string): string => {
+    if (!email) return '';
+    const atIndex = email.indexOf('@');
+    if (atIndex <= 0) return email; // No @ or @ is the first char
+
+    const localPart = email.substring(0, atIndex);
+    const domainPart = email.substring(atIndex);
+
+    if (localPart.length <= 1) {
+      return '*' + domainPart;
+    }
+
+    // Mask all but the first character of the local part
+    return localPart.charAt(0) + '***' + domainPart;
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -146,23 +170,24 @@ export default function MyPage() {
           <CardHeader className="pb-6">
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl">내 프로필</CardTitle>
-              <Button
+              {/* <Button
                 variant="outline"
                 size="sm"
                 className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 편집
-              </Button>
+              </Button> */}
             </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row items-start gap-6">
               {/* Profile Image */}
               <div className="relative">
-                <Avatar className="w-24 h-24 border-3 border-amber-500">
-                  <AvatarImage src="https://cdn-store.leagueoflegends.co.kr/images/v2/emotes/3153.png" alt="프로필 사진" />
-                  <AvatarFallback className="bg-amber-100 text-amber-700 text-xl font-semibold">{user.name.substring(0, 2)}</AvatarFallback>
+                <Avatar className="w-24 h-24 border-3 border-amber-300">
+                  <AvatarFallback className="bg-amber-100 text-amber-500">
+                    <User className="w-12 h-12" />
+                  </AvatarFallback>
                 </Avatar>
                 {/* <Button
                   size="sm"
@@ -180,14 +205,14 @@ export default function MyPage() {
                       <User className="w-4 h-4" />
                       <span>이름</span>
                     </div>
-                    <p className="text-lg font-semibold text-gray-900">{user.name}</p>
+                    <p className="text-lg font-semibold text-gray-900">{maskName(user.name)}</p>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Mail className="w-4 h-4" />
                       <span>이메일</span>
                     </div>
-                    <p className="text-lg text-gray-900">{user.username}</p>
+                    <p className="text-lg text-gray-900">{maskEmail(user.username)}</p>
                   </div>
                 </div>
 

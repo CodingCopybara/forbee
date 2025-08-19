@@ -59,6 +59,9 @@ public class OAuth2AuthorizationServerConfig
     @Autowired
     private Environment env;
 
+    @Autowired
+    private CustomWebResponseExceptionTranslator customWebResponseExceptionTranslator;
+
     @Override
     public void configure(AuthorizationServerSecurityConfigurer security)
         throws Exception {
@@ -118,7 +121,8 @@ public class OAuth2AuthorizationServerConfig
         endpoints
             .authenticationManager(authenticationManager)
             .tokenStore(tokenStore()) //토큰과 관련된 인증 데이터를 저장, 검색, 제거, 읽기를 정의
-            .tokenEnhancer(tokenEnhancerChain);
+            .tokenEnhancer(tokenEnhancerChain)
+            .exceptionTranslator(customWebResponseExceptionTranslator);
     }
 
     @Bean
