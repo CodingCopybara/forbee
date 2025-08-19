@@ -69,7 +69,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/pest-detection">
               <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-3">
-                무료 진단 시작하기
+                진단 시작하기
               </Button>
             </Link>
             <Link href="/community">
@@ -169,12 +169,12 @@ export default function HomePage() {
                 </div>
                 <CardTitle className="text-xl">밀원수 지원 서비스</CardTitle>
                 <CardDescription>
-                  양봉농협과 함께하는 밀원수 무료 지원 프로그램으로 더 풍성한 꿀 생산을 시작하세요
+                  양봉농협과 함께하는 밀원수 지원 프로그램으로 더 풍성한 꿀 생산을 시작하세요
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm text-gray-600">
-                  <li>• 무료 묘목 지원</li>
+                  <li>• 묘목 지원</li>
                   <li>• 전문가 컨설팅</li>
                   <li>• 현장 방문 서비스</li>
                 </ul>
@@ -225,7 +225,7 @@ export default function HomePage() {
           </p>
           <Link href="/login">
             <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-3 font-semibold">
-              무료로 시작하기
+              지금 시작하기
             </Button>
           </Link>
         </div>

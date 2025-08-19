@@ -3,6 +3,7 @@ package com.example.template.controller;
 import com.example.template.entity.User;
 import com.example.template.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +26,8 @@ public class UserController {
     private PasswordEncoder passwordEncoder;
 
     private final RestTemplate restTemplate = new RestTemplate(); // 추가
+    @Value("${GW_URL}")
+    private String gatewayUrl;
 
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@RequestBody RegistrationRequestDto registrationDto) {
@@ -43,10 +46,11 @@ public class UserController {
             }
         }
 
+        // 회원가입
         User newUser = new User();
-        newUser.setUsername(registrationDto.getEmail()); // 변경
+        newUser.setUsername(registrationDto.getEmail());
         newUser.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
-        newUser.setUserIdentifier(userIdentifier); // userIdentifier 설정
+        newUser.setUserIdentifier(userIdentifier);
 
         userRepository.save(newUser);
 
@@ -60,7 +64,7 @@ public class UserController {
             userProfileDto.setPhone(registrationDto.getPhone());
 
             // user 서비스의 /users/signup 엔드포인트로 POST 요청
-            String userServiceUrl = "http://localhost:8084/users/signup"; // user 서비스의 실제 주소로 변경
+            String userServiceUrl = gatewayUrl + "/users/signup"; // GW_URL 환경변수 사용
             restTemplate.postForEntity(userServiceUrl, userProfileDto, String.class);
 
         } catch (Exception e) {

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth-service
+  labels:
+    app: oauth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth-service
+  template:
+    metadata:
+      labels:
+        app: oauth-service
+    spec:
+      containers:
+        - name: oauth-service
+          image: oauth-service:latest # Replace with your actual image name and tag
+          ports:
+            - containerPort: 8080
+          env:
+            - name: GW_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: oauth-config
+                  key: GW_URL
+          imagePullPolicy: IfNotPresent # Change to Always for production
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth-service
+  labels:
+    app: oauth-service
+spec:
+  selector:
+    app: oauth-service
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP # Change to LoadBalancer for external access
