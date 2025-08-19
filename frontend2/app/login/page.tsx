@@ -123,7 +123,22 @@ export default function LoginPage() {
       if (!response.ok) {
         // 응답이 성공적이지 않을 경우 에러 처리
         const errorData = await response.json();
-        throw new Error(errorData.error_description || '로그인에 실패했습니다.');
+        // 백엔드에서 error_description이 중첩된 JSON 문자열로 올 수 있으므로 한 번 더 파싱 시도
+        if (errorData.error_description && typeof errorData.error_description === 'string') {
+          try {
+            const nestedErrorData = JSON.parse(errorData.error_description);
+            // 중첩된 JSON이 유효하면 해당 데이터를 사용
+            if (nestedErrorData.error_description) {
+              errorData.error_description = nestedErrorData.error_description;
+            }
+            if (nestedErrorData.remaining_attempts !== undefined) {
+              errorData.remaining_attempts = nestedErrorData.remaining_attempts;
+            }
+          } catch (e) {
+            // 중첩된 JSON이 아니면 원래 문자열 그대로 사용
+          }
+        }
+        throw new Error(JSON.stringify(errorData));
       }
 
       const data = await response.json();
@@ -162,7 +177,34 @@ export default function LoginPage() {
 
     } catch (error) {
       console.error("로그인 실패:", error);
-      alert((error as Error).message);
+      let errorMessage = "로그인에 실패했습니다.";
+      let remainingAttempts = null;
+
+      try {
+        const errorData = JSON.parse((error as Error).message);
+        if (errorData.error_description) {
+          // 특정 에러 메시지 오버라이드
+          if (errorData.error === 'invalid_request' && errorData.error_description === 'Internal Server Error') {
+            errorMessage = '아이디 또는 비밀번호가 일치하지 않습니다.';
+          } else {
+            errorMessage = errorData.error_description;
+          }
+        }
+        if (errorData.remaining_attempts !== undefined) {
+          remainingAttempts = errorData.remaining_attempts;
+        }
+      } catch (parseError) {
+        console.error("Error parsing error message:", parseError);
+        // Fallback to generic message if parsing fails
+      }
+
+      if (remainingAttempts !== null && remainingAttempts > 0) {
+        alert(`${errorMessage} 남은 횟수: ${remainingAttempts}회`);
+      } else if (remainingAttempts === 0) {
+        alert(`${errorMessage}`);
+      } else {
+        alert(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
