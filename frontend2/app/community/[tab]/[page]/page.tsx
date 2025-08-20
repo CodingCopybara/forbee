@@ -8,18 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  MessageCircle,
-  Eye,
-  Pin,
-  AlertCircle,
-  HelpCircle,
-  PenTool,
-  Grid3X3,
-  List,
-  Search,
-  X,
-} from "lucide-react"
+import { MessageCircle, Eye, Pin, AlertCircle, HelpCircle, PenTool, Grid3X3, List, Search, X } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 export const fetchCache = "force-no-store"
@@ -34,11 +23,8 @@ type PostRow = {
   views?: number
   likes?: number
   comments?: number
-  // board는 free/notice/qna (기존 필드)
   board?: "free" | "notice" | "qna" | string
-  // ✅ 세부 카테고리(일반/수확후기/…)
   subCategory?: string
-  // ✅ 태그(있으면 사용)
   tags?: string[]
   isPinned?: boolean
   isImportant?: boolean
@@ -54,6 +40,7 @@ const tabs = [
 ] as const
 
 const GW = (process.env.NEXT_PUBLIC_GW_URL || "").replace(/\/+$/, "")
+console.log("초기 GW 값 : ", GW)
 const PAGE_SIZE = 10 as const
 
 const roleFromLS = () =>
@@ -61,24 +48,26 @@ const roleFromLS = () =>
 const tokenFromLS = () => (typeof window !== "undefined" ? localStorage.getItem("accessToken") || "" : "")
 const loggedIn = () => !!tokenFromLS()
 const authHeaders = () => {
-  const role = roleFromLS()
-  const token = tokenFromLS()
-  return { Role: role, ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  if (typeof window === "undefined") {
+    // Server-side rendering: localStorage is not available.
+    // Return headers that indicate an unauthenticated state or default.
+    // This ensures consistent rendering between server and client before hydration.
+    return {};
+  }
+  const role = roleFromLS();
+  const token = tokenFromLS();
+  return { Role: role, ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 }
 
-// ✅ 세부 카테고리 라벨 매핑 (write 페이지와 동일 set)
 const categoryLabelMap: Record<string, string> = {
-  // free
   general: "일반",
   harvest: "수확후기",
   question: "질문",
   info: "정보공유",
   review: "후기",
-  // notice
   announcement: "공지사항",
   update: "업데이트",
   event: "이벤트",
-  // qna
   disease: "질병진단",
   management: "관리문의",
   "ai-service": "AI서비스",
@@ -119,12 +108,10 @@ export default function CommunityPage({
   const [allData, setAllData] = useState<Record<Tab, PostRow[]>>({ free: [], notice: [], qna: [] })
   const [loading, setLoading] = useState(false)
 
-  // 검색/보기 상태
   const [viewMode, setViewMode] = useState<"table" | "card">("table")
   const [searchQuery, setSearchQuery] = useState("")
   const [searchType, setSearchType] = useState<"all" | "title" | "content">("all")
 
-  // 권한
   const role = roleFromLS()
   const QNA_ALLOWED = new Set(["MEMBER", "VETERINARIAN", "ADMIN"])
   const NOTICE_ALLOWED = new Set(["USER", "MEMBER", "VETERINARIAN", "ADMIN"])
@@ -133,17 +120,33 @@ export default function CommunityPage({
     setActiveTab(CURRENT_TAB)
   }, [CURRENT_TAB])
 
-  // 데이터 로드
+  // ✅ 댓글 수 보장형 로더
   async function load(category: Tab) {
-    if (!GW) return
-    setLoading(true)
+    if (!GW) {
+      console.log("GW 값이 설정되지 않았습니다.");
+      // return;
+    }
+    setLoading(true);
     try {
+      const requestUrl = `${GW}/posts?category=${category}&sort=createdAt,desc&sort=id,desc`;
+      console.log("요청 URL:", requestUrl);
+      console.log("GW 값:", GW);
+
       const res = await fetch(
-        `${GW}/posts?category=${category}&sort=createdAt,desc&sort=id,desc`,
+        requestUrl,
         { headers: authHeaders(), cache: "no-store" },
-      )
-      if (!res.ok) throw new Error(`GET /posts?category=${category} -> ${res.status}`)
-      const json = await res.json()
+      );
+
+      console.log("응답 상태:", res.status, "OK 여부:", res.ok);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`GET /posts?category=${category} -> ${res.status} 오류:`, errorText);
+        throw new Error(`GET /posts?category=${category} -> ${res.status}`);
+      }
+
+      const json = await res.json();
+      console.log("수신된 JSON 데이터:", json);
 
       const items: any[] = Array.isArray(json)
         ? json
@@ -152,18 +155,18 @@ export default function CommunityPage({
         : Array.isArray(json?.data)
         ? json.data
         : []
+      console.log("처리된 아이템:", items);
 
-      const mapped: PostRow[] = items.map((p) => ({
+      // 1차 매핑
+      let mapped: PostRow[] = items.map((p) => ({
         id: pick(p.id, p.postId, p.seq, p.uid) ?? String(Math.random()),
         title: String(pick<string>(p.title, p.subject, p.name, p.heading) ?? ""),
         author: pick<string>(p.author, p.username, p.writer, p.createdBy, "익명") ?? "익명",
         createdAt: pick<string>(p.createdAt, p.created_date, p.created, p.regDate, p.date),
         views: pick<number>(p.views, p.viewCount) ?? 0,
         likes: pick<number>(p.likes, p.likeCount) ?? 0,
-        comments: pick<number>(p.comments, p.commentCount, p.replyCount) ?? 0,
-        // 기존 board(대분류)
+        comments: pick<number>(p.comments, p.commentCount, p.replyCount), // 있을 수도, 없을 수도
         board: pick<string>(p.category, p.board, category) ?? category,
-        // ✅ 서버가 내려주는 필드 추론적으로 수집
         subCategory: pick<string>(p.subCategory, p.sub_category, p.subcategory, p.topic, p.cat),
         tags: Array.isArray(p.tags) ? p.tags : undefined,
         isPinned: !!p.isPinned,
@@ -173,7 +176,33 @@ export default function CommunityPage({
         content: pick<string>(p.content, p.body, p.description, p.text) ?? "",
       }))
 
-      // 최신순 정렬
+      // ❗ 댓글 수 없는 항목만 개별 조회로 채우기
+      async function fetchCommentCount(postId: number | string): Promise<number> {
+        try {
+          const r = await fetch(`${GW}/comments/post/${postId}`, { headers: authHeaders(), cache: "no-store" })
+          if (!r.ok) return 0
+          const arr = await r.json()
+          return Array.isArray(arr) ? arr.length : 0
+        } catch {
+          return 0
+        }
+      }
+
+      const needIdx: number[] = []
+      mapped.forEach((p, i) => {
+        if (p.comments === undefined || p.comments === null || Number.isNaN(Number(p.comments))) {
+          needIdx.push(i)
+        }
+      })
+
+      if (needIdx.length > 0) {
+        const counts = await Promise.all(needIdx.map((i) => fetchCommentCount(mapped[i].id)))
+        needIdx.forEach((i, k) => {
+          mapped[i] = { ...mapped[i], comments: counts[k] }
+        })
+      }
+
+      // 정렬 유지
       mapped.sort((a, b) => {
         const ad = a.createdAt ? new Date(a.createdAt).getTime() : 0
         const bd = b.createdAt ? new Date(b.createdAt).getTime() : 0
@@ -185,10 +214,12 @@ export default function CommunityPage({
 
       setAllData((prev) => ({ ...prev, [category]: mapped }))
     } catch (e) {
-      console.error(e)
-      setAllData((prev) => ({ ...prev, [category]: [] }))
+      console.error("API 호출 중 오류 발생:", e);
+      alert("게시글을 불러오지 못했습니다.")
+      setAllData((prev) => ({ ...prev, [category]: [] }));
     } finally {
-      setLoading(false)
+      setLoading(false);
+      console.log("로딩 완료.");
     }
   }
 
@@ -197,7 +228,6 @@ export default function CommunityPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab])
 
-  // 권한에 따른 목록 제목 잠금 여부
   const isRowLocked = (tabNow: Tab) => {
     if (tabNow === "qna") return !QNA_ALLOWED.has(role)
     if (tabNow === "notice") return !(loggedIn() && NOTICE_ALLOWED.has(role))
@@ -215,7 +245,6 @@ export default function CommunityPage({
     }
   }
 
-  // 검색 필터
   const filtered = useMemo(() => {
     const base = allData[activeTab] || []
     const q = searchQuery.trim().toLowerCase()
@@ -234,7 +263,6 @@ export default function CommunityPage({
   const start = (CURRENT_PAGE - 1) * PAGE_SIZE
   const paged = filtered.slice(start, start + PAGE_SIZE)
 
-  // 페이지 버튼 (최대 5개)
   const pageButtons = useMemo(() => {
     const max = 5
     let first = Math.max(1, CURRENT_PAGE - 2)
@@ -288,6 +316,7 @@ export default function CommunityPage({
                 const title = locked ? "🔒 잠긴 글입니다." : post.title
                 const maskedAuthor = maskId(post.author)
                 const subLabel = post.subCategory ? (categoryLabelMap[post.subCategory] || post.subCategory) : null
+                const commentCount = Number.isFinite(post.comments as number) ? (post.comments as number) : 0
                 return (
                   <tr key={post.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-sm text-gray-500">{number}</td>
@@ -300,13 +329,11 @@ export default function CommunityPage({
                         {post.status && (
                           <Badge className={`text-xs px-1 py-0 ${getStatusColor(post.status)}`}>{post.status}</Badge>
                         )}
-                        {/* ✅ 세부 카테고리 배지 (대분류 배지 대신) */}
                         {subLabel && (
                           <Badge variant="outline" className="text-xs px-1 py-0 text-amber-600 border-amber-200">
                             {subLabel}
                           </Badge>
                         )}
-                        {/* 태그 한두 개만 미리보기 (옵션) */}
                         {Array.isArray(post.tags) && post.tags.slice(0, 2).map((tg) => (
                           <Badge key={tg} variant="secondary" className="text-[10px]">{`#${tg}`}</Badge>
                         ))}
@@ -336,7 +363,7 @@ export default function CommunityPage({
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1 text-sm text-gray-500">
                         <MessageCircle className="h-3 w-3" />
-                        <span>{post.comments ?? 0}</span>
+                        <span>{commentCount}</span>
                       </div>
                     </td>
                   </tr>
@@ -364,6 +391,7 @@ export default function CommunityPage({
           const title = locked ? "🔒 잠긴 글입니다." : post.title
           const maskedAuthor = maskId(post.author)
           const subLabel = post.subCategory ? (categoryLabelMap[post.subCategory] || post.subCategory) : null
+        const commentCount = Number.isFinite(post.comments as number) ? (post.comments as number) : 0
           return (
             <div key={post.id} className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
@@ -372,13 +400,11 @@ export default function CommunityPage({
                     {post.isPinned && <Pin className="h-4 w-4 text-amber-500" />}
                     {post.isImportant && <Badge variant="destructive" className="text-xs">중요</Badge>}
                     {post.status && <Badge className={`text-xs ${getStatusColor(post.status)}`}>{post.status}</Badge>}
-                    {/* ✅ 세부 카테고리 배지 */}
                     {subLabel && (
                       <Badge variant="outline" className="text-xs text-amber-600 border-amber-200">
                         {subLabel}
                       </Badge>
                     )}
-                    {/* 태그 프리뷰 */}
                     {Array.isArray(post.tags) && post.tags.slice(0, 3).map((tg) => (
                       <Badge key={tg} variant="secondary" className="text-[11px]">{`#${tg}`}</Badge>
                     ))}
@@ -401,7 +427,7 @@ export default function CommunityPage({
                     </div>
                     <div className="flex items-center gap-1">
                       <MessageCircle className="h-4 w-4" />
-                      <span>{post.comments ?? 0}</span>
+                      <span>{commentCount}</span>
                     </div>
                   </div>
                 </div>
@@ -417,9 +443,6 @@ export default function CommunityPage({
       </div>
     )
   }
-
-  const prevDisabled = CURRENT_PAGE === 1
-  const nextDisabled = CURRENT_PAGE === totalPages
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -468,14 +491,22 @@ export default function CommunityPage({
               </button>
             </div>
 
-            {canWrite && (
-              <Link href={`/community/write?board=${activeTab}`} prefetch={false}>
-                <Button className="bg-amber-500 hover:bg-amber-600 text-white">
-                  <PenTool className="h-4 w-4 mr-2" />
-                  글쓰기
-                </Button>
-              </Link>
-            )}
+            {(() => {
+              const canWrite =
+                activeTab === "free"
+                  ? ["USER", "MEMBER", "VETERINARIAN", "ADMIN"].includes(role)
+                  : activeTab === "qna"
+                  ? role === "MEMBER"
+                  : role === "ADMIN"
+              return canWrite ? (
+                <Link href={`/community/write?board=${activeTab}`} prefetch={false}>
+                  <Button className="bg-amber-500 hover:bg-amber-600 text-white">
+                    <PenTool className="h-4 w-4 mr-2" />
+                    글쓰기
+                  </Button>
+                </Link>
+              ) : null
+            })()}
           </div>
         </div>
 

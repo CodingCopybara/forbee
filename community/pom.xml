@@ -24,8 +24,8 @@
 
 		<!-- ✅ Azure SDK 버전 (Boot 2.3과 잘 맞는 보수적 버전) -->
 		<azure.storage.blob.version>12.14.2</azure.storage.blob.version>
-		<!-- ✅ (선택) Reactor 3.3.x 를 명시하고 싶을 때만 사용. 일반적으로 생략 가능 -->
-		<reactor.core.version>3.3.24.RELEASE</reactor.core.version>
+		<!-- ✅ Azure SDK와의 호환성을 위해 Reactor 버전을 명시적으로 올립니다. -->
+		<reactor.core.version>3.4.22</reactor.core.version>
 	</properties>
 
 	<dependencies>
@@ -137,6 +137,12 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<!-- ✅ reactor-core 버전을 명시적으로 관리 -->
+			<dependency>
+				<groupId>io.projectreactor</groupId>
+				<artifactId>reactor-core</artifactId>
+				<version>${reactor.core.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-dependencies</artifactId>

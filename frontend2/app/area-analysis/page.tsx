@@ -21,6 +21,23 @@ interface PixelRatios {
   [key: string]: number
 }
 
+function AlertModal({ message, onClose }: { message: string; onClose: () => void }) {
+  if (!message) return null
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-xl bg-white shadow-xl border">
+        <div className="px-5 py-4 border-b">
+          <h3 className="text-base font-semibold">알림</h3>
+        </div>
+        <div className="px-5 py-6 text-gray-800 whitespace-pre-wrap break-words">{message}</div>
+        <div className="px-5 py-4 border-t flex justify-end">
+          <Button onClick={onClose} className="bg-amber-500 hover:bg-amber-600 text-white">확인</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function MapPredict() {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstance = useRef<any>(null)
@@ -40,6 +57,8 @@ export default function MapPredict() {
   const [analysisAddress, setAnalysisAddress] = useState<string>("");
   const isCapturingRef = useRef(false);
   const [searchAddress, setSearchAddress] = useState("");
+  const [mapInitializationError, setMapInitializationError] = useState<string | null>(null);
+  const [alertMessage, setAlertMessage] = useState("");
 
   useEffect(() => {
     if (mapInstance.current && !markerLayerRef.current) {
@@ -228,76 +247,91 @@ export default function MapPredict() {
   // 지도 초기화
   useEffect(() => {
     const initializeMap = () => {
-      if (!mapRef.current || typeof window.sop === "undefined") return;
-
-      proj4.defs("EPSG:5179", "+proj=tmerc +lat_0=38 +lon_0=127.5 +k=1 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs")
-
-      const satelliteCRS = (() => {
-        const code = "EPSG:900913";
-        const def = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs";
-        const options = {
-          resolutions: [
-            156543.0339, 78271.51695, 39135.758475, 19567.8792375, 9783.93961875,
-            4891.969809375, 2445.9849046875, 1222.99245234375, 611.496226171875,
-            305.7481130859375, 152.87405654296876, 76.43702827148438,
-            38.21851413574219, 19.109257067871095, 9.554628533935547,
-            4.777314266967774, 2.388657133483887, 1.1943285667419434,
-            0.5971642833709717, 0.29858214168548586, 0.14929107084274293
-          ],
-          origin: [-20037508.34, 20037508.34]
-        };
-        const crs = new window.sop.CRS.Proj(code, def, options);
-        crs.projection.bounds = window.sop.bounds(
-          [13232210.28055642, 3584827.864295762],
-          [15238748.249933105, 5575460.5658249445]
-        );
-        return crs;
-      })()
-
-      const map = new window.sop.map(mapRef.current, {
-        scale: false,
-        panControl: false,
-        zoomSliderControl: true,
-        minZoom: 10,
-        maxZoom: 19,
-        crs: satelliteCRS,
-      });
-      mapInstance.current = map;
-
-      const satelliteTileLayer = new window.sop.TileLayer(
-        "https://xdworld.vworld.kr/2d/Satellite/service/{z}/{x}/{y}.jpeg",
-        { maxZoom: 19, minZoom: 10, crossOrigin: 'anonymous' }
-      );
-      map.addLayer(satelliteTileLayer);
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const utmk = proj4("EPSG:4326", "EPSG:5179", [pos.coords.longitude, pos.coords.latitude])
-            map.setView(window.sop.utmk(utmk[0], utmk[1]), 16)
-          },
-          () => {
-            const defaultPoint = proj4("EPSG:4326", "EPSG:5179", [127.5, 36.5])
-            map.setView(window.sop.utmk(defaultPoint[0], defaultPoint[1]), 16)
-          }
-        )
-      } else {
-        const defaultPoint = proj4("EPSG:4326", "EPSG:5179", [127.5, 36.5])
-        map.setView(window.sop.utmk(defaultPoint[0], defaultPoint[1]), 16)
+      if (!mapRef.current || typeof window.sop === "undefined") {
+        setMapInitializationError("지도 객체를 찾을 수 없습니다.");
+        return;
       }
+      try {
+        proj4.defs("EPSG:5179", "+proj=tmerc +lat_0=38 +lon_0=127.5 +k=1 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs")
 
-      map.on("moveend", updateCoordinates)
-      map.on("zoomend", updateCoordinates)
-      map.invalidateSize()
-      setIsMapInitialized(true)
+        const satelliteCRS = (() => {
+          const code = "EPSG:900913";
+          const def = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs";
+          const options = {
+            resolutions: [
+              156543.0339, 78271.51695, 39135.758475, 19567.8792375, 9783.93961875,
+              4891.969809375, 2445.9849046875, 1222.99245234375, 611.496226171875,
+              305.7481130859375, 152.87405654296876, 76.43702827148438,
+              38.21851413574219, 19.109257067871095, 9.554628533935547,
+              4.777314266967774, 2.388657133483887, 1.1943285667419434,
+              0.5971642833709717, 0.29858214168548586, 0.14929107084274293
+            ],
+            origin: [-20037508.34, 20037508.34]
+          };
+          const crs = new window.sop.CRS.Proj(code, def, options);
+          crs.projection.bounds = window.sop.bounds(
+            [13232210.28055642, 3584827.864295762],
+            [15238748.249933105, 5575460.5658249445]
+          );
+          return crs;
+        })()
+
+        const map = new window.sop.map(mapRef.current, {
+          scale: false,
+          panControl: false,
+          zoomSliderControl: true,
+          minZoom: 10,
+          maxZoom: 19,
+          crs: satelliteCRS,
+        });
+        mapInstance.current = map;
+
+        const satelliteTileLayer = new window.sop.TileLayer(
+          "https://xdworld.vworld.kr/2d/Satellite/service/{z}/{x}/{y}.jpeg",
+          { maxZoom: 19, minZoom: 10, crossOrigin: 'anonymous' }
+        );
+        map.addLayer(satelliteTileLayer);
+
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const utmk = proj4("EPSG:4326", "EPSG:5179", [pos.coords.longitude, pos.coords.latitude])
+              map.setView(window.sop.utmk(utmk[0], utmk[1]), 16)
+            },
+            () => {
+              const defaultPoint = proj4("EPSG:4326", "EPSG:5179", [127.5, 36.5])
+              map.setView(window.sop.utmk(defaultPoint[0], defaultPoint[1]), 16)
+            }
+          )
+        } else {
+          const defaultPoint = proj4("EPSG:4326", "EPSG:5179", [127.5, 36.5])
+          map.setView(window.sop.utmk(defaultPoint[0], defaultPoint[1]), 16)
+        }
+
+        map.on("moveend", updateCoordinates)
+        map.on("zoomend", updateCoordinates)
+        map.invalidateSize()
+        setIsMapInitialized(true)
+      } catch (error) {
+        console.error("Error initializing map:", error);
+        setMapInitializationError("지도를 불러오는 중 오류가 발생했습니다.");
+      }
     }
 
+    let attemptCount = 0;
+    const maxAttempts = 50; // 10 seconds timeout
+
     const interval = setInterval(() => {
+      attemptCount++;
       if (typeof window.sop !== "undefined") {
         clearInterval(interval)
         initializeMap()
+      } else if (attemptCount > maxAttempts) {
+        clearInterval(interval);
+        console.error("SGIS map script failed to load.");
+        setMapInitializationError("지도를 불러오지 못했습니다. 네트워크 연결을 확인해주세요.");
       }
-    }, 100)
+    }, 200)
 
     return () => {
       clearInterval(interval)
@@ -438,8 +472,10 @@ export default function MapPredict() {
       setResultImageSrc(response.data.image_data || "")
       setPixelRatios(response.data.pixel_ratios || {})
       setRecommendationText(calculateRecommendation(response.data.pixel_ratios || {}))
+      setShowResultPopup(true);
     } catch (error) {
       console.error('예측 실패:', error);
+      setAlertMessage("분석에 실패했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       widgetElements.forEach(el => {
         el.style.display = el.dataset.prevDisplay || '';
@@ -542,7 +578,7 @@ const dummyImage = "/images/dummy_result.png";
               결과 보기
             </Button>
             
-            {/* 임시 진입로 - 실제 서비스에서는 제거 */}
+            {/* 임시 진입로 - 실제 서비스에서는 제거
             <Button
               onClick={() => {
                 const recommendation = calculateRecommendation(dummyRatios);
@@ -554,7 +590,7 @@ const dummyImage = "/images/dummy_result.png";
               className="w-full bg-green-500 hover:bg-green-600 text-white mt-2"
             >
               임시 진입
-            </Button>
+            </Button> */}
 
           </div>
         </div>
@@ -562,7 +598,24 @@ const dummyImage = "/images/dummy_result.png";
         {/* 메인 지도 영역 */}
         <div className="flex-1 relative grid place-items-center p-4">
           <div className="relative w-full h-full">
-            <div className="w-full h-full" ref={mapRef}></div>
+            {mapInitializationError ? (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "1px dashed gray",
+                  borderRadius: "8px",
+                  backgroundColor: "#f9f9f9",
+                }}
+              >
+                <p style={{ color: "#555" }}>{mapInitializationError}</p>
+              </div>
+            ) : (
+              <div className="w-full h-full" ref={mapRef}></div>
+            )}
             {isLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-50" style={{ backgroundColor: "rgba(0,0,0,0.8)",}}>
                 <Loader2 className="w-16 h-16 animate-spin mb-4" />
@@ -685,6 +738,7 @@ const dummyImage = "/images/dummy_result.png";
           )}
         </div>
       </div>
+      <AlertModal message={alertMessage} onClose={() => setAlertMessage("")} />
     </div>
   )
 }

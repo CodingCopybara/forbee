@@ -26,15 +26,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         if (loginAttemptService.isBlocked(username)) {
-            throw new LockedException("해당 계정은 잦은 로그인 실패로 인해 잠겼습니다.");
+            throw new LockedException("잦은 로그인 실패로 인해 잠겼습니다.\n10분 뒤 다시 시도하세요.");
         }
 
         User user = userRepository.findByUsername(username);
         if (user == null) {
-            // 실패 시 실제 계정이 있는지 여부를 노출하지 않기 위해 AuthenticationFailureBadCredentialsEvent를 발생시킴
-            // 하지만 여기서는 UsernameNotFoundException을 던져야 UserDetailsService 명세에 맞음
-            // 실제 실패 이벤트 처리는 AuthenticationEvents에서 담당
-            throw new UsernameNotFoundException("사용자를 찾을 수 없거나 비밀번호가 틀렸습니다.");
+            throw new UsernameNotFoundException("아이디 또는 비밀번호가 올바르지 않습니다.");
         }
         return user;
     }

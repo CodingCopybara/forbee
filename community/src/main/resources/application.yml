@@ -29,7 +29,8 @@ spring:
 # 공통 로깅 (필요에 맞게 조절)
 logging:
   level:
-    org.hibernate.type: trace
+    forbee: DEBUG
+    org.hibernate: DEBUG
     org.springframework.cloud: debug
     org.springframework.web: DEBUG
     org.springframework.http.converter: TRACE
@@ -138,3 +139,6 @@ spring:
 api:
   url:
     community: community:8080
+
+server:
+  port: 8080

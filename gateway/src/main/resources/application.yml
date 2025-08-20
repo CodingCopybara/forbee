@@ -112,22 +112,56 @@ spring:
   cloud:
     gateway:
       routes:
+         - id: community-posts
+           uri: http://community:8080
+           predicates:
+            - Path=/posts/**
+
+         - id: community-comments
+           uri: http://community:8080
+           predicates:
+            - Path=/comments/**
+
          - id: user
            uri: http://user:8080
            predicates:
             - Path=/users/**
+
+         - id: memberRequest
+           uri: http://user:8080
+           predicates:
+            - Path=/memberRequestLists/**
+
+         - id: file
+           uri: http://user:8080
+           predicates:
+            - Path=/files/**
+
+         - id: milwon-application
+           uri: http://user:8080
+           predicates:
+            - Path=/trees/**
+
          - id: oauth-register
            uri: http://oauth:8080
            predicates:
             - Path=/oauth/users/register
+
          - id: oauth-token
            uri: http://oauth:8080
            predicates:
-            - Path=/oauth/token
+            - Path=/oauth/token      
+
+         - id: ai
+           uri: http://ai:8080
+           predicates:
+            - Path=/ai/**, /api/**
+
          - id: frontend2
            uri: http://frontend2:80
            predicates:
             - Path=/**
+
       globalcors:
         corsConfigurations:
           '[/**]':

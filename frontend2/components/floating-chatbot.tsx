@@ -96,7 +96,7 @@ export default function MessengerStyleChatbot() {
     } catch {
       const errMsg: Message = {
         id: (Date.now() + 2).toString(),
-        content: "서버 연결에 문제가 있어요. 잠시 후 다시 시도해주세요.",
+        content: "로그인 후 이용해주세요!",
         sender: "bot",
         timestamp: new Date(),
       }
