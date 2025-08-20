@@ -41,13 +41,14 @@ spring:
            uri: http://localhost:8084
            predicates:
             - Path=/files/**
-         - id: dashboard
-           uri: http://localhost:0
-           predicates:
-            - Path=/maps/**
+
+        #  - id: dashboard
+        #    uri: http://localhost:0
+        #    predicates:
+        #     - Path=/maps/**
          # 챗봇
          - id: chatbot
-           uri: http://localhost:0
+           uri: http://localhost:8082
            predicates:
             - Path=/chatbots/**
 
@@ -156,6 +157,38 @@ spring:
            uri: http://ai:8080
            predicates:
             - Path=/ai/**, /api/**
+
+         # 챗봇
+         - id: chatbot
+           uri: http://chatbot:8080
+           predicates:
+            - Path=/chatbots/**
+
+         # Spring → FastAPI 프록시
+         - id: chat_to_spring
+           uri: http://chatbot:8080
+           predicates:
+            - Path=/chatbot/chat
+            - Method=POST
+
+         - id: health_to_spring
+           uri: http://chatbot:8080
+           predicates:
+            - Path=/chatbot/health
+            - Method=GET
+
+         # FastAPI
+         - id: help_to_fastapi
+           uri: http://chatbot-ai:8000
+           predicates:
+            - Path=/chatbot/help
+            - Method=POST
+
+         - id: health_fastapi
+           uri: http://chatbot-ai:8000
+           predicates:
+            - Path=/chatbot/health-fast
+            - Method=GET
 
          - id: frontend2
            uri: http://frontend2:80
