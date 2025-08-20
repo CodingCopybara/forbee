@@ -40,4 +40,6 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003"]
 
 # .dockerignore 파일 수정 (Java 관련 파일 추가 (/src/main/java, /src/main/resources, /target, pom.xml))
 # docker build -t <이미지 이름> -f PyDockerfile .
+# docker build -t forbeeregistry.azurecr.io/python:latest -f PyDockerfile .
+# docker push forbeeregistry.azurecr.io/python:latest
 # docker run -d -p 8003:8003 --name <컨테이너 이름> <이미지 이름>  # 로컬에서 실행
