@@ -96,6 +96,23 @@ const flowers = [
   { id: "cherry", name: "벚꽃", color: "bg-rose-100 text-rose-800" },
 ]
 
+function AlertModal({ message, onClose }: { message: string; onClose: () => void }) {
+  if (!message) return null
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-xl bg-white shadow-xl border">
+        <div className="px-5 py-4 border-b">
+          <h3 className="text-base font-semibold">알림</h3>
+        </div>
+        <div className="px-5 py-6 text-gray-800 whitespace-pre-wrap break-words">{message}</div>
+        <div className="px-5 py-4 border-t flex justify-end">
+          <Button onClick={onClose} className="bg-amber-500 hover:bg-amber-600 text-white">확인</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function BloomPredictionPage() {
   const [searchKeyword, setSearchKeyword] = useState("") 
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
@@ -103,6 +120,7 @@ export default function BloomPredictionPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<BloomResult | null>(null)
   const [showLocationPopup, setShowLocationPopup] = useState(false)
+  const [alertMessage, setAlertMessage] = useState("")
   
 
   const handleLocationSelect = (location: Location) => {
@@ -111,14 +129,11 @@ export default function BloomPredictionPage() {
     setResult(null)
   }
 
-  const filteredLocations = useMemo(() => {
-    return locations.filter((loc) =>
-      loc.name.toLowerCase().includes(searchKeyword.toLowerCase())
-    )
-  }, [searchKeyword])
-
   const handlePredict = async () => {
-    if (!selectedLocation || !selectedFlower) return
+    if (!selectedLocation || !selectedFlower) {
+      setAlertMessage("꽃 또는 위치가 선택되지 않았습니다.");
+      return;
+    }
 
     setIsLoading(true)
     setResult(null)
@@ -130,8 +145,16 @@ export default function BloomPredictionPage() {
       console.log("Requesting API URL:", apiUrl);
       console.log("NEXT_PUBLIC_GW_URL:", process.env.NEXT_PUBLIC_GW_URL);
 
-      if (!flowerInfo || !selectedLocation) {
-        alert("꽃 또는 위치가 선택되지 않았습니다.");
+      if (!flowerInfo) {
+        setAlertMessage("꽃이 선택되지 않았습니다.");
+        return;
+      }
+
+      const accessToken = localStorage.getItem("accessToken");
+      if (!accessToken) {
+        setAlertMessage("로그인이 필요합니다. 로그인 후 다시 시도해 주세요.");
+        setIsLoading(false);
+        setShowLocationPopup(false);
         return;
       }
 
@@ -144,7 +167,7 @@ export default function BloomPredictionPage() {
 
       // POST 요청
       const response = await axios.post(apiUrl, null, { params,   headers: {
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        Authorization: `Bearer ${accessToken}`,
       }, });
       const apiResponse = response.data; 
       console.log("받는 데이터:", apiResponse);
@@ -169,7 +192,7 @@ export default function BloomPredictionPage() {
 
     } catch (error) {
       console.error("Failed to fetch prediction:", error);
-      alert("개화 시기 예측에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+      setAlertMessage("개화 시기 예측에 실패했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       setIsLoading(false);
       setShowLocationPopup(false);
@@ -408,6 +431,8 @@ export default function BloomPredictionPage() {
           </Card>
         </div>
       )}
+
+      <AlertModal message={alertMessage} onClose={() => setAlertMessage("")} />
     </div>
     </div>
   )
