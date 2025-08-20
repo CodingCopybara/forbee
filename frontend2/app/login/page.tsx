@@ -17,12 +17,38 @@ interface DecodedToken {
   username: string;
 }
 
+// ✅ 실패 시 항상 보여줄 공통 문구
+const GENERIC_BAD_CREDENTIALS = "아이디 또는 비밀번호가 올바르지 않습니다.";
+
+/* =========================
+ * 커스텀 알림 모달 (주소/URL 미노출)
+ * ========================= */
+function AlertModal({ message, onClose }: { message: string; onClose: () => void }) {
+  if (!message) return null
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-xl bg-white shadow-xl border">
+        <div className="px-5 py-4 border-b">
+          <h3 className="text-base font-semibold">알림</h3>
+        </div>
+        <div className="px-5 py-6 text-gray-800 whitespace-pre-wrap break-words">{message}</div>
+        <div className="px-5 py-4 border-t flex justify-end">
+          <Button onClick={onClose} className="bg-amber-500 hover:bg-amber-600 text-white">확인</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login")
   const [isLoading, setIsLoading] = useState(false)
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false)
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
+
+  // ✅ 커스텀 알림 상태 (기존 로직은 유지, alert만 치환)
+  const [alertMsg, setAlertMsg] = useState("")
+  const showAlert = (msg: string) => setAlertMsg(msg)
 
   const [loginForm, setLoginForm] = useState({
     email: "",
@@ -57,7 +83,7 @@ export default function LoginPage() {
   const handleRegisterFormChange = (field: string, value: string) => {
     setRegisterForm({ ...registerForm, [field]: value })
 
-    // 실시간 검증
+    // 실시간 검증 (원본 로직 유지)
     const newErrors = { ...validationErrors }
 
     if (field === "email") {
@@ -75,7 +101,6 @@ export default function LoginPage() {
         newErrors.password = ""
       }
 
-      // 비밀번호 변경 시 확인 비밀번호도 재검증
       if (registerForm.confirmPassword && value !== registerForm.confirmPassword) {
         newErrors.confirmPassword = "비밀번호가 일치하지 않습니다"
       } else if (registerForm.confirmPassword && value === registerForm.confirmPassword) {
@@ -94,6 +119,24 @@ export default function LoginPage() {
     setValidationErrors(newErrors)
   }
 
+  /* =========================
+   * 오류 메시지 추출 (URL/HTML 제거)
+   * ========================= */
+  const extractMessage = async (res: Response) => {
+    try {
+      const data = await res.clone().json()
+      if (data?.message) return String(data.message)
+      if (data?.error_description) return String(data.error_description)
+      if (typeof data === "string") return data
+    } catch {}
+    try {
+      const text = await res.text()
+      return text.replace(/https?:\/\/[^\s]+/g, "").replace(/<[^>]*>/g, "").trim() || "요청이 실패했습니다."
+    } catch {
+      return "네트워크 오류가 발생했습니다."
+    }
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -103,7 +146,7 @@ export default function LoginPage() {
       // Basic a_auth 헤더를 위한 client:secret 인코딩
       const client_id = 'uengine-client';
       const client_secret = 'uengine-secret';
-      const basicAuth = btoa(`${client_id}:${client_secret}`);
+      const basicAuth = typeof window !== 'undefined' ? btoa(`${client_id}:${client_secret}`) : '';
 
       // Spring OAuth2는 x-www-form-urlencoded 형식의 데이터를 기대합니다.
       const params = new URLSearchParams();
@@ -121,36 +164,48 @@ export default function LoginPage() {
       });
 
       if (!response.ok) {
-        // 응답이 성공적이지 않을 경우 에러 처리
-        const errorData = await response.json();
-        // 백엔드에서 error_description이 중첩된 JSON 문자열로 올 수 있으므로 한 번 더 파싱 시도
-        if (errorData.error_description && typeof errorData.error_description === 'string') {
-          try {
-            const nestedErrorData = JSON.parse(errorData.error_description);
-            // 중첩된 JSON이 유효하면 해당 데이터를 사용
-            if (nestedErrorData.error_description) {
-              errorData.error_description = nestedErrorData.error_description;
-            }
-            if (nestedErrorData.remaining_attempts !== undefined) {
-              errorData.remaining_attempts = nestedErrorData.remaining_attempts;
-            }
-          } catch (e) {
-            // 중첩된 JSON이 아니면 원래 문자열 그대로 사용
+        // ❶ 서버 메시지 추출
+        let errorMessage = await extractMessage(response);
+
+        // ❷ 중첩 JSON/남은 횟수 처리 + 실패 유형 매핑
+        let remain: number | null = null;
+        try {
+          const j = await response.clone().json();
+          const raw = (j?.error_description || j?.message || '').toString().toLowerCase();
+          if (
+            j?.error === 'invalid_grant' ||
+            j?.error === 'bad_credentials' ||
+            raw.includes('bad credentials') ||
+            raw.includes('password') ||
+            raw.includes('username') ||
+            raw.includes('invalid')
+          ) {
+            errorMessage = GENERIC_BAD_CREDENTIALS;
           }
+          if (j?.remaining_attempts !== undefined) {
+            remain = Number(j.remaining_attempts);
+          }
+        } catch {}
+
+        // ❸ 5xx 또는 내부 서버 에러 문구 → 통합 문구로 덮어쓰기
+        if (response.status >= 500 || /internal server error/i.test(errorMessage)) {
+          errorMessage = GENERIC_BAD_CREDENTIALS;
         }
-        throw new Error(JSON.stringify(errorData));
+
+        // ❹ 알림 출력
+        if (remain !== null && remain >= 0) {
+          showAlert(remain > 0 ? `${errorMessage} 남은 횟수: ${remain}회` : errorMessage);
+        } else {
+          showAlert(errorMessage || GENERIC_BAD_CREDENTIALS);
+        }
+        return;
       }
 
       const data = await response.json();
-      console.log("로그인 성공, 토큰:", data.access_token);
-      
-      // 토큰 디코딩 및 정보 저장
       const decodedToken = jwtDecode<DecodedToken>(data.access_token);
       localStorage.setItem('accessToken', data.access_token);
       localStorage.setItem('userIdentifier', decodedToken.userIdentifier);
       localStorage.setItem('username', decodedToken.username);
-
-      console.log('Decoded Token:', decodedToken);
 
       const response2 = await fetch(`${gatewayUrl}/users/${decodedToken.userIdentifier}`, {
         method: 'GET',
@@ -160,9 +215,9 @@ export default function LoginPage() {
       })
 
       if (!response2.ok) {
-        // 응답이 성공적이지 않을 경우 에러 처리
-        const errorData2 = await response2.json();
-        throw new Error(errorData2.error_description || '로그인에 실패했습니다.');
+        const msg = await extractMessage(response2)
+        showAlert(msg || GENERIC_BAD_CREDENTIALS)
+        return
       }
 
       const data2 = await response2.json();
@@ -171,40 +226,12 @@ export default function LoginPage() {
       localStorage.setItem('role', data2.role)
       localStorage.setItem('phone', data2.phone)
 
-      alert("로그인 성공!");
-
-      window.location.href = '/'; // 메인 페이지로 리디렉션
+      showAlert("로그인 성공!")
+      setTimeout(() => { window.location.href = '/' }, 300)
 
     } catch (error) {
       console.error("로그인 실패:", error);
-      let errorMessage = "로그인에 실패했습니다.";
-      let remainingAttempts = null;
-
-      try {
-        const errorData = JSON.parse((error as Error).message);
-        if (errorData.error_description) {
-          // 특정 에러 메시지 오버라이드
-          if (errorData.error === 'invalid_request' && errorData.error_description === 'Internal Server Error') {
-            errorMessage = '아이디 또는 비밀번호가 일치하지 않습니다.';
-          } else {
-            errorMessage = errorData.error_description;
-          }
-        }
-        if (errorData.remaining_attempts !== undefined) {
-          remainingAttempts = errorData.remaining_attempts;
-        }
-      } catch (parseError) {
-        console.error("Error parsing error message:", parseError);
-        // Fallback to generic message if parsing fails
-      }
-
-      if (remainingAttempts !== null && remainingAttempts > 0) {
-        alert(`${errorMessage} 남은 횟수: ${remainingAttempts}회`);
-      } else if (remainingAttempts === 0) {
-        alert(`${errorMessage}`);
-      } else {
-        alert(errorMessage);
-      }
+      showAlert(GENERIC_BAD_CREDENTIALS)
     } finally {
       setIsLoading(false);
     }
@@ -215,20 +242,18 @@ export default function LoginPage() {
 
     const hasErrors = Object.values(validationErrors).some((error) => error !== "")
     if (hasErrors) {
-      alert("입력 정보를 다시 확인해주세요.")
+      showAlert("입력 정보를 다시 확인해주세요.")
       return
     }
 
     if (registerForm.password !== registerForm.confirmPassword) {
-      alert("비밀번호가 일치하지 않습니다.")
+      showAlert("비밀번호가 일치하지 않습니다.")
       return
     }
 
     setIsLoading(true)
     try {
       const gatewayUrl = process.env.NEXT_PUBLIC_GW_URL;
-      
-      // registerForm에서 confirmPassword와 agreeTerms를 제외한 데이터를 준비합니다.
       const { confirmPassword, agreeTerms, ...payload } = registerForm;
 
       const response = await fetch(`${gatewayUrl}/oauth/users/register`, {
@@ -236,26 +261,22 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload) // 데이터를 JSON 문자열로 변환
+        body: JSON.stringify(payload)
       })
 
       if (!response.ok) {
-        // 응답이 성공적이지 않을 경우 에러 처리
-        // 서버에서 오는 에러 메시지를 그대로 보여주도록 수정
-        const errorText = await response.text();
-        throw new Error(errorText || '회원가입에 실패했습니다.');
+        const msg = await extractMessage(response)
+        showAlert(msg || '회원가입에 실패했습니다.')
+        return
       }
 
-      // 성공 시 응답은 text일 수 있으므로 .text()로 받음
-      const data = await response.text();
-      console.log("회원가입 성공", data);
-
-      alert("회원가입이 완료되었습니다! 로그인 탭으로 이동합니다.")
+      await response.text();
+      showAlert("회원가입이 완료되었습니다! 로그인 탭으로 이동합니다.")
       setActiveTab("login")
+
     } catch (error) {
       console.error("회원가입 실패:", error);
-      // 서버에서 받은 에러 메시지를 alert에 표시
-      alert((error as Error).message);
+      showAlert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.")
     } finally {
       setIsLoading(false)
     }
@@ -330,9 +351,6 @@ export default function LoginPage() {
                   />
                   <span className="ml-2 text-sm text-gray-600">로그인 상태 유지</span>
                 </label>
-                {/* <a href="#" className="text-sm text-amber-600 hover:text-amber-700">
-                  비밀번호 찾기
-                </a> */}
               </div>
               <Button
                 type="submit"
@@ -426,7 +444,7 @@ export default function LoginPage() {
                 {validationErrors.password && <p className="mt-1 text-sm text-red-500">{validationErrors.password}</p>}
               </div>
               <div>
-                <Label className="block text-sm font-medium text-gray-700 mb-2">비밀번호 확인</Label>
+                <Label className="block text_sm font-medium text-gray-700 mb-2">비밀번호 확인</Label>
                 <Input
                   type="password"
                   required
@@ -504,6 +522,9 @@ export default function LoginPage() {
     </div>
     <PrivacyPolicyModal isOpen={isPrivacyModalOpen} onClose={() => setIsPrivacyModalOpen(false)} />
     <TermsOfServiceModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
+
+    {/* 🔔 커스텀 알림 모달 */}
+    <AlertModal message={alertMsg} onClose={() => setAlertMsg("")} />
     </>
   )
 }

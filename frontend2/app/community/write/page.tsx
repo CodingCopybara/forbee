@@ -37,12 +37,33 @@ const usernameFromLS = () => {
 }
 
 /* =========================
- * 채팅 이력 모달 (그대로)
+ * 커스텀 Alert 팝업
+ * - 브라우저 기본 alert가 아닌, 화면 중앙 모달
+ * - 주소/도메인 노출 없음
  * ========================= */
-function ChatHistoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+function AlertModal({ message, onClose }: { message: string; onClose: () => void }) {
+  if (!message) return null
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-xl bg-white shadow-xl border">
+        <div className="px-5 py-4 border-b">
+          <h3 className="text-base font-semibold">알림</h3>
+        </div>
+        <div className="px-5 py-6 text-gray-800 whitespace-pre-wrap break-words">{message}</div>
+        <div className="px-5 py-4 border-t flex justify-end">
+          <Button onClick={onClose} className="bg-amber-500 hover:bg-amber-600 text-white">확인</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* =========================
+ * 채팅 이력 모달 (오류는 상위에서 내려준 onAlert로 처리)
+ * ========================= */
+function ChatHistoryModal({ isOpen, onClose, onAlert }: { isOpen: boolean; onClose: () => void; onAlert: (m: string) => void }) {
   const GW_URL = process.env.NEXT_PUBLIC_GW_URL || ""
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string>("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
 
   const currentUserId = () => {
@@ -52,17 +73,16 @@ function ChatHistoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
   const getJSON = async <T,>(url: string, headers: Record<string, string> = {}) => {
     const res = await fetch(url, { headers })
-    if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`)
+    if (!res.ok) throw new Error(`요청 실패 (${res.status})`)
     return (await res.json()) as T
   }
 
   const loadLatest = async () => {
     if (!GW_URL) {
-      setError("게이트웨이 URL(NEXT_PUBLIC_GW_URL)이 설정되지 않았습니다.")
+      onAlert("게이트웨이 URL(NEXT_PUBLIC_GW_URL)이 설정되지 않았습니다.")
       return
     }
     setLoading(true)
-    setError("")
     try {
       const token = (typeof window !== "undefined" && localStorage.getItem("accessToken")) || ""
       type RawMsg = { sender: "user" | "bot"; type: "text" | "image"; text?: string | null; url?: string | null; ts?: number }
@@ -84,14 +104,14 @@ function ChatHistoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       setMessages(mapped)
     } catch (e) {
       console.error(e)
-      setError("대화내역을 불러오지 못했습니다.")
+      onAlert("대화내역을 불러오지 못했습니다.")
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    if (isOpen) loadLatest()
+    if (isOpen) void loadLatest()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
@@ -118,9 +138,7 @@ function ChatHistoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
         {/* 본문 */}
         <div className="flex-1 overflow-y-auto p-6">
-          {error ? (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-3">⚠️ {error}</div>
-          ) : loading ? (
+          {loading ? (
             <div className="text-sm text-gray-600">불러오는 중...</div>
           ) : messages.length === 0 ? (
             <div className="text-sm text-gray-600">최근 대화가 없어요.</div>
@@ -171,17 +189,31 @@ function ChatHistoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 }
 
 /* =========================
- * 글쓰기 페이지
- * - 카테고리/태그 제거
- * - 훅(useEffect) 규칙 위반 수정: 컴포넌트 내부에서 실행
+ * 글쓰기 페이지 (모든 오류 커스텀 팝업)
  * ========================= */
 export default function WritePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [boardType, setBoardType] = useState(searchParams.get("board") || "free")
+  const [boardType] = useState(searchParams.get("board") || "free")
   const [title, setTitle] = useState("")
   const [showChatHistory, setShowChatHistory] = useState(false)
+
+  // 커스텀 alert 상태
+  const [alertMsg, setAlertMsg] = useState("")
+  const showAlert = (m: string) => setAlertMsg(m)
+
+  // 전역 오류도 커스텀 팝업으로
+  useEffect(() => {
+    const rej = (ev: PromiseRejectionEvent) => showAlert(String(ev?.reason?.message || ev?.reason || "알 수 없는 오류"))
+    const err = (ev: ErrorEvent) => showAlert(String(ev?.error?.message || ev?.message || "알 수 없는 오류"))
+    window.addEventListener("unhandledrejection", rej as any)
+    window.addEventListener("error", err as any)
+    return () => {
+      window.removeEventListener("unhandledrejection", rej as any)
+      window.removeEventListener("error", err as any)
+    }
+  }, [])
 
   // 본문 에디터 & 첨부
   const editorRef = useRef<HTMLDivElement | null>(null)
@@ -191,124 +223,104 @@ export default function WritePage() {
 
   const isFromDiagnosis = searchParams.get("board") === "qna"
 
-  // ✅ (이전: 파일 바깥 useEffect → 오류) → 컴포넌트 내부로 이동
+  // placeholder 스타일 주입
   useEffect(() => {
     const style = document.createElement("style")
     style.innerHTML = `
-      [data-placeholder]:empty:before {
-        content: attr(data-placeholder);
-        color: #9ca3af; /* gray-400 */
-      }
+      [data-placeholder]:empty:before { content: attr(data-placeholder); color: #9ca3af; }
     `
     document.head.appendChild(style)
     return () => {
-      try {
-        document.head.removeChild(style)
-      } catch {}
+      try { document.head.removeChild(style) } catch {}
     }
   }, [])
 
-  const syncFromEditor = () => {
-    // 사용 시점에 innerHTML 읽습니다. (placeholder 처리 목적)
-  }
+  const syncFromEditor = () => {}
 
   const insertHtmlAtCaret = (html: string) => {
-    const el = editorRef.current
-    if (!el) return
-    el.focus()
-    const sel = window.getSelection()
-    if (!sel || sel.rangeCount === 0) {
-      el.insertAdjacentHTML("beforeend", html)
-    } else {
-      const range = sel.getRangeAt(0)
-      range.deleteContents()
-      const tmp = document.createElement("div")
-      tmp.innerHTML = html
-      const frag = document.createDocumentFragment()
-      let node: ChildNode | null
-      let lastNode: ChildNode | null = null
-      while ((node = tmp.firstChild)) {
-        lastNode = frag.appendChild(node)
+    try {
+      const el = editorRef.current
+      if (!el) return
+      el.focus()
+      const sel = window.getSelection()
+      if (!sel || sel.rangeCount === 0) {
+        el.insertAdjacentHTML("beforeend", html)
+      } else {
+        const range = sel.getRangeAt(0)
+        range.deleteContents()
+        const tmp = document.createElement("div")
+        tmp.innerHTML = html
+        const frag = document.createDocumentFragment()
+        let node: ChildNode | null
+        let lastNode: ChildNode | null = null
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        while ((node = tmp.firstChild)) lastNode = frag.appendChild(node)
+        range.insertNode(frag)
+        if (lastNode) {
+          range.setStartAfter(lastNode)
+          range.collapse(true)
+          sel.removeAllRanges()
+          sel.addRange(range)
+        }
       }
-      range.insertNode(frag)
-      if (lastNode) {
-        range.setStartAfter(lastNode)
-        range.collapse(true)
-        sel.removeAllRanges()
-        sel.addRange(range)
-      }
+    } catch (e) {
+      console.error(e)
+      showAlert("본문에 내용을 삽입하는 중 오류가 발생했습니다.")
     }
   }
 
   /* =========================
    * 업로드: wsas/rsas + Azure PUT
    * ========================= */
-  type WsasResp = {
-    uploadUrl: string
-    blobUrl: string
-    fileName: string
-    publicContainer?: string | boolean
-  }
+  type WsasResp = { uploadUrl: string; blobUrl: string; fileName: string; publicContainer?: string | boolean }
 
-  // 1) 백엔드(wsas)에서 업로드용 SAS/고유 파일명 받아오기
   async function getWriteSasFromGW(originalName: string): Promise<WsasResp> {
-    if (!GW) throw new Error("NEXT_PUBLIC_GW_URL 미설정")
+    if (!GW) throw new Error("게이트웨이 URL이 설정되지 않았습니다.")
     const url = `${GW}/ai/wsas?fileName=${encodeURIComponent(originalName)}`
     const res = await fetch(url, { method: "GET", cache: "no-store" })
-    if (!res.ok) {
-      const msg = await res.text().catch(() => "")
-      throw new Error(`wsas 실패 ${res.status} ${msg}`)
-    }
+    if (!res.ok) throw new Error("업로드 준비에 실패했습니다. 잠시 후 다시 시도해주세요.")
     return (await res.json()) as WsasResp
   }
 
-  // 2) (비공개 컨테이너일 때) 읽기 전용 링크 발급
   async function getReadSasFromGW(uniqueName: string): Promise<string> {
-    if (!GW) throw new Error("NEXT_PUBLIC_GW_URL 미설정")
+    if (!GW) throw new Error("게이트웨이 URL이 설정되지 않았습니다.")
     const url = `${GW}/ai/rsas?fileName=${encodeURIComponent(uniqueName)}`
     const res = await fetch(url, { method: "GET", cache: "no-store" })
-    if (!res.ok) {
-      const msg = await res.text().catch(() => "")
-      throw new Error(`rsas 실패 ${res.status} ${msg}`)
-    }
+    if (!res.ok) throw new Error("파일 접근 권한 요청에 실패했습니다.")
     const json = await res.json()
     return String(json.readOnlyUrl || "")
   }
 
-  // 3) 실제 PUT 업로드 (이미지/PDF 공용)
   async function uploadViaSas(file: File): Promise<{ publicUrl: string; uniqueName: string; isPublic: boolean }> {
-    const { uploadUrl, blobUrl, fileName, publicContainer } = await getWriteSasFromGW(file.name)
+    try {
+      const { uploadUrl, blobUrl, fileName, publicContainer } = await getWriteSasFromGW(file.name)
+      const put = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "x-ms-blob-type": "BlockBlob", "Content-Type": file.type || "application/octet-stream" },
+        body: file,
+      })
+      if (!put.ok) throw new Error("파일 업로드에 실패했습니다.")
 
-    const put = await fetch(uploadUrl, {
-      method: "PUT",
-      headers: {
-        "x-ms-blob-type": "BlockBlob", // 중요
-        "Content-Type": file.type || "application/octet-stream",
-      },
-      body: file,
-    })
-    if (!put.ok) throw new Error(`Azure 업로드 실패 ${put.status}`)
+      const isPublic =
+        typeof publicContainer === "string" ? publicContainer.toLowerCase() === "true" :
+        typeof publicContainer === "boolean" ? publicContainer : CONTAINER_PUBLIC_DEFAULT
 
-    // 컨테이너 공개 여부 결정: 응답 > 환경변수 기본값
-    const isPublic =
-      typeof publicContainer === "string"
-        ? publicContainer.toLowerCase() === "true"
-        : typeof publicContainer === "boolean"
-        ? publicContainer
-        : CONTAINER_PUBLIC_DEFAULT
-
-    if (isPublic) {
-      return { publicUrl: blobUrl, uniqueName: fileName, isPublic: true }
-    } else {
-      const readUrl = await getReadSasFromGW(fileName)
-      return { publicUrl: readUrl, uniqueName: fileName, isPublic: false }
+      if (isPublic) {
+        return { publicUrl: blobUrl, uniqueName: fileName, isPublic: true }
+      } else {
+        const readUrl = await getReadSasFromGW(fileName)
+        return { publicUrl: readUrl, uniqueName: fileName, isPublic: false }
+      }
+    } catch (e) {
+      console.error(e)
+      showAlert(`${file.name} 업로드 중 오류가 발생했습니다.`)
+      throw e
     }
   }
 
   /* =========================
    * 파일 선택 핸들러
    * ========================= */
-  // 이미지 삽입 (PNG/JPG만, 본문에 <img>로 직접 삽입)
   const onPickImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     e.target.value = ""
@@ -318,75 +330,64 @@ export default function WritePage() {
 
     for (const f of files) {
       if (!(f.type === "image/png" || f.type === "image/jpeg")) {
-        alert("PNG 또는 JPG 파일만 업로드할 수 있습니다.")
+        showAlert("PNG 또는 JPG 파일만 업로드할 수 있습니다.")
         continue
       }
-
       if (f.size > MAX_IMAGE_SIZE) {
-        alert(`512KB를 초과하여 업로드할 수 없습니다.`)
+        showAlert("최대 512KB까지 허용됩니다.")
         continue
       }
-
       try {
         const { publicUrl } = await uploadViaSas(f)
-        insertHtmlAtCaret(
-          `<img src="${publicUrl}" alt="${f.name}" style="max-width:100%;height:auto;display:block;margin:0.5rem 0;" />`
-        )
+        insertHtmlAtCaret(`<img src="${publicUrl}" alt="${f.name}" style="max-width:100%;height:auto;display:block;margin:0.5rem 0;" />`)
         syncFromEditor()
       } catch (err) {
-        console.error(err)
-        alert(`이미지 업로드 실패: ${f.name}`)
+        // 이미 showAlert 처리됨
       }
     }
   }
 
-  // PDF 첨부 (본문 X, 첨부목록에만)
   const onPickPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ""
     if (!file) return
     if (file.type !== "application/pdf") {
-      alert("PDF만 업로드할 수 있습니다.")
+      showAlert("PDF만 업로드할 수 있습니다.")
       return
     }
     if (file.size > 20 * 1024 * 1024) {
-      alert("최대 20MB까지 허용됩니다.")
+      showAlert("최대 20MB까지 허용됩니다.")
       return
     }
     try {
       const { publicUrl } = await uploadViaSas(file)
       setAttachments((prev) => [...prev, { name: file.name, url: publicUrl, type: "pdf" }])
     } catch (err) {
-      console.error(err)
-      alert("PDF 업로드 실패")
+      // 이미 showAlert 처리됨
     }
   }
 
-  const removeAttachment = (idx: number) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== idx))
-  }
+  const removeAttachment = (idx: number) => setAttachments((prev) => prev.filter((_, i) => i !== idx))
 
-  // 저장: contenteditable의 innerHTML + 첨부(PDF만)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!GW) {
-      alert("게이트웨이 URL이 설정되지 않았습니다.");
+      showAlert("게이트웨이 URL이 설정되지 않았습니다.")
       return
     }
 
     const el = editorRef.current
     const contentHtml = (el?.innerHTML || "").trim()
 
-    // ✅ 본문 길이 제한 추가 (HTML 포함 기준)
     const MAX_CONTENT_LENGTH = 10000
     if (contentHtml.length > MAX_CONTENT_LENGTH) {
-      alert(`본문이 너무 깁니다. ${MAX_CONTENT_LENGTH.toLocaleString()}자 이하로 작성해 주세요.`)
+      showAlert(`본문이 너무 깁니다. ${MAX_CONTENT_LENGTH.toLocaleString()}자 이하로 작성해 주세요.`)
       return
     }
 
     if (!title.trim() || !contentHtml) {
-      alert("제목과 내용을 입력해 주세요.")
+      showAlert("제목과 내용을 입력해 주세요.")
       return
     }
 
@@ -395,35 +396,22 @@ export default function WritePage() {
       const token = tokenFromLS()
       const author = usernameFromLS() || "익명"
 
-      const payload = {
-        title,
-        content: contentHtml,
-        category: boardType, // 기존 필드 유지(백엔드 호환)
-        author,
-        attachments,
-      }
+      const payload = { title, content: contentHtml, category: boardType, author, attachments }
 
       const res = await fetch(`${GW}/posts/writepost`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Role: role,
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { "Content-Type": "application/json", Role: role, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(payload),
         cache: "no-store",
       })
 
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "")
-        throw new Error(`POST /posts/writepost -> ${res.status} ${txt}`)
-      }
+      if (!res.ok) throw new Error("게시글 작성에 실패했습니다.")
 
-      alert("작성 완료!")
+      showAlert("작성 완료!")
       router.replace(`/community/${boardType}/1`)
     } catch (err) {
       console.error(err)
-      alert("작성에 실패했습니다.")
+      showAlert("작성에 실패했습니다. 잠시 후 다시 시도해 주세요.")
     }
   }
 
@@ -464,11 +452,9 @@ export default function WritePage() {
                   contentEditable
                   onInput={syncFromEditor}
                   className="min-h-[320px] p-3 border rounded-md bg-white leading-7 outline-none"
-                  // placeholder 흉내
                   data-placeholder="내용을 입력하세요..."
                   style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
                 />
-                {/* 접근성을 위해 시각적으로만 숨긴 안내 */}
                 <Textarea className="sr-only" aria-hidden value="" readOnly />
                 {isFromDiagnosis && (
                   <div className="mt-2">
@@ -491,25 +477,11 @@ export default function WritePage() {
                 {/* 이미지 (본문에 삽입) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">이미지 삽입 (PNG/JPG)</label>
-                  <input
-                    ref={imageInputRef}
-                    type="file"
-                    multiple
-                    onChange={onPickImages}
-                    className="hidden"
-                    accept="image/png,image/jpeg"
-                  />
+                  <input ref={imageInputRef} type="file" multiple onChange={onPickImages} className="hidden" accept="image/png,image/jpeg" />
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                     <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">
-                      PNG 또는 JPG 이미지를 업로드하면 본문에 <b>직접</b> 삽입됩니다.
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="cursor-pointer bg-transparent"
-                      onClick={() => imageInputRef.current?.click()}
-                    >
+                    <p className="text-sm text-gray-600 mb-2">PNG 또는 JPG 이미지를 업로드하면 본문에 <b>직접</b> 삽입됩니다.</p>
+                    <Button type="button" variant="outline" className="cursor-pointer bg-transparent" onClick={() => imageInputRef.current?.click()}>
                       이미지 선택
                     </Button>
                   </div>
@@ -522,12 +494,7 @@ export default function WritePage() {
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                     <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm text-gray-600 mb-2">PDF는 본문에 삽입되지 않고 아래 첨부 목록에만 추가됩니다.</p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="cursor-pointer bg-transparent"
-                      onClick={() => pdfInputRef.current?.click()}
-                    >
+                    <Button type="button" variant="outline" className="cursor-pointer bg-transparent" onClick={() => pdfInputRef.current?.click()}>
                       PDF 선택
                     </Button>
                   </div>
@@ -541,12 +508,7 @@ export default function WritePage() {
                   <ul className="space-y-2">
                     {attachments.map((att, i) => (
                       <li key={att.url + i} className="flex items-center justify-between">
-                        <a
-                          href={att.url}
-                          target="_blank"
-                          rel="noopener"
-                          className="text-sm underline break-all flex items-center gap-2"
-                        >
+                        <a href={att.url} target="_blank" rel="noopener" className="text-sm underline break-all flex items-center gap-2">
                           <FileText className="h-4 w-4" />
                           {att.name}
                         </a>
@@ -564,18 +526,17 @@ export default function WritePage() {
           {/* 버튼 */}
           <div className="flex justify-end gap-4 mt-6">
             <Link href={`/community/${boardType}/1`} prefetch={false}>
-              <Button type="button" variant="outline">
-                취소
-              </Button>
+              <Button type="button" variant="outline">취소</Button>
             </Link>
-            <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-white">
-              게시글 작성
-            </Button>
+            <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-white">게시글 작성</Button>
           </div>
         </form>
 
-        <ChatHistoryModal isOpen={showChatHistory} onClose={() => setShowChatHistory(false)} />
+        <ChatHistoryModal isOpen={showChatHistory} onClose={() => setShowChatHistory(false)} onAlert={showAlert} />
       </div>
+
+      {/* 🔔 커스텀 Alert 모달 */}
+      <AlertModal message={alertMsg} onClose={() => setAlertMsg("")} />
     </div>
   )
 }
