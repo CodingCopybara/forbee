@@ -99,6 +99,7 @@ export default function LoginPage() {
     setIsLoading(true)
     try {
       const gatewayUrl = process.env.NEXT_PUBLIC_GW_URL;
+      console.log("초기 gatewayUrl 값 : ", gatewayUrl)
 
       // Basic a_auth 헤더를 위한 client:secret 인코딩
       const client_id = 'uengine-client';

@@ -112,6 +112,14 @@ spring:
   cloud:
     gateway:
       routes:
+         - id: community-posts
+           uri: http://community:8080
+           predicates:
+            - Path=/posts/**
+         - id: community-comments
+           uri: http://community:8080
+           predicates:
+            - Path=/comments/**
          - id: user
            uri: http://user:8080
            predicates:

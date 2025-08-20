@@ -54,6 +54,7 @@ const tabs = [
 ] as const
 
 const GW = (process.env.NEXT_PUBLIC_GW_URL || "").replace(/\/+$/, "")
+console.log("초기 GW 값 : ", GW)
 const PAGE_SIZE = 10 as const
 
 const roleFromLS = () =>
@@ -61,9 +62,15 @@ const roleFromLS = () =>
 const tokenFromLS = () => (typeof window !== "undefined" ? localStorage.getItem("accessToken") || "" : "")
 const loggedIn = () => !!tokenFromLS()
 const authHeaders = () => {
-  const role = roleFromLS()
-  const token = tokenFromLS()
-  return { Role: role, ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  if (typeof window === "undefined") {
+    // Server-side rendering: localStorage is not available.
+    // Return headers that indicate an unauthenticated state or default.
+    // This ensures consistent rendering between server and client before hydration.
+    return {};
+  }
+  const role = roleFromLS();
+  const token = tokenFromLS();
+  return { Role: role, ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 }
 
 // ✅ 세부 카테고리 라벨 매핑 (write 페이지와 동일 set)
@@ -135,15 +142,31 @@ export default function CommunityPage({
 
   // 데이터 로드
   async function load(category: Tab) {
-    if (!GW) return
-    setLoading(true)
+    if (!GW) {
+      console.log("GW 값이 설정되지 않았습니다.");
+      // return;
+    }
+    setLoading(true);
     try {
+      const requestUrl = `${GW}/posts?category=${category}&sort=createdAt,desc&sort=id,desc`;
+      console.log("요청 URL:", requestUrl);
+      console.log("GW 값:", GW);
+
       const res = await fetch(
-        `${GW}/posts?category=${category}&sort=createdAt,desc&sort=id,desc`,
+        requestUrl,
         { headers: authHeaders(), cache: "no-store" },
-      )
-      if (!res.ok) throw new Error(`GET /posts?category=${category} -> ${res.status}`)
-      const json = await res.json()
+      );
+
+      console.log("응답 상태:", res.status, "OK 여부:", res.ok);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`GET /posts?category=${category} -> ${res.status} 오류:`, errorText);
+        throw new Error(`GET /posts?category=${category} -> ${res.status}`);
+      }
+
+      const json = await res.json();
+      console.log("수신된 JSON 데이터:", json);
 
       const items: any[] = Array.isArray(json)
         ? json
@@ -152,6 +175,7 @@ export default function CommunityPage({
         : Array.isArray(json?.data)
         ? json.data
         : []
+      console.log("처리된 아이템:", items);
 
       const mapped: PostRow[] = items.map((p) => ({
         id: pick(p.id, p.postId, p.seq, p.uid) ?? String(Math.random()),
@@ -185,10 +209,11 @@ export default function CommunityPage({
 
       setAllData((prev) => ({ ...prev, [category]: mapped }))
     } catch (e) {
-      console.error(e)
-      setAllData((prev) => ({ ...prev, [category]: [] }))
+      console.error("API 호출 중 오류 발생:", e);
+      setAllData((prev) => ({ ...prev, [category]: [] }));
     } finally {
-      setLoading(false)
+      setLoading(false);
+      console.log("로딩 완료.");
     }
   }
 
