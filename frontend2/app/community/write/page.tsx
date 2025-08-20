@@ -10,8 +10,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
 import { X, Upload, ArrowLeft, MessageSquare, Bot, User, FileText } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 
@@ -19,28 +17,6 @@ const GW = (process.env.NEXT_PUBLIC_GW_URL || "").replace(/\/+$/, "")
 // 백엔드가 응답에 publicContainer를 내려주지 않는 경우를 대비한 기본 플래그
 const CONTAINER_PUBLIC_DEFAULT =
   (process.env.NEXT_PUBLIC_AZURE_CONTAINER_PUBLIC || "true").toLowerCase() === "true"
-
-const categories = {
-  free: [
-    { value: "general", label: "일반" },
-    { value: "harvest", label: "수확후기" },
-    { value: "question", label: "질문" },
-    { value: "info", label: "정보공유" },
-    { value: "review", label: "후기" },
-  ],
-  notice: [
-    { value: "announcement", label: "공지사항" },
-    { value: "update", label: "업데이트" },
-    { value: "event", label: "이벤트" },
-  ],
-  qna: [
-    { value: "disease", label: "질병진단" },
-    { value: "management", label: "관리문의" },
-    { value: "ai-service", label: "AI서비스" },
-    { value: "equipment", label: "장비문의" },
-    { value: "location", label: "위치선정" },
-  ],
-} as const
 
 type ChatMessage = {
   id: string
@@ -196,19 +172,15 @@ function ChatHistoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
 /* =========================
  * 글쓰기 페이지
- * - 본문: contenteditable(이미지 <img> 태그로 직접 삽입)
- * - 이미지: PNG/JPG만, 본문에만 삽입
- * - PDF: 첨부 목록에만 추가(본문 X)
+ * - 카테고리/태그 제거
+ * - 훅(useEffect) 규칙 위반 수정: 컴포넌트 내부에서 실행
  * ========================= */
 export default function WritePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const [boardType, setBoardType] = useState(searchParams.get("board") || "free")
-  const [category, setCategory] = useState(searchParams.get("category") || "")
   const [title, setTitle] = useState("")
-  const [tags, setTags] = useState<string[]>([])
-  const [tagInput, setTagInput] = useState("")
   const [showChatHistory, setShowChatHistory] = useState(false)
 
   // 본문 에디터 & 첨부
@@ -219,16 +191,25 @@ export default function WritePage() {
 
   const isFromDiagnosis = searchParams.get("board") === "qna"
 
-  const handleAddTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim()) && tags.length < 5) {
-      setTags([...tags, tagInput.trim()])
-      setTagInput("")
+  // ✅ (이전: 파일 바깥 useEffect → 오류) → 컴포넌트 내부로 이동
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.innerHTML = `
+      [data-placeholder]:empty:before {
+        content: attr(data-placeholder);
+        color: #9ca3af; /* gray-400 */
+      }
+    `
+    document.head.appendChild(style)
+    return () => {
+      try {
+        document.head.removeChild(style)
+      } catch {}
     }
-  }
-  const handleRemoveTag = (t: string) => setTags(tags.filter((v) => v !== t))
+  }, [])
 
   const syncFromEditor = () => {
-    // 사용 시점에 innerHTML 읽습니다. (여기선 placeholder 처리 목적으로만 둠)
+    // 사용 시점에 innerHTML 읽습니다. (placeholder 처리 목적)
   }
 
   const insertHtmlAtCaret = (html: string) => {
@@ -333,7 +314,7 @@ export default function WritePage() {
     e.target.value = ""
     if (!files.length) return
 
-    const MAX_IMAGE_SIZE = 512 * 1024 
+    const MAX_IMAGE_SIZE = 512 * 1024 // 512KB
 
     for (const f of files) {
       if (!(f.type === "image/png" || f.type === "image/jpeg")) {
@@ -342,7 +323,7 @@ export default function WritePage() {
       }
 
       if (f.size > MAX_IMAGE_SIZE) {
-        alert(`500KB를 초과하여 업로드할 수 없습니다.`)
+        alert(`512KB를 초과하여 업로드할 수 없습니다.`)
         continue
       }
 
@@ -358,7 +339,6 @@ export default function WritePage() {
       }
     }
   }
-
 
   // PDF 첨부 (본문 X, 첨부목록에만)
   const onPickPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -391,7 +371,7 @@ export default function WritePage() {
     e.preventDefault()
 
     if (!GW) {
-      alert("게이트웨이 URL이 설정되지 않았습니다.")
+      alert("게이트웨이 URL이 설정되지 않았습니다.");
       return
     }
 
@@ -418,11 +398,9 @@ export default function WritePage() {
       const payload = {
         title,
         content: contentHtml,
-        category: boardType,
+        category: boardType, // 기존 필드 유지(백엔드 호환)
         author,
         attachments,
-        tags,
-        subCategory: category,
       }
 
       const res = await fetch(`${GW}/posts/writepost`, {
@@ -449,7 +427,6 @@ export default function WritePage() {
     }
   }
 
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -473,39 +450,6 @@ export default function WritePage() {
               <CardTitle>게시글 작성</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* 게시판/카테고리 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">게시판 선택</label>
-                  <Select value={boardType} onValueChange={setBoardType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="게시판을 선택하세요" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="free">자유게시판</SelectItem>
-                      <SelectItem value="notice">공지사항</SelectItem>
-                      <SelectItem value="qna">Q&A</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="카테고리를 선택하세요" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories[boardType as keyof typeof categories].map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
               {/* 제목 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">제목</label>
@@ -557,7 +501,9 @@ export default function WritePage() {
                   />
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                     <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">PNG 또는 JPG 이미지를 업로드하면 본문에 <b>직접</b> 삽입됩니다.</p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      PNG 또는 JPG 이미지를 업로드하면 본문에 <b>직접</b> 삽입됩니다.
+                    </p>
                     <Button
                       type="button"
                       variant="outline"
@@ -612,35 +558,6 @@ export default function WritePage() {
                   </ul>
                 </div>
               )}
-
-              {/* 태그 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">태그 (최대 5개)</label>
-                <div className="flex gap-2 mb-2">
-                  <Input
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    placeholder="태그를 입력하고 Enter를 누르세요"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault()
-                        handleAddTag()
-                      }
-                    }}
-                  />
-                  <Button type="button" onClick={handleAddTag} variant="outline">
-                    추가
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                      #{tag}
-                      <X className="h-3 w-3 cursor-pointer" onClick={() => handleRemoveTag(tag)} />
-                    </Badge>
-                  ))}
-                </div>
-              </div>
             </CardContent>
           </Card>
 
@@ -662,18 +579,3 @@ export default function WritePage() {
     </div>
   )
 }
-
-  useEffect(() => {
-    const style = document?.createElement?.("style")
-    if (style) {
-      style.innerHTML = `
-      [data-placeholder]:empty:before {
-        content: attr(data-placeholder);
-        color: #9ca3af; /* gray-400 */
-      }
-      `
-      document.head.appendChild(style)
-    }
-  }, [])
-
-

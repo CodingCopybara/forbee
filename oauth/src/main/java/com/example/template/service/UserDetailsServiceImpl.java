@@ -26,7 +26,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         if (loginAttemptService.isBlocked(username)) {
-            throw new LockedException("해당 계정은 잦은 로그인 실패로 인해 잠겼습니다.");
+            throw new LockedException("해당 계정은 잦은 로그인 실패로 인해 잠겼습니다. 10분 뒤 다시 시도하세요.");
         }
 
         User user = userRepository.findByUsername(username);
