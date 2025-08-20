@@ -98,7 +98,7 @@ export function BloomMap({ locations, onMarkerClick, selectedLocation }: bloomMa
       } else if (attemptCount > maxAttempts) {
         clearInterval(interval)
         console.error("SGIS map script failed to load.")
-        setInitializationError("지도 라이브러리를 불러오지 못했습니다. 네트워크 연결을 확인해주세요.")
+        setInitializationError("지도를 불러오지 못했습니다. 네트워크 연결을 확인해주세요.")
       }
     }, 200)
 
