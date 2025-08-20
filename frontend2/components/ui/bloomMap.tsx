@@ -15,7 +15,6 @@ interface Location {
   name: string
   coordinates: [number, number]
   station: string
-  
 }
 
 interface bloomMapProps {
@@ -25,21 +24,25 @@ interface bloomMapProps {
 }
 
 export function BloomMap({ locations, onMarkerClick, selectedLocation }: bloomMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
-  const [isMapInitialized, setIsMapInitialized] = useState(false);
+  const mapRef = useRef<HTMLDivElement>(null)
+  const mapInstance = useRef<any>(null)
+  const markersRef = useRef<any[]>([])
+  const [isMapInitialized, setIsMapInitialized] = useState(false)
+  const [initializationError, setInitializationError] = useState<string | null>(null)
 
   // 지도 초기화 (최초 1회만 실행)
   useEffect(() => {
     const initializeMap = () => {
-      if (!mapRef.current || typeof window.sop === "undefined") return;
+      if (!mapRef.current || typeof window.sop === "undefined") {
+        setInitializationError("지도 객체를 찾을 수 없습니다.")
+        return
+      }
 
       try {
         proj4.defs(
           "EPSG:5179",
           "+proj=tmerc +lat_0=38 +lon_0=127.5 +k=1 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs"
-        );
+        )
 
         const map = new window.sop.map(mapRef.current, {
           scale: false,
@@ -52,88 +55,116 @@ export function BloomMap({ locations, onMarkerClick, selectedLocation }: bloomMa
             step: 1,
             range: [2, 4],
           },
-        });
-        mapInstance.current = map;
+        })
+        mapInstance.current = map
 
         // GPS 기반 위치 설정
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (position) => {
-              const { latitude, longitude } = position.coords;
-              const utmkCoords = proj4("EPSG:4326", "EPSG:5179", [longitude, latitude]);
-              const utmkPoint = window.sop.utmk(utmkCoords[0], utmkCoords[1]);
-              map.setView(utmkPoint, 10);
+              const { latitude, longitude } = position.coords
+              const utmkCoords = proj4("EPSG:4326", "EPSG:5179", [longitude, latitude])
+              const utmkPoint = window.sop.utmk(utmkCoords[0], utmkCoords[1])
+              map.setView(utmkPoint, 10)
             },
             (error) => {
-              console.error("Geolocation error:", error);
-              const defaultPoint = proj4("EPSG:4326", "EPSG:5179", [127.5, 36.5]);
-              map.setView(window.sop.utmk(defaultPoint[0], defaultPoint[1]), 9);
+              console.error("Geolocation error:", error)
+              const defaultPoint = proj4("EPSG:4326", "EPSG:5179", [127.5, 36.5])
+              map.setView(window.sop.utmk(defaultPoint[0], defaultPoint[1]), 9)
             }
-          );
+          )
         } else {
-          console.log("Geolocation is not supported by this browser.");
-          const defaultPoint = proj4("EPSG:4326", "EPSG:5179", [127.5, 36.5]);
-          map.setView(window.sop.utmk(defaultPoint[0], defaultPoint[1]), 9);
+          console.log("Geolocation is not supported by this browser.")
+          const defaultPoint = proj4("EPSG:4326", "EPSG:5179", [127.5, 36.5])
+          map.setView(window.sop.utmk(defaultPoint[0], defaultPoint[1]), 9)
         }
 
-        map.invalidateSize();
-        setIsMapInitialized(true); // 지도 초기화 완료 상태 업데이트
+        map.invalidateSize()
+        setIsMapInitialized(true) // 지도 초기화 완료 상태 업데이트
       } catch (error) {
-        console.error("Error initializing SGIS map:", error);
+        console.error("Error initializing SGIS map:", error)
+        setInitializationError("지도를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.")
       }
-    };
+    }
+
+    let attemptCount = 0
+    const maxAttempts = 50 // 50 * 200ms = 10 seconds
 
     const interval = setInterval(() => {
+      attemptCount++
       if (typeof window.sop !== "undefined") {
-        clearInterval(interval);
-        initializeMap();
+        clearInterval(interval)
+        initializeMap()
+      } else if (attemptCount > maxAttempts) {
+        clearInterval(interval)
+        console.error("SGIS map script failed to load.")
+        setInitializationError("지도를 불러오지 못했습니다. 네트워크 연결을 확인해주세요.")
       }
-    }, 100);
+    }, 200)
 
     return () => {
-      clearInterval(interval);
+      clearInterval(interval)
       if (mapInstance.current) {
-        mapInstance.current.remove();
-        mapInstance.current = null;
+        mapInstance.current.remove()
+        mapInstance.current = null
       }
-    };
-  }, []); // 의존성 배열을 비워서 최초 1회만 실행
+    }
+  }, []) // 의존성 배열을 비워서 최초 1회만 실행
 
   // 마커 관리
   useEffect(() => {
-    if (!isMapInitialized || !mapInstance.current) return; // 지도가 초기화되었을 때만 실행
+    if (!isMapInitialized || !mapInstance.current) return // 지도가 초기화되었을 때만 실행
 
     // 기존 마커 제거
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
+    markersRef.current.forEach((marker) => marker.remove())
+    markersRef.current = []
 
     // 새 마커 추가
-    locations.forEach(location => {
-      const [lat, lng] = location.coordinates;
-      const utmkCoords = proj4("EPSG:4326", "EPSG:5179", [lng, lat]);
+    locations.forEach((location) => {
+      const [lat, lng] = location.coordinates
+      const utmkCoords = proj4("EPSG:4326", "EPSG:5179", [lng, lat])
 
       const flowerMarker = new window.sop.icon({
-        iconUrl: '/markers/flower4.png',
-        iconSize: [48, 48],                
-        iconAnchor: [16, 32],             
+        iconUrl: "/markers/flower4.png",
+        iconSize: [48, 48],
+        iconAnchor: [16, 32],
       })
 
-      const marker = new window.sop.marker(utmkCoords, { icon: flowerMarker });
-      marker.addTo(mapInstance.current);
-      marker.on("click", () => onMarkerClick(location));
-      markersRef.current.push(marker);
-    });
-  }, [isMapInitialized, locations, onMarkerClick]);
+      const marker = new window.sop.marker(utmkCoords, { icon: flowerMarker })
+      marker.addTo(mapInstance.current)
+      marker.on("click", () => onMarkerClick(location))
+      markersRef.current.push(marker)
+    })
+  }, [isMapInitialized, locations, onMarkerClick])
 
   // 선택된 위치로 중심 이동
   useEffect(() => {
     if (selectedLocation && mapInstance.current) {
-      const [lat, lng] = selectedLocation.coordinates;
-      const utmkCoords = proj4("EPSG:4326", "EPSG:5179", [lng, lat]);
-      const utmkPoint = window.sop.utmk(utmkCoords[0], utmkCoords[1]);
-      mapInstance.current.setView(utmkPoint, 10);
+      const [lat, lng] = selectedLocation.coordinates
+      const utmkCoords = proj4("EPSG:4326", "EPSG:5179", [lng, lat])
+      const utmkPoint = window.sop.utmk(utmkCoords[0], utmkCoords[1])
+      mapInstance.current.setView(utmkPoint, 10)
     }
-  }, [selectedLocation]);
+  }, [selectedLocation])
 
-  return <div ref={mapRef} style={{ width: "100%", height: "100%", zIndex: 0 }} />;
+  if (initializationError) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "1px dashed gray",
+          borderRadius: "8px",
+          backgroundColor: "#f9f9f9",
+        }}
+      >
+        <p style={{ color: "#555" }}>{initializationError}</p>
+      </div>
+    )
+  }
+
+  return <div ref={mapRef} style={{ width: "100%", height: "100%", zIndex: 0 }} />
 }
