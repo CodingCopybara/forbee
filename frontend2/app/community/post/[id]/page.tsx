@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Eye, ThumbsUp, MessageCircle, Share2, Bookmark, MoreVertical } from "lucide-react"
+import { ArrowLeft, Eye, MessageCircle, Share2, MoreVertical } from "lucide-react"
 import { marked } from "marked"
 import DOMPurify from "dompurify"
 
@@ -44,9 +44,9 @@ type Post = {
   views?: number
   likes?: number
   comments?: number
-  category?: "free" | "notice" | "qna" | string   // 대분류(서버 기존)
-  subCategory?: string                             // ✅ 세부 카테고리
-  tags?: string[]                                  // ✅ 태그
+  category?: "free" | "notice" | "qna" | string // 대분류(서버 기존)
+  subCategory?: string                           // ✅ 세부 카테고리
+  tags?: string[]                                // ✅ 태그
 }
 
 type Comment = {
@@ -85,6 +85,52 @@ function maskId(value?: string): string {
   return v.slice(0, 3) + "*".repeat(v.length - 3)
 }
 
+/* =========================
+ * 주소가 노출되지 않는 커스텀 알림/확인 모달
+ * ========================= */
+function AlertModal({ message, onClose }: { message: string; onClose: () => void }) {
+  if (!message) return null
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-xl bg-white shadow-xl border">
+        <div className="px-5 py-4 border-b">
+          <h3 className="text-base font-semibold">알림</h3>
+        </div>
+        <div className="px-5 py-6 text-gray-800 whitespace-pre-wrap break-words">{message}</div>
+        <div className="px-5 py-4 border-t flex justify-end">
+          <Button onClick={onClose} className="bg-amber-500 hover:bg-amber-600 text-white">확인</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ConfirmModal({
+  message,
+  onConfirm,
+  onCancel,
+}: {
+  message: string
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  if (!message) return null
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-xl bg-white shadow-xl border">
+        <div className="px-5 py-4 border-b">
+          <h3 className="text-base font-semibold">확인</h3>
+        </div>
+        <div className="px-5 py-6 text-gray-800 whitespace-pre-wrap break-words">{message}</div>
+        <div className="px-5 py-4 border-t flex justify-end gap-2">
+          <Button variant="outline" onClick={onCancel}>취소</Button>
+          <Button onClick={onConfirm} className="bg-amber-500 hover:bg-amber-600 text-white">확인</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function PostDetailPage({
   params,
 }: {
@@ -96,8 +142,17 @@ export default function PostDetailPage({
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState("")
-  const [isLiked, setIsLiked] = useState(false)
-  const [isBookmarked, setIsBookmarked] = useState(false)
+
+  // 🔔 커스텀 알림/확인 상태
+  const [alertMsg, setAlertMsg] = useState("")
+  const showAlert = (msg: string) => setAlertMsg(msg)
+  const [confirmMsg, setConfirmMsg] = useState("")
+  const askConfirm = (msg: string, onYes: () => void) => {
+    setConfirmMsg(msg)
+    // 확인 버튼에서 onYes 호출 후 모달 닫기
+    confirmYesRef.current = () => { setConfirmMsg(""); onYes() }
+  }
+  const confirmYesRef = React.useRef<() => void>(() => {})
 
   const role = roleFromLS()
   const loggedIn = !!tokenFromLS()
@@ -144,6 +199,27 @@ export default function PostDetailPage({
       if (c.ok) setComments(await c.json())
     } catch (e) {
       console.error(e)
+      showAlert("게시글을 불러오지 못했습니다.")
+    }
+  }
+
+  // 공유하기: 현재 페이지 URL 복사 (모달 알림 사용)
+  const handleShare = async () => {
+    try {
+      const url = typeof window !== "undefined" ? window.location.href : ""
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url)
+      } else {
+        const ta = document.createElement("textarea")
+        ta.value = url
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand("copy")
+        document.body.removeChild(ta)
+      }
+      showAlert("링크가 클립보드에 복사되었습니다.")
+    } catch {
+      showAlert("복사에 실패했습니다. 브라우저 권한을 확인해주세요.")
     }
   }
 
@@ -159,21 +235,19 @@ export default function PostDetailPage({
 
   const handleDelete = async () => {
     if (!canDelete) return
-    if (!confirm("정말 삭제하시겠습니까?")) return
-    try {
-      const res = await fetch(`${GW}/posts/${id}`, { method: "DELETE", headers: authHeaders() })
-      if (!res.ok) throw new Error(`DELETE /posts/${id} -> ${res.status}`)
-      alert("삭제되었습니다.")
-      const dest = `/community/${post?.category || "free"}/1`
-      router.replace(dest)
-    } catch (e) {
-      console.error(e)
-      alert("삭제 실패")
-    }
+    askConfirm("정말 삭제하시겠습니까?", async () => {
+      try {
+        const res = await fetch(`${GW}/posts/${id}`, { method: "DELETE", headers: authHeaders() })
+        if (!res.ok) throw new Error(`DELETE /posts/${id} -> ${res.status}`)
+        showAlert("삭제되었습니다.")
+        const dest = `/community/${post?.category || "free"}/1`
+        setTimeout(() => router.replace(dest), 250)
+      } catch (e) {
+        console.error(e)
+        showAlert("삭제에 실패했습니다.")
+      }
+    })
   }
-
-  const handleLike = () => setIsLiked((v) => !v)
-  const handleBookmark = () => setIsBookmarked((v) => !v)
 
   const submitComment = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -189,7 +263,7 @@ export default function PostDetailPage({
       load()
     } catch (e) {
       console.error(e)
-      alert("댓글 작성 실패")
+      showAlert("댓글 작성에 실패했습니다.")
     }
   }
 
@@ -255,12 +329,9 @@ export default function PostDetailPage({
                   <span>{post?.views ?? 0}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <ThumbsUp className="h-4 w-4" />
-                  <span>{post?.likes ?? 0}</span>
-                </div>
-                <div className="flex items-center gap-1">
                   <MessageCircle className="h-4 w-4" />
-                  <span>{post?.comments ?? 0}</span>
+                  {/* ✅ 실제 로드된 댓글 수로 표시 */}
+                  <span>{comments.length}</span>
                 </div>
               </div>
             </div>
@@ -274,28 +345,9 @@ export default function PostDetailPage({
               )}
             </div>
 
-            <div className="flex items-center justify-between mt-8 pt-6 border-t">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant={isLiked ? "default" : "outline"}
-                  size="sm"
-                  onClick={handleLike}
-                  className={isLiked ? "bg-amber-500 hover:bg-amber-600" : ""}
-                >
-                  <ThumbsUp className="h-4 w-4 mr-2" />
-                  좋아요
-                </Button>
-                <Button
-                  variant={isBookmarked ? "default" : "outline"}
-                  size="sm"
-                  onClick={handleBookmark}
-                  className={isBookmarked ? "bg-amber-500 hover:bg-amber-600" : ""}
-                >
-                  <Bookmark className="h-4 w-4 mr-2" />
-                  북마크
-                </Button>
-              </div>
-              <Button variant="outline" size="sm">
+            <div className="flex items-center justify-end mt-8 pt-6 border-t">
+              {/* ✅ 좋아요/북마크 제거, 공유만 남김 */}
+              <Button variant="outline" size="sm" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" />
                 공유하기
               </Button>
@@ -356,6 +408,14 @@ export default function PostDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      {/* 🔔 커스텀 알림/확인 모달 */}
+      <AlertModal message={alertMsg} onClose={() => setAlertMsg("")} />
+      <ConfirmModal
+        message={confirmMsg}
+        onCancel={() => setConfirmMsg("")}
+        onConfirm={() => confirmYesRef.current()}
+      />
     </div>
   )
 }
