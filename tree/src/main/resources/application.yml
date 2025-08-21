@@ -81,4 +81,6 @@ spring:
           destination: forbee
           contentType: application/json
 
-
+tree:
+  python:
+    script-path: /app/model/predict_bloom.py

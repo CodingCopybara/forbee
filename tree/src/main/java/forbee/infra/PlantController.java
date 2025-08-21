@@ -2,8 +2,8 @@ package forbee.infra;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.ArrayList; 
 import java.util.Optional;
@@ -14,6 +14,8 @@ import java.time.format.DateTimeFormatter;
 import javax.transaction.Transactional;
 
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
@@ -24,14 +26,18 @@ import com.opencsv.exceptions.CsvException;
 @RestController
 @Transactional
 public class PlantController {
+
+    @Value("${tree.python.script-path}")
+    private String pythonScriptPath;
     private String getPreviousYearBloomDate(String species, String location, int year) {
         String previousYearBloomDate = "전년도 개화가 데이터 없습니다.";
-        String csvFilePath = "/workspace/forbee/tree/src/main/model/data/" + species + ".csv";
+        String csvFilePath = "model/data/" + species + ".csv"; // Path relative to resources folder
         
         System.out.println("1. Starting getPreviousYearBloomDate...");
         System.out.println("2. CSV file path: " + csvFilePath);
 
-        try (CSVReader reader = new CSVReaderBuilder(new FileReader(csvFilePath))
+        try (InputStream is = new ClassPathResource(csvFilePath).getInputStream();
+             CSVReader reader = new CSVReaderBuilder(new InputStreamReader(is))
                 .withSkipLines(0)
                 .build()) {
 
@@ -93,9 +99,10 @@ public class PlantController {
 
     private String getactualBloomDate(String species, String location, int year) {
         String actualBloomDate = "관측된 정보가 없습니다.";
-        String csvFilePath = "/workspace/forbee/tree/src/main/model/data/" + species + ".csv";
+        String csvFilePath = "model/data/" + species + ".csv";
 
-        try (CSVReader reader = new CSVReaderBuilder(new FileReader(csvFilePath))
+        try (InputStream is = new ClassPathResource(csvFilePath).getInputStream();
+             CSVReader reader = new CSVReaderBuilder(new InputStreamReader(is))
                 .withSkipLines(0)
                 .build()) {
 
@@ -142,10 +149,11 @@ public class PlantController {
     }
 
     public String getAvgBloomDate(String species, String location, int year) {
-        String csvFilePath = "/workspace/forbee/tree/src/main/model/data/" + species + ".csv";
+        String csvFilePath = "model/data/" + species + ".csv";
         List<Integer> bloomDays = new ArrayList<>();
 
-        try (CSVReader reader = new CSVReaderBuilder(new FileReader(csvFilePath))
+        try (InputStream is = new ClassPathResource(csvFilePath).getInputStream();
+             CSVReader reader = new CSVReaderBuilder(new InputStreamReader(is))
                 .withSkipLines(0)
                 .build()) {
 
@@ -247,7 +255,7 @@ public class PlantController {
         String avgBloomDate = getAvgBloomDate(species, location, year);
 
         try {
-            String scriptPath = "/workspace/forbee/tree/src/main/model/predict_bloom.py";
+            String scriptPath = pythonScriptPath;
 
             ProcessBuilder pb = new ProcessBuilder(
                 "python",
