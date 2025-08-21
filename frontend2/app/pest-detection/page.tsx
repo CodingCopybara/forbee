@@ -84,7 +84,7 @@ export default function PestDetectionPage() {
   const [detection, setDetection] = useState<Detection>(null)
   // SSE 구독
   useEffect(() => {
-    if (!GW_URL || !userId) return
+    if (!userId) return
     const streamUrl = `${GW_URL}/ai/stream?userId=${encodeURIComponent(userId)}`
     const es = new EventSource(streamUrl)
     esRef.current = es
