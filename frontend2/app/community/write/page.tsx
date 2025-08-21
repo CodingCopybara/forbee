@@ -86,7 +86,7 @@ function ChatHistoryModal({ isOpen, onClose, onAlert }: { isOpen: boolean; onClo
     try {
       const token = (typeof window !== "undefined" && localStorage.getItem("accessToken")) || ""
       type RawMsg = { sender: "user" | "bot"; type: "text" | "image"; text?: string | null; url?: string | null; ts?: number }
-      const data = await getJSON<{ messages?: RawMsg[] }>(`${GW_URL}/chatbot/chat-sessions/latest`, {
+      const data = await getJSON<{ messages?: RawMsg[] }>(`${GW_URL}/api/chat-sessions/latest`, {
         userId: currentUserId(),
         Authorization: `Bearer ${token}`,
       })
