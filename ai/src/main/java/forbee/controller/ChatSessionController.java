@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/chatbot/chat-sessions")
+@RequestMapping("/api/chat-sessions")
 public class ChatSessionController {
   private final ChatSessionRepo sessionRepo;
   private final ChatMessageRepo messageRepo;

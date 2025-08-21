@@ -4,7 +4,7 @@ import com.azure.identity.DefaultAzureCredential;
 import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
-import com.azure.storage.blob.models.UserDelegationKey;
+// import com.azure.storage.blob.models.UserDelegationKey;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import org.slf4j.Logger;
@@ -16,6 +16,8 @@ import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.azure.storage.common.StorageSharedKeyCredential;  // 추가
+
 @Service
 public class AzureBlobService {
     private static final Logger log = LoggerFactory.getLogger(AzureBlobService.class);
@@ -24,22 +26,37 @@ public class AzureBlobService {
     private final String containerName;
     
     public AzureBlobService(
-            @Value("${azure.storage.account-url}") String accountUrl,
+        //     @Value("${azure.storage.account-url}") String accountUrl,
+        //     @Value("${azure.storage.container-name}") String containerName) {
+//         this.containerName = containerName;
+
+//         // DefaultAzureCredential 체인을 그대로 사용하면
+//         // 1) 로컬 az login & Azure CLI
+//         // 2) AKS IMDS(Managed Identity)
+//         // 순으로 자동 적용됩니다.
+//         DefaultAzureCredential credential = new DefaultAzureCredentialBuilder().build();
+        
+//         this.blobServiceClient = new BlobServiceClientBuilder()
+//                 .endpoint(accountUrl)
+//                 .credential(credential)
+//                 .buildClient();
+                
+//         log.info("Azure Blob Service initialized with account: {}, container: {}", accountUrl, containerName);
+//     }
+            @Value("${azure.storage.account-name}") String accountName,
+            @Value("${azure.storage.account-key}") String accountKey,
             @Value("${azure.storage.container-name}") String containerName) {
         this.containerName = containerName;
 
-        // DefaultAzureCredential 체인을 그대로 사용하면
-        // 1) 로컬 az login & Azure CLI
-        // 2) AKS IMDS(Managed Identity)
-        // 순으로 자동 적용됩니다.
-        DefaultAzureCredential credential = new DefaultAzureCredentialBuilder().build();
+        String endpoint = String.format("https://forbee.blob.core.windows.net", accountName);
+        StorageSharedKeyCredential credential = new StorageSharedKeyCredential(accountName, accountKey);
         
         this.blobServiceClient = new BlobServiceClientBuilder()
-                .endpoint(accountUrl)
+                .endpoint(endpoint)
                 .credential(credential)
                 .buildClient();
                 
-        log.info("Azure Blob Service initialized with account: {}, container: {}", accountUrl, containerName);
+        log.info("Azure Blob Service initialized with account: {}, container: {}", accountName, containerName);
     }
     /**
      * 파일 업로드를 위한 User-delegation SAS 토큰 생성
@@ -50,11 +67,11 @@ public class AzureBlobService {
         log.info("Generating SAS token for file: {}", fileName);
         
         // User delegation key 요청 (최대 7일, 여기서는 1시간)
-        OffsetDateTime delegationKeyStart = OffsetDateTime.now();
-        OffsetDateTime delegationKeyExpiry = delegationKeyStart.plusHours(1);
+        // OffsetDateTime delegationKeyStart = OffsetDateTime.now();
+        // OffsetDateTime delegationKeyExpiry = delegationKeyStart.plusHours(1);
         
-        UserDelegationKey userDelegationKey = blobServiceClient.getUserDelegationKey(
-                delegationKeyStart, delegationKeyExpiry);
+        // UserDelegationKey userDelegationKey = blobServiceClient.getUserDelegationKey(
+        //         delegationKeyStart, delegationKeyExpiry);
         
         // Blob 클라이언트 생성
         var blobClient = blobServiceClient
@@ -64,14 +81,16 @@ public class AzureBlobService {
         // SAS 권한 설정 (Create, Write 권한만 부여)
         BlobSasPermission sasPermission = new BlobSasPermission()
                 .setCreatePermission(true)
-                .setWritePermission(true);
+                .setWritePermission(true)
+                .setAddPermission(true);
         
         // SAS 토큰 생성 (10분 유효)
         BlobServiceSasSignatureValues sasValues = new BlobServiceSasSignatureValues(
                 OffsetDateTime.now().plusMinutes(10), sasPermission)
                 .setContentType("image/jpeg");
         
-        String sasToken = blobClient.generateUserDelegationSas(sasValues, userDelegationKey);
+        // String sasToken = blobClient.generateUserDelegationSas(sasValues, userDelegationKey);
+        String sasToken = blobClient.generateSas(sasValues); 
         
         // URL 생성
         String blobUrl = blobClient.getBlobUrl();
@@ -91,11 +110,11 @@ public class AzureBlobService {
      * @return 읽기 전용 SAS URL
      */
     public String generateReadOnlySasUrl(String fileName) {
-        OffsetDateTime delegationKeyStart = OffsetDateTime.now();
-        OffsetDateTime delegationKeyExpiry = delegationKeyStart.plusHours(1);
+        // OffsetDateTime delegationKeyStart = OffsetDateTime.now();
+        // OffsetDateTime delegationKeyExpiry = delegationKeyStart.plusHours(1);
         
-        UserDelegationKey userDelegationKey = blobServiceClient.getUserDelegationKey(
-                delegationKeyStart, delegationKeyExpiry);
+        // UserDelegationKey userDelegationKey = blobServiceClient.getUserDelegationKey(
+        //         delegationKeyStart, delegationKeyExpiry);
         
         var blobClient = blobServiceClient
                 .getBlobContainerClient(containerName)
@@ -107,7 +126,8 @@ public class AzureBlobService {
         BlobServiceSasSignatureValues sasValues = new BlobServiceSasSignatureValues(
                 OffsetDateTime.now().plusHours(24), sasPermission);
         
-        String sasToken = blobClient.generateUserDelegationSas(sasValues, userDelegationKey);
+        // String sasToken = blobClient.generateUserDelegationSas(sasValues, userDelegationKey);
+        String sasToken = blobClient.generateSas(sasValues);
         
         return blobClient.getBlobUrl() + "?" + sasToken;
     }

@@ -5,7 +5,7 @@ uvicorn[standard]
 python-dotenv
 ultralytics
 torch
-# torchvision
+torchvision
 azure-storage-blob
 azure-identity
 opencv-python-headless

@@ -51,3 +51,4 @@ src/main/python/results/
 kafka_consumer_test.py
 src/main/python/__pycache__/
 kubernetes/secret.yaml
+kubectl

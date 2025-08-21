@@ -25,14 +25,11 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: ai
-        image: forbeeregistry.azurecr.io/ai:v2
+        image: forbeeregistry.azurecr.io/ai:v3
+        imagePullPolicy: Always
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: docker
-        - name: AZURE_CLIENT_ID
-          value: "67c8e9d2-4e62-4a58-87e7-c74c258163e5"
-        - name: AZURE_TENANT_ID
-          value: "a7b712a5-a241-4e41-8073-56918e85ab3f"
         envFrom:
         - secretRef:
             name: app-secrets
@@ -62,12 +59,8 @@ spec:
           periodSeconds: 5
           failureThreshold: 5
       - name: python
-        image: forbeeregistry.azurecr.io/python:latest
+        image: forbeeregistry.azurecr.io/python:v3
         env:
-        - name: AZURE_CLIENT_ID
-          value: "67c8e9d2-4e62-4a58-87e7-c74c258163e5"
-        - name: AZURE_TENANT_ID
-          value: "a7b712a5-a241-4e41-8073-56918e85ab3f"
         - name: KAFKA_BOOTSTRAP_SERVERS
           value: "my-kafka:9092"
         - name: KAFKA_TOPIC

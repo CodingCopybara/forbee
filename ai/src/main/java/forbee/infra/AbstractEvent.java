@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import forbee.AiApplication;
 import forbee.config.kafka.KafkaProcessor;
+// import org.springframework.kafka.core.KafkaTemplate;  // AKS 빌드 시 KafkaProcessor 주석 처리 후 사용
 import org.springframework.beans.BeanUtils;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
@@ -33,7 +34,6 @@ public class AbstractEvent {
             KafkaProcessor.class
         );
         MessageChannel outputChannel = processor.outboundTopic();
-
         outputChannel.send(
             MessageBuilder
                 .withPayload(this)
@@ -44,6 +44,9 @@ public class AbstractEvent {
                 .setHeader("type", getEventType())
                 .build()
         );
+        // AKS 배포 시 KafkaProcessor, MessageChannel, outputChannel.send 전부 주석 처리 후 사용
+        // KafkaTemplate<String, String> kafkaTemplate = AiApplication.applicationContext.getBean(KafkaTemplate.class);
+        // kafkaTemplate.send("forbee", this.toJson());
     }
 
     public void publishAfterCommit() {

@@ -135,6 +135,10 @@ azure:
     account-url: https://forbee.blob.core.windows.net
     container-name: blob
 
+    # AKS 액세스 키 인증 때문에 추가
+    account-key: ${AZURE_STORAGE_ACCESS_KEY}
+    account-name: forbee
+
 logging:
   level:
     root: INFO

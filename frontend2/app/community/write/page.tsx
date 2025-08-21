@@ -223,13 +223,17 @@ export default function WritePage() {
 
   const isFromDiagnosis = searchParams.get("board") === "qna"
 
-  const handleAddTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim()) && tags.length < 5) {
-      setTags([...tags, tagInput.trim()])
-      setTagInput("")
+  // placeholder 스타일 주입
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.innerHTML = `
+      [data-placeholder]:empty:before { content: attr(data-placeholder); color: #9ca3af; }
+    `
+    document.head.appendChild(style)
+    return () => {
+      try { document.head.removeChild(style) } catch {}
     }
-  }
-  const handleRemoveTag = (t: string) => setTags(tags.filter((v) => v !== t))
+  }, [])
 
   const syncFromEditor = () => {}
 

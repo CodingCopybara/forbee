@@ -15,3 +15,5 @@ public interface KafkaProcessor {
     @Output(OUTPUT)
     MessageChannel outboundTopic();
 }
+
+// AKS 빌드 시 전체 주석 처리 했음

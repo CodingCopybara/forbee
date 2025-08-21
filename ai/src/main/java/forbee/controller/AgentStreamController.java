@@ -30,6 +30,14 @@ public class AgentStreamController {
         // EmitterProcessor<T> 자체가 Flux<T>라서 asFlux() 불필요
         return stream.getSink(userId)
                 .map(data -> ServerSentEvent.builder(data).event("agent").build());
+
+        // AKS 빌드 시 위 return 주석 처리 후 사용
+        // AgentResponse lastResult = store.get(userId);
+        // return Flux.concat(
+        // lastResult != null ? Flux.just(lastResult) : Flux.empty(),
+        // stream.getSink(userId)
+        // )
+        // .map(data -> ServerSentEvent.builder(data).event("agent").build());
     }
 
     @GetMapping("/result")
