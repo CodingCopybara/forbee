@@ -84,7 +84,7 @@ export default function PestDetectionPage() {
   const [detection, setDetection] = useState<Detection>(null)
   // SSE 구독
   useEffect(() => {
-    if (!GW_URL || !userId) return
+    if (!userId) return
     const streamUrl = `${GW_URL}/ai/stream?userId=${encodeURIComponent(userId)}`
     const es = new EventSource(streamUrl)
     esRef.current = es
@@ -317,13 +317,13 @@ export default function PestDetectionPage() {
             ts: Date.now() + i,
           })),
       }
-      await postJSON(`${GW_URL}/chatbot/chat-sessions`, payload, { userId, Authorization: `Bearer ${token}` })
+      await postJSON(`${GW_URL}/api/chat-sessions`, payload, { userId, Authorization: `Bearer ${token}` })
       router.push("/community/write?board=qna&category=disease")
     } catch (e) {
       console.warn("서버 저장 실패 → localStorage fallback", e)
       const fallbackId = `local-${Date.now()}`
       localStorage.setItem(`chat:${fallbackId}`, JSON.stringify({ userId, messages }))
-      router.push("/community/qna/write")
+      router.push("community/write?board=qna")
     } finally {
       setIsSaving(false)
     }
@@ -459,7 +459,7 @@ export default function PestDetectionPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Bot className="w-5 h-5 text-amber-600" />
-                  AI 진단 상담
+                  AI 처방전 
                 </CardTitle>
                 <CardDescription>분석 결과에 대해 궁금한 점을 언제든 질문하세요</CardDescription>
               </CardHeader>

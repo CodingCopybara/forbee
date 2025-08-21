@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chatbot-ai-config
+data:
+  VECTOR_STORE_ID: "vs_68a5b22241c88191940c033687a357bd"

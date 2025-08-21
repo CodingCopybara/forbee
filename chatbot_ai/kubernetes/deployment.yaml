@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatbot-ai
+  labels:
+    app: chatbot-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chatbot-ai
+  template:
+    metadata:
+      labels:
+        app: chatbot-ai
+    spec:
+      containers:
+        - name: chatbot-ai
+          image: forbeeregistry.azurecr.io/chatbot_ai:08202036
+          ports:
+            - containerPort: 8000 # Dockerfile에 명시된 포트
+          envFrom:
+            - secretRef:
+                name: app-secrets
+            - configMapRef:
+                name: chatbot-ai-config
+          command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

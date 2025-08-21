@@ -16,22 +16,22 @@ spec:
     spec:
       containers:
         - name: chatbot
-          image: "username/chatbot:latest"
+          image: forbeeregistry.azurecr.io/chatbot:08202044
           ports:
             - containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 15
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 10
-          livenessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 15
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 5
+          # readinessProbe:
+          #   httpGet:
+          #     path: '/actuator/health'
+          #     port: 8080
+          #   initialDelaySeconds: 15
+          #   timeoutSeconds: 2
+          #   periodSeconds: 5
+          #   failureThreshold: 10
+          # livenessProbe:
+          #   httpGet:
+          #     path: '/actuator/health'
+          #     port: 8080
+          #   initialDelaySeconds: 15
+          #   timeoutSeconds: 2
+          #   periodSeconds: 5
+          #   failureThreshold: 5

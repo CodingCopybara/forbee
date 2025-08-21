@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatbot-ai
+  labels:
+    app: chatbot-ai
+spec:
+  selector:
+    app: chatbot-ai
+  ports:
+    - protocol: TCP
+      port: 8000 # 서비스 포트
+      targetPort: 8000 # 컨테이너 포트 (Dockerfile에 명시된 포트)
+  type: ClusterIP # 클러스터 내부에서만 접근 가능
