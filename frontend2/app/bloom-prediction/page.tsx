@@ -305,7 +305,7 @@ export default function BloomPredictionPage() {
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-5 w-5 text-amber-600" />
                             <div>
-                              <p className="text-sm text-gray-600">관측소 평균 개화일</p>
+                              <p className="text-sm text-gray-600">최근 10년 평균 개화일</p>
                               <p className="font-semibold">{result.avgBloomDate}</p>
                             </div>
                           </div>
@@ -355,7 +355,7 @@ export default function BloomPredictionPage() {
                       </h4>
                       <p className="text-sm text-amber-800">AI 예측에 성공했습니다.</p>
                       <p className="text-sm text-amber-800">해당 관측소에 전년도 개화일 데이터가 존재하지 않으면 표시되지 않을 수 있습니다.</p>
-                      <p className="text-sm text-amber-800">관측소의 평균 개화일 데이터는 최근 10년간의 데이터를 기준으로 산정됩니다. 최근 관측 데이터가 없는 경우, 표시되지 않을 수 있습니다.</p>
+                      <p className="text-sm text-amber-800">최근 10년 평균 개화일 데이터는 최근 10년간의 데이터를 기준으로 산정됩니다. 최근 관측 데이터가 없는 경우, 표시되지 않을 수 있습니다.</p>
                     </div>
                   </>
                 )}
