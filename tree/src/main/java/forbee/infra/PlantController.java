@@ -265,6 +265,9 @@ public class PlantController {
                 "--species", species
             );
 
+            // Set encoding for Python script
+            pb.environment().put("PYTHONIOENCODING", "UTF-8");
+
             pb.redirectErrorStream(true);
             Process process = pb.start();
 
@@ -277,7 +280,8 @@ public class PlantController {
 
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                System.out.println("Python script failed to execute.");
+                System.out.println("Python script failed to execute. Exit Code: " + exitCode);
+                System.out.println("Script output: " + output.toString());
                 return new BloomPredictionResponse(
                     "fail",
                     "N/A",

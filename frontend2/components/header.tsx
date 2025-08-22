@@ -46,13 +46,13 @@ export default function Header() {
         </Link>
         <nav className="hidden md:flex items-center space-x-6">
           <Link href="/pest-detection" className="text-gray-600 hover:text-amber-600 transition-colors">
-            진단 서비스
+            해충 질병 진단
           </Link>
           <Link href="/area-analysis" className="text-gray-600 hover:text-amber-600 transition-colors">
-            양봉지 분석
+            양봉 지역 분석
           </Link>
           <Link href="/bloom-prediction" className="text-gray-600 hover:text-amber-600 transition-colors">
-            개화 예측
+            개화 시기 예측
           </Link>
           <Link href="/nectar-support" className="text-gray-600 hover:text-amber-600 transition-colors">
             밀원수 지원

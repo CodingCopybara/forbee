@@ -34,17 +34,17 @@ export default function Footer() {
               <ul className="space-y-2 text-sm text-gray-400">
                 <li>
                   <Link href="/pest-detection" className="hover:text-amber-400 transition-colors">
-                    해충/질병 탐지
+                    해충 질병 진단
                   </Link>
                 </li>
                 <li>
                   <Link href="/area-analysis" className="hover:text-amber-400 transition-colors">
-                    양봉지 분석
+                    양봉 입지 분석
                   </Link>
                 </li>
                 <li>
                   <Link href="#" className="hover:text-amber-400 transition-colors">
-                    개화 예측
+                    개화 시기 예측
                   </Link>
                 </li>
                 <li>

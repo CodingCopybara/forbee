@@ -507,8 +507,8 @@ const dummyImage = "/images/dummy_result.png";
         {/* 좌측 사이드바 */}
         <div className="w-80 bg-white shadow-lg overflow-y-auto">
           <div className="p-6 border-b">
-            <h1 className="text-2xl font-bold text-gray-900">양봉지 분석</h1>
-            <p className="text-sm text-gray-600 mt-2">AI를 이용해 원하는 위치가 양봉지에 적합한지 분석해드려요.</p>
+            <h1 className="text-2xl font-bold text-gray-900">양봉 입지 분석</h1>
+            <p className="text-sm text-gray-600 mt-2">AI를 이용해 원하는 위치가 양봉하기 적합한지 분석해드려요.</p>
           </div>  
 
           {/* 분석할 지역 */}

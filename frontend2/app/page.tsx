@@ -102,7 +102,7 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
                   <Bug className="w-6 h-6 text-amber-600" />
                 </div>
-                <CardTitle className="text-xl">해충/질병 탐지</CardTitle>
+                <CardTitle className="text-xl">해충 질병 진단</CardTitle>
                 <CardDescription>벌집 사진을 업로드하면 AI가 즉시 분석하여 질병과 해충을 감지합니다</CardDescription>
               </CardHeader>
               <CardContent>
@@ -123,7 +123,7 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
                   <MapPin className="w-6 h-6 text-amber-600" />
                 </div>
-                <CardTitle className="text-xl">양봉 지역 분석</CardTitle>
+                <CardTitle className="text-xl">양봉 입지 분석</CardTitle>
                 <CardDescription>지도 기반으로 선택한 양봉지 중심 반경 800m 이내 환경을 분석합니다</CardDescription>
               </CardHeader>
               <CardContent>
@@ -144,7 +144,7 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
                   <Flower className="w-6 h-6 text-amber-600" />
                 </div>
-                <CardTitle className="text-xl">전국 개화시기 예측</CardTitle>
+                <CardTitle className="text-xl">개화 시기 예측</CardTitle>
                 <CardDescription>
                   AI 기반 개화시기 예측으로 주변 관측소의 개화시기를 확인하세요
                 </CardDescription>
@@ -167,7 +167,7 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
                   <TreePine className="w-6 h-6 text-amber-600" />
                 </div>
-                <CardTitle className="text-xl">밀원수 지원 서비스</CardTitle>
+                <CardTitle className="text-xl">밀원수 지원</CardTitle>
                 <CardDescription>
                   양봉농협과 함께하는 밀원수 지원 프로그램으로 더 풍성한 꿀 생산을 시작하세요
                 </CardDescription>
@@ -195,14 +195,14 @@ export default function HomePage() {
               <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-2">1,200+</h3>
+              <h3 className="text-3xl font-bold text-gray-900 mb-2">2,300+</h3>
               <p className="text-gray-600">활성 양봉업자</p>
             </div>
             <div>
               <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Shield className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-2">98.5%</h3>
+              <h3 className="text-3xl font-bold text-gray-900 mb-2">92.2%</h3>
               <p className="text-gray-600">진단 정확도</p>
             </div>
             <div>

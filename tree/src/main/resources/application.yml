@@ -40,6 +40,10 @@ spring:
 #>>> EDA / Topic Name
           contentType: application/json
 
+tree:
+  python:
+    script-path: /workspace/forbee/tree/src/main/model/predict_bloom.py
+
 logging:
   level:
     org.hibernate.type: trace
