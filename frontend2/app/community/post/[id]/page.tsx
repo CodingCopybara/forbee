@@ -10,7 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Eye, MessageCircle, Share2, MoreVertical } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { marked } from "marked"
 import DOMPurify from "dompurify"
 
@@ -45,9 +44,9 @@ type Post = {
   views?: number
   likes?: number
   comments?: number
-  category?: "free" | "notice" | "qna" | string
-  subCategory?: string
-  tags?: string[]
+  category?: "free" | "notice" | "qna" | string // 대분류(서버 기존)
+  subCategory?: string                           // ✅ 세부 카테고리
+  tags?: string[]                                // ✅ 태그
 }
 
 type Comment = {
@@ -150,6 +149,7 @@ export default function PostDetailPage({
   const [confirmMsg, setConfirmMsg] = useState("")
   const askConfirm = (msg: string, onYes: () => void) => {
     setConfirmMsg(msg)
+    // 확인 버튼에서 onYes 호출 후 모달 닫기
     confirmYesRef.current = () => { setConfirmMsg(""); onYes() }
   }
   const confirmYesRef = React.useRef<() => void>(() => {})
@@ -170,18 +170,7 @@ export default function PostDetailPage({
   const contentLocked = titleLocked
   const commentsLocked = titleLocked
 
-  // ✅ 작성자/관리자 권한 계산
-  const normalizeName = (s?: string) => {
-    const v = (s || "").trim()
-    const n = v.includes("@") ? v.split("@")[0] : v
-    return n.toLowerCase()
-  }
-  const currentUser = normalizeName(usernameFromLS())
-  const postAuthor = normalizeName(post?.author)
-  const isAuthor = !!post && currentUser && postAuthor && currentUser === postAuthor
-
-  const canEdit = isAuthor
-  const canDelete = isAuthor || role === "ADMIN"
+  const canDelete = role === "ADMIN"
 
   const canComment = React.useMemo(() => {
     if (!post) return false
@@ -214,7 +203,7 @@ export default function PostDetailPage({
     }
   }
 
-  // 공유하기
+  // 공유하기: 현재 페이지 URL 복사 (모달 알림 사용)
   const handleShare = async () => {
     try {
       const url = typeof window !== "undefined" ? window.location.href : ""
@@ -234,14 +223,16 @@ export default function PostDetailPage({
     }
   }
 
-  // 수정 이동: 현재 경로 뒤에 /edit 부착
-  const handleEdit = () => {
-    if (!canEdit) return
-    const base = typeof window !== "undefined" ? window.location.pathname.replace(/\/+$/, "") : ""
-    router.push(`${base}/edit`)
-  }
+  marked.setOptions({ breaks: true })
+  const renderedHtml = useMemo(() => {
+    const raw = post?.content ?? ""
+    const parsed = marked.parse(raw || "", { async: false }) as string
+    const fixed = parsed.replace(/(src|href)="(\/[^"]*)"/g, (_m, attr, path) => `${attr}="${abs(path)}"`)
+    return { __html: DOMPurify.sanitize(fixed) }
+  }, [post?.content])
 
-  // 삭제
+  const formattedDate = (raw?: string) => (raw ? new Date(raw).toLocaleString("ko-KR") : "")
+
   const handleDelete = async () => {
     if (!canDelete) return
     askConfirm("정말 삭제하시겠습니까?", async () => {
@@ -258,15 +249,23 @@ export default function PostDetailPage({
     })
   }
 
-  marked.setOptions({ breaks: true })
-  const renderedHtml = useMemo(() => {
-    const raw = post?.content ?? ""
-    const parsed = marked.parse(raw || "", { async: false }) as string
-    const fixed = parsed.replace(/(src|href)="(\/[^"]*)"/g, (_m, attr, path) => `${attr}="${abs(path)}"`)
-    return { __html: DOMPurify.sanitize(fixed) }
-  }, [post?.content])
-
-  const formattedDate = (raw?: string) => (raw ? new Date(raw).toLocaleString("ko-KR") : "")
+  const submitComment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newComment.trim() || !canComment) return
+    try {
+      const res = await fetch(`${GW}/comments/write`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ postId: id, content: newComment, author: usernameFromLS() || "익명" }),
+      })
+      if (!res.ok) throw new Error(`POST /comments/write -> ${res.status}`)
+      setNewComment("")
+      load()
+    } catch (e) {
+      console.error(e)
+      showAlert("댓글 작성에 실패했습니다.")
+    }
+  }
 
   const subCategoryBadge = (sc?: string) => {
     if (!sc) return null
@@ -284,7 +283,13 @@ export default function PostDetailPage({
               목록으로
             </Button>
           </Link>
-          {/* 상단 우측의 별도 '삭제하기' 버튼 제거 → 점점점 메뉴에서 처리 */}
+          <div className="ml-auto flex gap-2">
+            {canDelete && (
+              <Button variant="destructive" size="sm" onClick={handleDelete}>
+                삭제하기
+              </Button>
+            )}
+          </div>
         </div>
 
         <Card className="mb-8">
@@ -298,24 +303,10 @@ export default function PostDetailPage({
                     <Badge key={tag} variant="secondary" className="text-xs">#{tag}</Badge>
                   ))}
               </div>
-
-              {/* 점점점 버튼 → 드롭다운 (작성자 또는 관리자에게만 편집/삭제 노출) */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" aria-label="더보기">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {canEdit && <DropdownMenuItem onClick={handleEdit}>수정하기</DropdownMenuItem>}
-                  {canDelete && <DropdownMenuItem onClick={handleDelete} className="text-red-600">삭제하기</DropdownMenuItem>}
-                  {!canEdit && !canDelete && (
-                    <DropdownMenuItem disabled>권한 없음</DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button variant="ghost" size="sm">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
             </div>
-
             <h1 className="text-2xl font-bold text-gray-900 mt-4">
               {titleLocked ? "잠긴 글입니다." : post?.title || ""}
             </h1>
@@ -339,6 +330,7 @@ export default function PostDetailPage({
                 </div>
                 <div className="flex items-center gap-1">
                   <MessageCircle className="h-4 w-4" />
+                  {/* ✅ 실제 로드된 댓글 수로 표시 */}
                   <span>{comments.length}</span>
                 </div>
               </div>
@@ -354,6 +346,7 @@ export default function PostDetailPage({
             </div>
 
             <div className="flex items-center justify-end mt-8 pt-6 border-t">
+              {/* ✅ 좋아요/북마크 제거, 공유만 남김 */}
               <Button variant="outline" size="sm" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" />
                 공유하기
@@ -368,25 +361,7 @@ export default function PostDetailPage({
           </CardHeader>
           <CardContent>
             {canComment && !commentsLocked ? (
-              <form onSubmit={(e) => {
-                e.preventDefault()
-                if (!newComment.trim()) return
-                ;(async () => {
-                  try {
-                    const res = await fetch(`${GW}/comments/write`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json", ...authHeaders() },
-                      body: JSON.stringify({ postId: id, content: newComment, author: usernameFromLS() || "익명" }),
-                    })
-                    if (!res.ok) throw new Error(`POST /comments/write -> ${res.status}`)
-                    setNewComment("")
-                    load()
-                  } catch (e) {
-                    console.error(e)
-                    showAlert("댓글 작성에 실패했습니다.")
-                  }
-                })()
-              }} className="mb-6">
+              <form onSubmit={submitComment} className="mb-6">
                 <Textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}

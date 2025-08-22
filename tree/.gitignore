@@ -44,4 +44,3 @@ secrets.yml
 node_modules
 .dist/
 .pem
-*.pyc
