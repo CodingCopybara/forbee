@@ -38,12 +38,158 @@ function AlertModal({ message, onClose }: { message: string; onClose: () => void
   )
 }
 
+/**
+ * 🍯 간단 미니게임: Honey Drop Game
+ * - 분석(isLoading) 중 화면 위 오버레이에 표시
+ * - 좌우 키/마우스/터치로 바구니를 움직여 떨어지는 꿀(이미지)을 받기
+ * - 이미지 경로는 /honey-dnaji.png (Next.js public 기준)
+ */
+function HoneyDropGame({ imageSrc = "/honey-dnaji.png" }: { imageSrc?: string }) {
+  const areaRef = useRef<HTMLDivElement>(null)
+  const [score, setScore] = useState(0)
+  const [miss, setMiss] = useState(0)
+  const [basketX, setBasketX] = useState(150)
+  const [areaW, setAreaW] = useState(360)
+  const [areaH, setAreaH] = useState(520)
+  const itemsRef = useRef<{ id: number; x: number; y: number; speed: number }[]>([])
+  const idRef = useRef(0)
+  const rafRef = useRef<number | null>(null)
+  const spawnTimer = useRef<any>(null)
+
+  useEffect(() => {
+    const updateSize = () => {
+      const el = areaRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      setAreaW(rect.width)
+      setAreaH(rect.height)
+      setBasketX(rect.width / 2)
+    }
+    updateSize()
+    window.addEventListener('resize', updateSize)
+    return () => window.removeEventListener('resize', updateSize)
+  }, [])
+
+  // 입력 컨트롤: 마우스/터치/키보드
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const el = areaRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      setBasketX(Math.max(0, Math.min(rect.width, e.clientX - rect.left)))
+    }
+    const onTouch = (e: TouchEvent) => {
+      const el = areaRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const t = e.touches[0]
+      setBasketX(Math.max(0, Math.min(rect.width, t.clientX - rect.left)))
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') setBasketX(x => Math.max(0, x - 24))
+      if (e.key === 'ArrowRight') setBasketX(x => Math.min(areaW, x + 24))
+    }
+    const el = areaRef.current
+    el?.addEventListener('mousemove', onMove)
+    el?.addEventListener('touchmove', onTouch)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      el?.removeEventListener('mousemove', onMove)
+      el?.removeEventListener('touchmove', onTouch)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [areaW])
+
+  // 스폰 & 게임 루프
+  useEffect(() => {
+    // 주기적으로 꿀 드랍 스폰
+    spawnTimer.current = setInterval(() => {
+      const w = areaRef.current?.clientWidth || 360
+      itemsRef.current.push({
+        id: idRef.current++,
+        x: Math.random() * (w - 40) + 20,
+        y: -40,
+        speed: 2.6 + Math.random() * 1.8,
+      })
+    }, 650)
+
+    const loop = () => {
+      // 업데이트
+      const h = areaRef.current?.clientHeight || 520
+      const basketWidth = 96
+      const basketHeight = 18
+      const basketY = h - 36 // 바닥에서 36px
+      itemsRef.current.forEach(it => {
+        it.y += it.speed
+      })
+      // 충돌/소실 처리
+      const remain: typeof itemsRef.current = []
+      itemsRef.current.forEach(it => {
+        const caught = Math.abs((it.x) - basketX) < (basketWidth / 2) && (it.y + 20) >= (basketY - basketHeight) && it.y <= basketY + 10
+        if (caught) {
+          setScore(s => s + 1)
+          return
+        }
+        if (it.y > h + 40) {
+          setMiss(m => m + 1)
+          return
+        }
+        remain.push(it)
+      })
+      itemsRef.current = remain
+      rafRef.current = requestAnimationFrame(loop)
+    }
+    rafRef.current = requestAnimationFrame(loop)
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      clearInterval(spawnTimer.current)
+    }
+  }, [basketX])
+
+  return (
+    <div className="w-full max-w-[780px] mx-auto">
+      <div className="mb-3 flex items-center justify-between text-sm text-gray-200">
+        <div className="flex items-center gap-3">
+          <span className="px-2 py-1 rounded bg-white/10">점수: <b className="text-white">{score}</b></span>
+          <span className="px-2 py-1 rounded bg-white/10">놓침: <b className="text-white">{miss}</b></span>
+        </div>
+        <div className="hidden md:block text-xs opacity-90">← → 키 또는 마우스/터치로 바구니 이동</div>
+      </div>
+      <div
+        ref={areaRef}
+        className="relative w-full aspect-[3/2] max-h-[60vh] bg-white/5 rounded-2xl overflow-hidden border border-white/10"
+      >
+        {/* 꿀 드랍들 */}
+        {itemsRef.current.map((it) => (
+          <img
+            key={it.id}
+            src={imageSrc}
+            alt="honey"
+            className="pointer-events-none select-none absolute w-10 h-10"
+            style={{ transform: `translate(${it.x - 20}px, ${it.y - 20}px)` }}
+          />
+        ))}
+
+        {/* 바구니 */}
+        <div
+          className="absolute bottom-4 left-0 h-[18px] w-[96px] rounded-full"
+          style={{ transform: `translateX(${Math.max(0, Math.min((areaW - 96), basketX - 48))}px)`,
+                   boxShadow: '0 6px 18px rgba(0,0,0,0.25)',
+                   background: 'linear-gradient(180deg, #f59e0b, #b45309)' }}
+        />
+      </div>
+    </div>
+  )
+}
+
 export default function MapPredict() {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstance = useRef<any>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   const [isMapInitialized, setIsMapInitialized] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [showGame, setShowGame] = useState(false)
   const [coordinates, setCoordinates] = useState("위치 정보를 로드 중...")
   const [resultImageSrc, setResultImageSrc] = useState("")
   const [pixelRatios, setPixelRatios] = useState<PixelRatios>({})
@@ -113,7 +259,6 @@ export default function MapPredict() {
           Authorization: "Bearer " + localStorage.getItem("accessToken"),
         },
       });
-      // 서버에서 받아온 JSON 구조에 맞춰서 필요한 주소만 추출
       const addr = res.data.full_addr || "주소를 불러오지 못했습니다.";
       setAddress(addr);
       setAnalysisAddress(addr);
@@ -123,26 +268,6 @@ export default function MapPredict() {
       setAnalysisAddress("주소를 불러오지 못했습니다.");
     }
   };
-
-  // // 지도 검색 기능
-  // const handleSearch = async () => {
-  //   if (!searchAddress || !mapInstance.current) return;
-
-  //   try {
-  //     const res = await axios.get(`${process.env.NEXT_PUBLIC_GW_URL}/maps/search-address`, { params: { query: searchAddress } });
-  //     const data = res.data;
-
-  //     if (data && data.x != null && data.y != null) {
-  //       const utmkPos = proj4("EPSG:4326", "EPSG:5179", [data.x, data.y]);
-  //       mapInstance.current.setView(window.sop.utmk(utmkPos[0], utmkPos[1]), 16); 
-  //     } else {
-  //       alert("검색 결과가 없습니다.");
-  //     }
-  //   } catch (err) {
-  //     console.error(err);
-  //     alert("주소 검색 실패");
-  //   }
-  // };
 
   // 추천 점수 계산
   const calculateRecommendation = (ratios: PixelRatios) => {
@@ -221,9 +346,8 @@ export default function MapPredict() {
       return labelDescriptions[label].low;
     };
 
-    // 라벨별 HTML 생성
     const labelHtml = Object.entries(ratios)
-      .filter(([label]) => labelDescriptions[label])
+      .filter(([label]) => (labelDescriptions as any)[label])
       .sort((a, b) => b[1] - a[1])
       .map(([label, ratio]) => {
         const percent = Math.floor(ratio * 10000) / 100;
@@ -351,10 +475,11 @@ export default function MapPredict() {
   const captureAndPredict = async () => {
     if (!mapRef.current || !mapInstance.current) return;
     setIsLoading(true);
+    setTimeout(() => setShowGame(true), 1000); // 분석 시작 1초 후 게임 표시
 
     const widgetElements = mapRef.current.querySelectorAll<HTMLElement>('.sop-control');
     widgetElements.forEach(el => {
-      el.dataset.prevDisplay = el.style.display;
+      ;(el as any).dataset.prevDisplay = el.style.display;
       el.style.display = 'none';
     });
     markerLayerRef.current?.remove();
@@ -381,11 +506,6 @@ export default function MapPredict() {
     const capturedImages: HTMLCanvasElement[] = [];
     const startOffsetX = -Math.floor(tilesPerSideX / 2);
     const startOffsetY = -Math.floor(tilesPerSideY / 2);
-    
-    console.log("지도 div 크기:", tileWidth, "x", tileHeight);
-    console.log("캡처 최소 목표 크기:", minTargetSize);
-    console.log("가로/세로 타일 수:", tilesPerSideX, tilesPerSideY);
-    console.log("최종 캡처 이미지 크기 (px):", finalWidth, "x", finalHeight);
     
     // 타일 스티칭
     for (let y = 0; y < tilesPerSideY; y++) {
@@ -455,7 +575,6 @@ export default function MapPredict() {
     if (!blob) throw new Error("Blob 생성 실패");
 
     try {
-      console.log("분석을 위해 이미지를 서버로 전송합니다.", { size: blob.size, type: blob.type });
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_GW_URL}/maps/predict-and-get-info`,
         blob,
@@ -467,7 +586,6 @@ export default function MapPredict() {
           responseType: "json",
         }
       );
-      console.log("서버로부터 분석 결과를 받았습니다:", response.data);
 
       setResultImageSrc(response.data.image_data || "")
       setPixelRatios(response.data.pixel_ratios || {})
@@ -477,29 +595,31 @@ export default function MapPredict() {
       console.error('예측 실패:', error);
       setAlertMessage("분석에 실패했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
+      // 원래 UI 복구
       widgetElements.forEach(el => {
-        el.style.display = el.dataset.prevDisplay || '';
-        delete el.dataset.prevDisplay;
+        el.style.display = (el as any).dataset.prevDisplay || '';
+        delete (el as any).dataset.prevDisplay;
       });
       markerLayerRef.current?.addTo(mapInstance.current);
       map.setView(originalCenter, originalZoom);
-      setIsLoading(false);
       isCapturingRef.current = false;
+      setShowGame(false); // 분석 종료 시 게임 닫기
+      setIsLoading(false);
     }
   }
 
   // 결과 보고서 UI 테스트 진입로
   const dummyRatios: PixelRatios = {
-  "활엽수림": 0.35,
-  "침엽수림": 0.15,
-  "논": 0.10,
-  "밭": 0.10,
-  "비닐하우스": 0.10,
-  "수역": 0.10,
-  "나지": 0.05,
-};
+    "활엽수림": 0.35,
+    "침엽수림": 0.15,
+    "논": 0.10,
+    "밭": 0.10,
+    "비닐하우스": 0.10,
+    "수역": 0.10,
+    "나지": 0.05,
+  };
 
-const dummyImage = "/images/dummy_result.png";
+  const dummyImage = "/images/dummy_result.png";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -521,24 +641,6 @@ const dummyImage = "/images/dummy_result.png";
               </div>
               <div className="text-sm text-gray-500 mt-1">({coordinates})</div>
             </div>
-            {/* 검색 입력창
-            <input
-              type="text"
-              placeholder="지역 검색..."
-              value={searchAddress}
-              onChange={(e) => setSearchAddress(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleSearch();
-              }}
-              className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
-            <Button
-              onClick={handleSearch}
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white mt-2"
-            >
-              <Search className="w-4 h-4 mr-2" />
-              검색
-            </Button> */}
           </div>
           
           {/* 이용 안내 */}
@@ -577,7 +679,7 @@ const dummyImage = "/images/dummy_result.png";
               className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800">
               결과 보기
             </Button>
-            
+
             {/* 임시 진입로 - 실제 서비스에서는 제거
             <Button
               onClick={() => {
@@ -616,10 +718,21 @@ const dummyImage = "/images/dummy_result.png";
             ) : (
               <div className="w-full h-full" ref={mapRef}></div>
             )}
+
+            {/* 분석 오버레이 + 미니게임 */}
             {isLoading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-50" style={{ backgroundColor: "rgba(0,0,0,0.8)",}}>
-                <Loader2 className="w-16 h-16 animate-spin mb-4" />
-                <p className="text-xl">분석 중입니다. 잠시만 기다려주세요...</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-50" style={{ backgroundColor: "rgba(0,0,0,0.85)",}}>
+                <div className="flex items-center gap-3 mb-4">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <p className="text-lg">분석 중입니다. 게임을 하며 기다려보세요!</p>
+                </div>
+                {/* 진행률 (시각 효과용)*/}
+                <div className="w-full max-w-xl px-6 mb-6">
+                  <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-2 bg-amber-400 animate-pulse" style={{ width: '66%' }} />
+                  </div>
+                </div>
+                {showGame && <HoneyDropGame imageSrc="/honey-dnaji.png" />}
               </div>
             )}
           </div>
@@ -668,23 +781,6 @@ const dummyImage = "/images/dummy_result.png";
                         {Object.entries(pixelRatios)
                         .sort((a, b) => b[1] - a[1])
                         .map(([key, value]) => {
-                          console.log("key type:", typeof key, "key:", key, "value:", value);
-                          const labels: Record<string, string> = {
-                            "-1": "무시",
-                            "0": "기타",
-                            "1": "건물",
-                            "2": "주차장",
-                            "3": "도로",
-                            "4": "가로수",
-                            "5": "논",
-                            "6": "비닐하우스",
-                            "7": "밭",
-                            "8": "활엽수림",
-                            "9": "침엽수림",
-                            "10": "나지",
-                            "11": "수역",
-                          };
-
                           const colors: Record<string, string> = {
                             "무시": "bg-[#646464]",
                             "기타": "bg-[#A0A0A0]",
@@ -706,11 +802,11 @@ const dummyImage = "/images/dummy_result.png";
                           return (
                             <div key={key} className="space-y-1">
                               <div className="flex items-center gap-2">
-                                <div className={`w-4 h-4 rounded-full border border-gray-300 inline-block ${colors[key]}`} />
+                                <div className={`w-4 h-4 rounded-full border border-gray-300 inline-block ${colors[key] || 'bg-gray-300'}`} />
                                 <span className="text-gray-700">{key}: {percent}%</span>
                               </div>
                               <div className="w-full h-2 bg-gray-200 rounded overflow-hidden">
-                                <div className={`h-full ${colors[key]}`} style={{ width: `${percent}%` }} />
+                                <div className={`h-full ${colors[key] || 'bg-gray-300'}`} style={{ width: `${percent}%` }} />
                               </div>
                             </div>
                           );
