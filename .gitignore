@@ -89,3 +89,4 @@ __pycache__/
 
 GEMINI.md
 .sqlite3
+env.properties

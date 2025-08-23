@@ -5,6 +5,8 @@ README.md
 .env
 kubernetes/
 README.md
+env.properties
+src/main/java/forbee/config/PropertyConfig.java
 # KafkaProcessor.java
 
 # Java 빌드 시 제외할 파일(Python 빌드 시 주석 처리)
