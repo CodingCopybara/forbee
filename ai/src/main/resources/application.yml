@@ -97,8 +97,8 @@ spring:
         show_sql: true
         format_sql: true
   kafka:
-  #   # bootstrap-servers: localhost:9092  # kafka:9092 였음 default profile이 실행되지 않아서 localhost로 변경
-    bootstrap-servers: my-kafka:9092  # AKS 배포 시 사용
+    bootstrap-servers: localhost:9092  # kafka:9092 였음 default profile이 실행되지 않아서 localhost로 변경
+    #bootstrap-servers: my-kafka:9092  # AKS 배포 시 사용
   security:
     oauth2:
       resourceserver:
