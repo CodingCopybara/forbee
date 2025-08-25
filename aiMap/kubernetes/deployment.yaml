@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: aimap
-          image: forbeeregistry.azurecr.io/aimap:08251112
+          image: forbeeregistry.azurecr.io/aimap:08251141
           ports:
             - containerPort: 8080
           env:

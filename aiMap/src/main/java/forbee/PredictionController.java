@@ -78,10 +78,10 @@ public class PredictionController {
             System.out.println("[3] 파일 저장 완료");
 
             // Python 호출
-            String scriptPath = "/workspace/forbee/aiMap/src/main/model/predict.py";
-            String modelPath = "/workspace/forbee/aiMap/src/main/model/MODEL.pth";
-
-            ProcessBuilder pb = new ProcessBuilder("python", scriptPath,
+            String scriptPath = "/app/model/predict.py";
+            String modelPath = "/app/model/MODEL.pth";
+            
+            ProcessBuilder pb = new ProcessBuilder("python3", scriptPath,
                     "--model", modelPath,
                     "--input", inputFilePath);
             
