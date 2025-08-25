@@ -30,10 +30,10 @@ interface BloomResult {
 }
 
 const flowerIcon = [
-  { id: 1, name: "아카시아", image: "/icons/flower1.png" },
-  { id: 2, name: "개나리", image: "/icons/flower2.png" },
-  { id: 3, name: "매화", image: "/icons/flower3.png" },
-  { id: 4, name: "벚꽃", image: "/icons/flower4.png" },
+  { id: 1, name: "아카시아", image: "https://forbee.blob.core.windows.net/blob/public/icons/flower1.png" },
+  { id: 2, name: "개나리", image: "https://forbee.blob.core.windows.net/blob/public/icons/flower2.png" },
+  { id: 3, name: "매화", image: "https://forbee.blob.core.windows.net/blob/public/icons/flower3.png" },
+  { id: 4, name: "벚꽃", image: "https://forbee.blob.core.windows.net/blob/public/icons/flower4.png" },
 ];
 
 const locations: Location[] = [

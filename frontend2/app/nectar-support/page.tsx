@@ -23,7 +23,7 @@ const nectarSources = [
     characteristics: "맑고 투명한 색상, 결정화가 늦음",
     benefits: "높은 당도, 오랜 보관 가능",
     description: "한국의 대표적인 밀원수로 품질 좋은 꿀을 생산합니다.",
-    image: "/placeholder-ps4k8.png",
+    image: "https://forbee.blob.core.windows.net/blob/public/placeholder-ps4k8.png",
   },
   {
     id: "forsythia",
@@ -34,7 +34,7 @@ const nectarSources = [
     characteristics: "연한 황색, 부드러운 향",
     benefits: "이른 봄 꿀 생산, 꿀벌 활력 증진",
     description: "이른 봄 꿀벌들의 첫 번째 중요한 꿀 공급원입니다.",
-    image: "/forsythia-yellow-flowers.png",
+    image: "https://forbee.blob.core.windows.net/blob/public/forsythia-yellow-flowers.png",
   },
   {
     id: "plum",
@@ -45,7 +45,7 @@ const nectarSources = [
     characteristics: "진한 향과 독특한 맛",
     benefits: "이른 개화로 봄철 꿀 생산 시작",
     description: "가장 이른 시기에 개화하여 꿀벌들의 활동을 시작하게 합니다.",
-    image: "/white-plum-blossoms.png",
+    image: "https://forbee.blob.core.windows.net/blob/public/white-plum-blossoms.png",
   },
   {
     id: "cherry",
@@ -56,7 +56,7 @@ const nectarSources = [
     characteristics: "연분홍빛 색상, 화사한 향",
     benefits: "봄철 주요 밀원, 관상가치 겸비",
     description: "아름다운 꽃과 함께 양질의 꿀을 제공하는 밀원수입니다.",
-    image: "/cherry-blossom-pink-flowers.png",
+    image: "https://forbee.blob.core.windows.net/blob/public/cherry-blossom-pink-flowers.png",
   },
 ]
 

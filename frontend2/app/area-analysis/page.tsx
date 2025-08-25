@@ -40,7 +40,7 @@ function AlertModal({ message, onClose }: { message: string; onClose: () => void
 /**
  * 🍯 간단 미니게임 (워커 없이)
  */
-function HoneyDropGame({ imageSrc = "/honey-dnaji.png" }: { imageSrc?: string }) {
+function HoneyDropGame({ imageSrc = "https://forbee.blob.core.windows.net/blob/public/honey-dnaji.png" }: { imageSrc?: string }) {
   const areaRef = useRef<HTMLDivElement>(null)
   const [score, setScore] = useState(0)
   const [miss, setMiss] = useState(0)
@@ -182,7 +182,11 @@ export default function MapPredict() {
 
   useEffect(() => {
     if (typeof window.sop !== "undefined") {
-      honeycombIconRef.current = new window.sop.icon({ iconUrl: "/markers/honeycomb.png", iconSize: [64, 64], iconAnchor: [16, 32] })
+      honeycombIconRef.current = new window.sop.icon({
+        iconUrl: 'https://forbee.blob.core.windows.net/blob/public/honey-dnaji.png',
+        iconSize: [48, 48],
+        iconAnchor: [16, 32],
+      });
     }
   }, [])
 
@@ -399,40 +403,46 @@ export default function MapPredict() {
     map.setZoom(captureZoom)
     await new Promise((r) => setTimeout(r, 800))
 
-    const mapElement = mapRef.current
-    const tileWidth = mapElement.offsetWidth
-    const tileHeight = mapElement.offsetHeight
-    const minTargetSize = 3000
+    const mapElement = mapRef.current;
+    const tileWidth = mapElement.offsetWidth;
+    const tileHeight = mapElement.offsetHeight;
+    const minTargetSize = 1500;
 
-    const tilesPerSideX = Math.ceil(minTargetSize / tileWidth)
-    const tilesPerSideY = Math.ceil(minTargetSize / tileHeight)
-    const finalWidth = tileWidth * tilesPerSideX
-    const finalHeight = tileHeight * tilesPerSideY
+    const tilesPerSideX = Math.ceil(minTargetSize / tileWidth);
+    const tilesPerSideY = Math.ceil(minTargetSize / tileHeight);
+    const finalWidth = tileWidth * tilesPerSideX;
+    const finalHeight = tileHeight * tilesPerSideY;
 
+    const capturedImages: HTMLCanvasElement[] = [];
+    const startOffsetX = -Math.floor(tilesPerSideX / 2);
+    const startOffsetY = -Math.floor(tilesPerSideY / 2);
 
     console.log("지도 div 크기:", tileWidth, "x", tileHeight);
     console.log("캡처 최소 목표 크기:", minTargetSize);
     console.log("가로/세로 타일 수:", tilesPerSideX, tilesPerSideY);
     console.log("최종 캡처 이미지 크기 (px):", finalWidth, "x", finalHeight);
 
-    const capturedImages: HTMLCanvasElement[] = []
-    const startOffsetX = -Math.floor(tilesPerSideX / 2)
-    const startOffsetY = -Math.floor(tilesPerSideY / 2)
+    // 타일 스티칭
+    for (let y = 0; y < tilesPerSideY; y++) {
+      for (let x = 0; x < tilesPerSideX; x++) {
+        const dx = (startOffsetX + x) * tileWidth;
+        const dy = (startOffsetY + y) * tileHeight;
 
-    try {
-      // 1) 모든 타일 캡처
-      for (let y = 0; y < tilesPerSideY; y++) {
-        for (let x = 0; x < tilesPerSideX; x++) {
-          const dx = (startOffsetX + x) * tileWidth
-          const dy = (startOffsetY + y) * tileHeight
-          map.setView(originalCenter, captureZoom, { animate: false })
-          map.panBy([dx, dy], { animate: false })
-          await new Promise((r) => setTimeout(r, 800))
+        map.setView(originalCenter, captureZoom, { animate: false });
+        map.panBy([dx, dy], { animate: false });
+        await new Promise(r => setTimeout(r, 999));
 
-          const canvas = await html2canvas(mapRef.current!, { useCORS: true, allowTaint: true, backgroundColor: null, width: tileWidth, height: tileHeight })
-          capturedImages.push(canvas)
-        }
+        const canvas = await html2canvas(mapRef.current!, {
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: null,
+          width: tileWidth,
+          height: tileHeight
+        });
+
+        capturedImages.push(canvas);
       }
+    }
 
       // 2) 스티칭
       const finalCanvas = document.createElement("canvas")
@@ -497,6 +507,19 @@ export default function MapPredict() {
       isCapturingRef.current = false
     }
   }
+
+  // 결과 보고서 UI 테스트 진입로
+  const dummyRatios: PixelRatios = {
+    "활엽수림": 0.35,
+    "침엽수림": 0.15,
+    "논": 0.10,
+    "밭": 0.10,
+    "비닐하우스": 0.10,
+    "수역": 0.10,
+    "나지": 0.05,
+  };
+
+  const dummyImage = "https://forbee.blob.core.windows.net/blob/public/images/dummy_result.png";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -577,16 +600,19 @@ export default function MapPredict() {
                     <div className="h-2 bg-amber-400 animate-pulse" style={{ width: "66%" }} />
                   </div>
                 </div>
-                {showGame && <HoneyDropGame imageSrc="/honey-dnaji.png" />}
+                {showGame && <HoneyDropGame imageSrc="https://forbee.blob.core.windows.net/blob/public/honey-dnaji.png" />}
               </div>
             )}
           </div>
 
           {showResultPopup && resultImageSrc && (
             <div className="absolute inset-0 grid place-items-center z-[1000] bg-white rounded-lg shadow-lg p-4 h-full overflow-auto">
-              {/* 닫기 버튼 */}
-              <button className="absolute top-2 right-2 p-0 text-gray-500 bg-transparent" onClick={() => setShowResultPopup(false)}>
-                <img src="/icons/x.png" alt="닫기" className="w-12 h-12 object-contain" />
+              {/* 닫기 버튼*/}
+              <button
+                className="absolute top-2 right-2 p-0 text-gray-500 bg-transparent"
+                onClick={() => setShowResultPopup(false)}
+              >
+                <img src="https://forbee.blob.core.windows.net/blob/public/icons/x.png" alt="닫기" className="w-12 h-12 object-contain" />
               </button>
 
               <div className="flex flex-col md:flex-row gap-4 w-full items-stretch mt-10">
