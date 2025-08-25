@@ -14,9 +14,15 @@ spec:
     spec:
       containers:
       - name: frontend2
-        image: forbeeregistry.azurecr.io/frontend2:08211736
+        image: forbeeregistry.azurecr.io/frontend2:08251026
         ports:
         - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_SGIS_CONSUMER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: next-public-sgis-consumer-key
+              key: key
         envFrom:
         - configMapRef:
             name: frontend2-config
