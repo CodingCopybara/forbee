@@ -19,7 +19,7 @@ export default function Footer() {
               <div className="flex items-center space-x-2 mb-4">
                 <div className="flex">
                   <Image
-                    src="/NongHyup.png"   // /public/bee-logo.png 에 파일 두기
+                    src="https://forbee.blob.core.windows.net/blob/public/NongHyup.png"   // /public/bee-logo.png 에 파일 두기
                     alt="양봉 AI 로고"
                     width={60}
                     height={60}

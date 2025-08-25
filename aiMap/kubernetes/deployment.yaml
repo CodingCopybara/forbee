@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: aimap
-          image: forbeeregistry.azurecr.io/aimap:08251141
+          image: forbeeregistry.azurecr.io/aimap:08250204
           ports:
             - containerPort: 8080
           env:
@@ -32,5 +32,5 @@ spec:
                 secretKeyRef:
                   name: sgis-api-keys
                   key: SGIS_SECRET_KEY
-      imagePullSecrets: # Add this section
-        - name: acr-secret # Name of your image pull secret
+      imagePullSecrets:
+        - name: acr-secret

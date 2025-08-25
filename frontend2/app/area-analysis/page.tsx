@@ -44,7 +44,7 @@ function AlertModal({ message, onClose }: { message: string; onClose: () => void
  * - 좌우 키/마우스/터치로 바구니를 움직여 떨어지는 꿀(이미지)을 받기
  * - 이미지 경로는 /honey-dnaji.png (Next.js public 기준)
  */
-function HoneyDropGame({ imageSrc = "/honey-dnaji.png" }: { imageSrc?: string }) {
+function HoneyDropGame({ imageSrc = "https://forbee.blob.core.windows.net/blob/public/honey-dnaji.png" }: { imageSrc?: string }) {
   const areaRef = useRef<HTMLDivElement>(null)
   const [score, setScore] = useState(0)
   const [miss, setMiss] = useState(0)
@@ -217,8 +217,8 @@ export default function MapPredict() {
   useEffect(() => {
     if (typeof window.sop !== "undefined") {
       honeycombIconRef.current = new window.sop.icon({
-        iconUrl: '/markers/honeycomb.png',
-        iconSize: [64, 64],
+        iconUrl: 'https://forbee.blob.core.windows.net/blob/public/honey-dnaji.png',
+        iconSize: [48, 48],
         iconAnchor: [16, 32],
       });
     }
@@ -498,7 +498,7 @@ export default function MapPredict() {
     const mapElement = mapRef.current;
     const tileWidth = mapElement.offsetWidth;
     const tileHeight = mapElement.offsetHeight;
-    const minTargetSize = 3000;
+    const minTargetSize = 1500;
 
     const tilesPerSideX = Math.ceil(minTargetSize / tileWidth);
     const tilesPerSideY = Math.ceil(minTargetSize / tileHeight);
@@ -509,10 +509,10 @@ export default function MapPredict() {
     const startOffsetX = -Math.floor(tilesPerSideX / 2);
     const startOffsetY = -Math.floor(tilesPerSideY / 2);
 
-
-
-
-
+    console.log("지도 div 크기:", tileWidth, "x", tileHeight);
+    console.log("캡처 최소 목표 크기:", minTargetSize);
+    console.log("가로/세로 타일 수:", tilesPerSideX, tilesPerSideY);
+    console.log("최종 캡처 이미지 크기 (px):", finalWidth, "x", finalHeight);
 
     // 타일 스티칭
     for (let y = 0; y < tilesPerSideY; y++) {
@@ -629,7 +629,7 @@ export default function MapPredict() {
     "나지": 0.05,
   };
 
-  const dummyImage = "/images/dummy_result.png";
+  const dummyImage = "https://forbee.blob.core.windows.net/blob/public/images/dummy_result.png";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -742,7 +742,7 @@ export default function MapPredict() {
                     <div className="h-2 bg-amber-400 animate-pulse" style={{ width: '66%' }} />
                   </div>
                 </div>
-                {showGame && <HoneyDropGame imageSrc="/honey-dnaji.png" />}
+                {showGame && <HoneyDropGame imageSrc="https://forbee.blob.core.windows.net/blob/public/honey-dnaji.png" />}
               </div>
             )}
           </div>
@@ -754,7 +754,7 @@ export default function MapPredict() {
                 className="absolute top-2 right-2 p-0 text-gray-500 bg-transparent"
                 onClick={() => setShowResultPopup(false)}
               >
-                <img src="/icons/x.png" alt="닫기" className="w-12 h-12 object-contain" />
+                <img src="https://forbee.blob.core.windows.net/blob/public/icons/x.png" alt="닫기" className="w-12 h-12 object-contain" />
               </button>
 
               <div className="flex flex-col md:flex-row gap-4 w-full items-stretch mt-10">

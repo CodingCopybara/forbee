@@ -125,7 +125,7 @@ export function BloomMap({ locations, onMarkerClick, selectedLocation }: bloomMa
       const utmkCoords = proj4("EPSG:4326", "EPSG:5179", [lng, lat])
 
       const flowerMarker = new window.sop.icon({
-        iconUrl: "/markers/flower4.png",
+        iconUrl: "https://forbee.blob.core.windows.net/blob/public/markers/flower4.png",
         iconSize: [48, 48],
         iconAnchor: [16, 32],
       })
