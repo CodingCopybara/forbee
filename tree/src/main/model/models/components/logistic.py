@@ -4,6 +4,9 @@ import torch.nn.functional as F
 
 import config
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 
 class GeneralizedLogistic(nn.Module):
 

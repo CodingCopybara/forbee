@@ -143,6 +143,11 @@ spring:
            predicates:
             - Path=/trees/**
 
+         - id: plants
+           uri: http://tree:8080
+           predicates:
+            - Path=/plants/**
+
          - id: oauth-register
            uri: http://oauth:8080
            predicates:
