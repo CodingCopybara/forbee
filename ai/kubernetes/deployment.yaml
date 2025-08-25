@@ -16,7 +16,7 @@ spec:
         kubernetes.io/os: linux
       containers:
       - name: ai
-        image: forbeeregistry.azurecr.io/ai:test
+        image: forbeeregistry.azurecr.io/ai:v4
         imagePullPolicy: Always
         env:
         - name: SPRING_PROFILES_ACTIVE
@@ -50,7 +50,7 @@ spec:
           periodSeconds: 5
           failureThreshold: 5
       - name: python
-        image: forbeeregistry.azurecr.io/python:v3
+        image: forbeeregistry.azurecr.io/python:v4
         env:
         - name: KAFKA_BOOTSTRAP_SERVERS
           value: "my-kafka:9092"
