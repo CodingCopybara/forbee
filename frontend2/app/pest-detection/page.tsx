@@ -318,7 +318,7 @@ export default function PestDetectionPage() {
           })),
       }
       await postJSON(`${GW_URL}/api/chat-sessions`, payload, { userId, Authorization: `Bearer ${token}` })
-      router.push("/community/write?board=qna&category=disease")
+      router.push("/community/write?board=qna")
     } catch (e) {
       console.warn("서버 저장 실패 → localStorage fallback", e)
       const fallbackId = `local-${Date.now()}`
