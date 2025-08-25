@@ -32,5 +32,5 @@ EXPOSE 8080
 
 # Run the application
 # The active profile will be set to 'docker' via docker-compose.
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms1g", "-Xmx4g", "-jar", "app.jar"]
 

@@ -3,15 +3,15 @@ package forbee.infra;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import forbee.AiApplication;
-import forbee.config.kafka.KafkaProcessor;
-// import org.springframework.kafka.core.KafkaTemplate;  // AKS 빌드 시 KafkaProcessor 주석 처리 후 사용
-import org.springframework.beans.BeanUtils;
+import forbee.config.kafka.KafkaProcessor;  // AKS 빌드 시 주석 처리 했음 (MimeTypeUtils까지 6개)
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.MimeTypeUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.util.MimeTypeUtils;
 
 //<<< Clean Arch / Outbound Adaptor
 public class AbstractEvent {
@@ -44,7 +44,7 @@ public class AbstractEvent {
                 .setHeader("type", getEventType())
                 .build()
         );
-        // AKS 배포 시 KafkaProcessor, MessageChannel, outputChannel.send 전부 주석 처리 후 사용
+        // AKS 배포 시 publish(), publishAfterCommit() 전부 주석 처리 했음
         // KafkaTemplate<String, String> kafkaTemplate = AiApplication.applicationContext.getBean(KafkaTemplate.class);
         // kafkaTemplate.send("forbee", this.toJson());
     }
