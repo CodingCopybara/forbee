@@ -56,7 +56,7 @@ public class PolicyHandler {
                 "Insect_mite", "응애",
                 "Larva_gypsum", "석고병",
                 "Larva_butterfly", "부저병",
-                "insect_wing_crippled_virus_infection", "날개불구바이러스감염증"
+                "Insect_wing_crippled_virus_infection", "날개불구바이러스감염증"
             );
             
             // 3. detectedObjects 추출
@@ -71,7 +71,7 @@ public class PolicyHandler {
             List<Map<String, Object>> detectedObjects = (List<Map<String, Object>>) detectedObjectsObj;
 
 
-            Set<String> normalLabels = Set.of("Insect_normal", "Larva_Normal", "Insect_normal\"");
+            Set<String> normalLabels = Set.of("Insect_normal", "Larva_Normal", "Insect_normal");
             // 4. 가장 높은 신뢰도의 질병 찾기
             String diseaseNameEn = null;
             double topConfidence = 0.0;

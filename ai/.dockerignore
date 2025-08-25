@@ -9,6 +9,7 @@ env.properties
 src/main/java/forbee/config/PropertyConfig.java
 src/main/resources/env.properties
 # KafkaProcessor.java
+bee_yolov8_detection.pt
 
 # Java 빌드 시 제외할 파일(Python 빌드 시 주석 처리)
 PyDockerfile
@@ -16,7 +17,6 @@ agent/
 src/main/python/
 main.py
 bee_disease_chroma_db/
-requirements.txt
 
 
 # Python 빌드 시 제외할 파일 
