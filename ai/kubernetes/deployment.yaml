@@ -26,10 +26,10 @@ spec:
             name: app-secrets
         resources:
           requests:
-            memory: "512Mi"
+            memory: "500Mi"
             cpu: "250m"
           limits:
-            memory: "3Gi"
+            memory: "800Mi"
             cpu: "1"
         ports:
         - containerPort: 8083
