@@ -281,7 +281,7 @@ export default function PestDetectionPage() {
 
     try {
       const token = localStorage.getItem("accessToken") || ""
-      await postJSON(`${GW_URL}/api/answer`, { answers: [text] }, { userId, Authorization: `Bearer ${token}` })  // 250825: chatbot -> api
+      await postJSON(`${GW_URL}/chatbot/answer`, { answers: [text] }, { userId, Authorization: `Bearer ${token}` })
       // 응답은 SSE로
     } catch (err) {
       console.error("답변 전송 오류", err)
@@ -318,7 +318,7 @@ export default function PestDetectionPage() {
           })),
       }
       await postJSON(`${GW_URL}/api/chat-sessions`, payload, { userId, Authorization: `Bearer ${token}` })
-      router.push("/community/write?board=qna&category=disease")
+      router.push("/community/write?board=qna")
     } catch (e) {
       console.warn("서버 저장 실패 → localStorage fallback", e)
       const fallbackId = `local-${Date.now()}`

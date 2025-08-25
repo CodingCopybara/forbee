@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Eye, MessageCircle, Share2, MoreVertical } from "lucide-react"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { marked } from "marked"
 import DOMPurify from "dompurify"
 
@@ -44,9 +45,9 @@ type Post = {
   views?: number
   likes?: number
   comments?: number
-  category?: "free" | "notice" | "qna" | string // 대분류(서버 기존)
-  subCategory?: string                           // ✅ 세부 카테고리
-  tags?: string[]                                // ✅ 태그
+  category?: "free" | "notice" | "qna" | string
+  subCategory?: string
+  tags?: string[]
 }
 
 type Comment = {
@@ -149,18 +150,18 @@ export default function PostDetailPage({
   const [confirmMsg, setConfirmMsg] = useState("")
   const askConfirm = (msg: string, onYes: () => void) => {
     setConfirmMsg(msg)
-    // 확인 버튼에서 onYes 호출 후 모달 닫기
     confirmYesRef.current = () => { setConfirmMsg(""); onYes() }
   }
   const confirmYesRef = React.useRef<() => void>(() => {})
 
   const role = roleFromLS()
   const loggedIn = !!tokenFromLS()
+  const me = usernameFromLS()
 
   const QNA_ALLOWED = new Set(["MEMBER", "VETERINARIAN", "ADMIN"])
   const NOTICE_ALLOWED = new Set(["USER", "MEMBER", "VETERINARIAN", "ADMIN"])
 
-  const titleLocked = React.useMemo(() => {
+  const titleLocked = useMemo(() => {
     if (!post) return false
     if (post.category === "qna") return !QNA_ALLOWED.has(role)
     if (post.category === "notice") return !(loggedIn && NOTICE_ALLOWED.has(role))
@@ -170,9 +171,18 @@ export default function PostDetailPage({
   const contentLocked = titleLocked
   const commentsLocked = titleLocked
 
-  const canDelete = role === "ADMIN"
+  // ✅ 본인이 글쓴이인지 판별
+  const isAuthor = useMemo(() => {
+    const a = (post?.author || "").toLowerCase()
+    const m = (me || "").toLowerCase()
+    return !!a && !!m && a === m
+  }, [post?.author, me])
 
-  const canComment = React.useMemo(() => {
+  const canEdit = isAuthor
+  // ✅ 관리자면 모든 글 삭제 가능
+  const canDelete = isAuthor || role === "ADMIN"
+
+  const canComment = useMemo(() => {
     if (!post) return false
     if (post.category === "free") return ["USER", "MEMBER", "VETERINARIAN", "ADMIN"].includes(role)
     if (post.category === "qna") return role === "VETERINARIAN"
@@ -203,7 +213,7 @@ export default function PostDetailPage({
     }
   }
 
-  // 공유하기: 현재 페이지 URL 복사 (모달 알림 사용)
+  // 공유하기
   const handleShare = async () => {
     try {
       const url = typeof window !== "undefined" ? window.location.href : ""
@@ -221,6 +231,15 @@ export default function PostDetailPage({
     } catch {
       showAlert("복사에 실패했습니다. 브라우저 권한을 확인해주세요.")
     }
+  }
+
+  // ✅ 현재 경로 뒤에 /edit 붙여 이동
+  const goEdit = () => {
+    const path =
+      typeof window !== "undefined"
+        ? window.location.pathname.replace(/\/+$/, "")
+        : `/community/post/${id}`
+    router.push(`${path}/edit`)
   }
 
   marked.setOptions({ breaks: true })
@@ -283,13 +302,7 @@ export default function PostDetailPage({
               목록으로
             </Button>
           </Link>
-          <div className="ml-auto flex gap-2">
-            {canDelete && (
-              <Button variant="destructive" size="sm" onClick={handleDelete}>
-                삭제하기
-              </Button>
-            )}
-          </div>
+          <div className="ml-auto flex gap-2">{/* 상단 우측 별도 버튼 필요 시 여기에 */}</div>
         </div>
 
         <Card className="mb-8">
@@ -303,13 +316,35 @@ export default function PostDetailPage({
                     <Badge key={tag} variant="secondary" className="text-xs">#{tag}</Badge>
                   ))}
               </div>
-              <Button variant="ghost" size="sm">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
+
+              {/* ✅ 제목 우측 드롭다운 메뉴: 본인 또는 ADMIN일 때 노출 */}
+              {(canEdit || canDelete) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" aria-label="more actions">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-36">
+                    {canEdit && (
+                      <DropdownMenuItem onClick={goEdit}>
+                        수정하기
+                      </DropdownMenuItem>
+                    )}
+                    {canDelete && (
+                      <DropdownMenuItem onClick={handleDelete}>
+                        삭제하기
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
+
             <h1 className="text-2xl font-bold text-gray-900 mt-4">
               {titleLocked ? "잠긴 글입니다." : post?.title || ""}
             </h1>
+
             <div className="flex items-center justify-between mt-4">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
@@ -330,12 +365,12 @@ export default function PostDetailPage({
                 </div>
                 <div className="flex items-center gap-1">
                   <MessageCircle className="h-4 w-4" />
-                  {/* ✅ 실제 로드된 댓글 수로 표시 */}
                   <span>{comments.length}</span>
                 </div>
               </div>
             </div>
           </CardHeader>
+
           <CardContent>
             <div className="prose max-w-none">
               {!contentLocked ? (
@@ -346,7 +381,6 @@ export default function PostDetailPage({
             </div>
 
             <div className="flex items-center justify-end mt-8 pt-6 border-t">
-              {/* ✅ 좋아요/북마크 제거, 공유만 남김 */}
               <Button variant="outline" size="sm" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" />
                 공유하기
