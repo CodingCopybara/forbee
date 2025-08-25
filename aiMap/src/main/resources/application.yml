@@ -44,12 +44,12 @@ logging:
     org.springframework.cloud: debug
 
 server:
-  port: 8081
+  port: 8080
 
 sgis:
   api:
-    consumer-key: 81e5e7f2bafc41a5a506
-    secret-key: 16f9b16102ca4732946c
+    consumer-key: ${SGIS_CONSUMER_KEY}
+    secret-key: ${SGIS_SECRET_KEY}
 
 ---
 
@@ -61,7 +61,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://localhost:9090/realms/master/protocol/openid-connect/certs
+          jwk-set-uri: http://oauth:9090/realms/master/protocol/openid-connect/certs
   jpa:
     properties:
       hibernate:
@@ -75,7 +75,7 @@ spring:
     stream:
       kafka:
         binder:
-          brokers: localhost:9092
+          brokers: my-kafka:9092
         streams:
           binder:
             configuration:
@@ -92,3 +92,7 @@ spring:
         event-out:
           destination: forbee
           contentType: application/json
+sgis:
+  api:
+    consumer-key: ${SGIS_CONSUMER_KEY}
+    secret-key: ${SGIS_SECRET_KEY}

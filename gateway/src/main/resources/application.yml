@@ -190,6 +190,11 @@ spring:
             - Path=/chatbot/health-fast
             - Method=GET
 
+         - id: aiMap
+           uri: http://aimap:8080
+           predicates:
+           - Path=/maps/**
+
          - id: frontend2
            uri: http://frontend2:80
            predicates:

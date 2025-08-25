@@ -1,40 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: aiMap
+  name: aimap
   labels:
-    app: aiMap
+    app: aimap
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: aiMap
+      app: aimap
   template:
     metadata:
       labels:
-        app: aiMap
+        app: aimap
     spec:
       containers:
-        - name: aiMap
-          image: "username/aimap:latest"
+        - name: aimap
+          image: forbeeregistry.azurecr.io/aimap:08251112
           ports:
-            - containerPort: 8081
+            - containerPort: 8080
           env:
             - name: SPRING_PROFILES_ACTIVE
-              value: docker
-          readinessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8081
-            initialDelaySeconds: 15
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 10
-          livenessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8081
-            initialDelaySeconds: 15
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 5
+              value: "docker"
+            - name: SGIS_CONSUMER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sgis-api-keys
+                  key: SGIS_CONSUMER_KEY
+            - name: SGIS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sgis-api-keys
+                  key: SGIS_SECRET_KEY
+      imagePullSecrets: # Add this section
+        - name: acr-secret # Name of your image pull secret
