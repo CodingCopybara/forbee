@@ -7,20 +7,24 @@ kubernetes/
 README.md
 env.properties
 src/main/java/forbee/config/PropertyConfig.java
+src/main/resources/env.properties
 # KafkaProcessor.java
+bee_yolov8_detection.pt
 
 # Java 빌드 시 제외할 파일(Python 빌드 시 주석 처리)
-PyDockerfile
-agent/
-src/main/python/
-main.py
-bee_disease_chroma_db/
-requirements.txt
+# PyDockerfile
+# agent/
+# src/main/python/
+# main.py
+# bee_disease_chroma_db/
 
 
 # Python 빌드 시 제외할 파일 
-# Dockerfile
-# pom.xml
-# src/main/java/
-# src/main/resources/
-# target/
+Dockerfile
+pom.xml
+src/main/java/
+src/main/resources/
+target/
+
+# Spring 빌드 전
+# kafka.bootstrap-servers: my-kafka:9092 확인

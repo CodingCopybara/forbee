@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ai
-  labels:
-    azure.workload.identity/use: "true"
 spec:
   replicas: 1
   selector:
@@ -13,19 +11,12 @@ spec:
     metadata:
       labels:
         app: ai
-        azure.workload.identity/use: "true"
     spec:
-      serviceAccountName: ai-wi-sa
       nodeSelector:
         kubernetes.io/os: linux
-      tolerations:
-      - key: "azure.workload.identity/use"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
       containers:
       - name: ai
-        image: forbeeregistry.azurecr.io/ai:v3
+        image: forbeeregistry.azurecr.io/ai:v4
         imagePullPolicy: Always
         env:
         - name: SPRING_PROFILES_ACTIVE
@@ -35,10 +26,10 @@ spec:
             name: app-secrets
         resources:
           requests:
-            memory: "512Mi"
+            memory: "500Mi"
             cpu: "250m"
           limits:
-            memory: "3Gi"
+            memory: "800Mi"
             cpu: "1"
         ports:
         - containerPort: 8083
@@ -59,7 +50,7 @@ spec:
           periodSeconds: 5
           failureThreshold: 5
       - name: python
-        image: forbeeregistry.azurecr.io/python:v3
+        image: forbeeregistry.azurecr.io/python:v4
         env:
         - name: KAFKA_BOOTSTRAP_SERVERS
           value: "my-kafka:9092"
