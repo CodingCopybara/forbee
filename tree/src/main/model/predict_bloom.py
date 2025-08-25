@@ -3,6 +3,7 @@ import torch
 import os
 import sys
 import numpy as np
+from typing import Union
 
 import config
 from process_temperature_data import get_hourly_temperature_data
@@ -23,7 +24,7 @@ FIXED_ALT = 20.0
 
 def predict_bloom_date(model: NNChillModel,
                        location_data: dict,
-                       temperature_data: list | np.ndarray,
+                       temperature_data: Union[list, np.ndarray],
                        ) -> int:
     input_x = {
         'lat': location_data['lat'],

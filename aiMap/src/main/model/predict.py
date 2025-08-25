@@ -17,6 +17,9 @@ from utils.data_vis import plot_img_and_mask
 
 from config import NUM_CLASSES, NUM_CHANNELS, visible_mapping 
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 # 클래스 이름 매핑
 class_names = [
     "기타",        # 0

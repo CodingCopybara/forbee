@@ -13,6 +13,9 @@ from datasets.dataset import Dataset
 from datasets.dataset_torch import TorchDatasetWrapper
 from models.base import BaseModel
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 
 class BaseTorchModel(BaseModel, nn.Module):
 

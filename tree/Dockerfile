@@ -4,7 +4,9 @@ RUN sed -i 's|deb.debian.org|archive.debian.org|g' /etc/apt/sources.list \
  && sed -i '/security.debian.org/d' /etc/apt/sources.list \
  && apt-get update && apt-get install -y \
         python3 python3-pip python3-dev build-essential libhdf5-dev libhdf5-serial-dev pkg-config libblas-dev liblapack-dev gfortran \
- && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/* && ln -s /usr/bin/python3 /usr/bin/python
+
+ENV PYTHON_DATA_DIR=/app/model/data  
 
 WORKDIR /app
 
@@ -19,4 +21,4 @@ EXPOSE 8080
 ENV TZ=Asia/Seoul
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-ENTRYPOINT ["java","-Xmx400M","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar","--spring.profiles.active=docker"]
+ENTRYPOINT ["java","-Xmx400M","-Djava.security.egd=file:/dev/./urandom","-jar","app.jar","--spring.profiles.active=docker"]
