@@ -93,6 +93,26 @@ public class PolicyHandler {
 
             if (!foundDisease) {
                 System.out.println("[Kafka Event] userId=" + userId + " 정상 벌입니다. 감지된 질병 없음.");
+                try {
+                    Map<String, Object> payload = new HashMap<>();
+                    payload.put("diseaseName", "정상");
+                    payload.put("risk", 0.0);
+                    payload.put("prescription",
+                        "분석 결과, 유의할 만한 해충/질병이 보이지 않습니다. 😊\n" +
+                        "- 벌집 위생과 환기를 유지하고 주 1~2회 정기 관찰을 이어가세요.\n" +
+                        "- 더 선명한 근접 사진으로 재분석하면 정확도가 높아집니다."
+                    );
+                    String json = objectMapper.writeValueAsString(payload);
+                    AgentResponse res = objectMapper.readValue(json, AgentResponse.class);
+                    if (userId != null && !userId.isBlank()) {
+                        store.put(userId, res);
+                        stream.emit(userId, res);
+                    } else {
+                        System.out.println("userId가 없어 SSE 전달을 생략합니다.");
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
                 return;
             } else {
                 String diseaseNameKor = diseaseLabelToKor.get(diseaseNameEn);

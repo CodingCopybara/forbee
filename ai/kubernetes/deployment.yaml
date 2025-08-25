@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ai
-  labels:
-    azure.workload.identity/use: "true"
 spec:
   replicas: 1
   selector:
@@ -13,19 +11,12 @@ spec:
     metadata:
       labels:
         app: ai
-        azure.workload.identity/use: "true"
     spec:
-      serviceAccountName: ai-wi-sa
       nodeSelector:
         kubernetes.io/os: linux
-      tolerations:
-      - key: "azure.workload.identity/use"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
       containers:
       - name: ai
-        image: forbeeregistry.azurecr.io/ai:v3
+        image: forbeeregistry.azurecr.io/ai:test
         imagePullPolicy: Always
         env:
         - name: SPRING_PROFILES_ACTIVE

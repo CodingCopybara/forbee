@@ -7,6 +7,7 @@ kubernetes/
 README.md
 env.properties
 src/main/java/forbee/config/PropertyConfig.java
+src/main/resources/env.properties
 # KafkaProcessor.java
 
 # Java 빌드 시 제외할 파일(Python 빌드 시 주석 처리)
@@ -24,3 +25,6 @@ requirements.txt
 # src/main/java/
 # src/main/resources/
 # target/
+
+# Spring 빌드 전
+# kafka.bootstrap-servers: my-kafka:9092 확인

@@ -281,7 +281,7 @@ export default function PestDetectionPage() {
 
     try {
       const token = localStorage.getItem("accessToken") || ""
-      await postJSON(`${GW_URL}/chatbot/answer`, { answers: [text] }, { userId, Authorization: `Bearer ${token}` })
+      await postJSON(`${GW_URL}/api/answer`, { answers: [text] }, { userId, Authorization: `Bearer ${token}` })  // 250825: chatbot -> api
       // 응답은 SSE로
     } catch (err) {
       console.error("답변 전송 오류", err)
