@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: tree
-          image: forbeeregistry.azurecr.io/tree:08211414
+          image: forbeeregistry.azurecr.io/tree:08251547
           ports:
             - containerPort: 8080
           # readinessProbe:

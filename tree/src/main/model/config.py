@@ -13,7 +13,11 @@ import torch
 CONFIG_DIR = os.path.abspath(os.path.join(__file__, os.pardir))
 
 # Path to folder where data is stored
-PATH_DATA_DIR = os.path.abspath(os.path.join(CONFIG_DIR, '..', 'resources', 'model', 'data'))
+if 'PYTHON_DATA_DIR' in os.environ:
+    PATH_DATA_DIR = os.environ['PYTHON_DATA_DIR']
+else:
+    # Original calculation for local environment
+    PATH_DATA_DIR = os.path.abspath(os.path.join(CONFIG_DIR, '..', 'resources', 'model', 'data'))
 os.makedirs(PATH_DATA_DIR, exist_ok=True)
 
 # Path to folder where model parameters are stored

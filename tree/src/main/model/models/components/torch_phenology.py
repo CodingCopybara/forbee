@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 class DegreeDaysDNN(nn.Module):
 
     def __init__(self,
