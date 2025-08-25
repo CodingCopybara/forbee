@@ -29,6 +29,7 @@ public class AbstractEvent {
         this.timestamp = System.currentTimeMillis();
     }
 
+    // AKS 배포 시 publish(), publishAfterCommit() 전부 주석 처리 했음
     public void publish() {
         KafkaProcessor processor = AiApplication.applicationContext.getBean(
             KafkaProcessor.class
@@ -44,11 +45,8 @@ public class AbstractEvent {
                 .setHeader("type", getEventType())
                 .build()
         );
-        // AKS 배포 시 publish(), publishAfterCommit() 전부 주석 처리 했음
-        // KafkaTemplate<String, String> kafkaTemplate = AiApplication.applicationContext.getBean(KafkaTemplate.class);
-        // kafkaTemplate.send("forbee", this.toJson());
+        
     }
-
     public void publishAfterCommit() {
         TransactionSynchronizationManager.registerSynchronization(
             new TransactionSynchronization() {
