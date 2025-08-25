@@ -6,8 +6,27 @@
   "dependencies": {
     "20": "^3.1.9",
     "axios": "^1.11.0",
+    "express": "^5.1.0",
     "jwt-decode": "^4.0.0",
     "linkify-react": "^4.3.2",
     "proj4": "^2.19.10"
-  }
+  },
+  "name": "forbee",
+  "version": "1.0.0",
+  "main": "redirect-server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dlafhr789/forbee.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dlafhr789/forbee/issues"
+  },
+  "homepage": "https://github.com/dlafhr789/forbee#readme",
+  "description": ""
 }

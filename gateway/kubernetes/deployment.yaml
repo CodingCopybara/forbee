@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: gateway
-          image: forbeeregistry.azurecr.io/gateway:08202137
+          image: forbeeregistry.azurecr.io/gateway:08250959
           ports:
             - containerPort: 8080

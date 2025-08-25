@@ -17,6 +17,8 @@ RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
 
 ARG NEXT_PUBLIC_GW_URL
 ENV NEXT_PUBLIC_GW_URL=$NEXT_PUBLIC_GW_URL
+ARG NEXT_PUBLIC_SGIS_CONSUMER_KEY
+ENV NEXT_PUBLIC_SGIS_CONSUMER_KEY=$NEXT_PUBLIC_SGIS_CONSUMER_KEY
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
