@@ -409,7 +409,6 @@ export default function MapPredict() {
     const finalWidth = tileWidth * tilesPerSideX
     const finalHeight = tileHeight * tilesPerSideY
 
-
     console.log("지도 div 크기:", tileWidth, "x", tileHeight);
     console.log("캡처 최소 목표 크기:", minTargetSize);
     console.log("가로/세로 타일 수:", tilesPerSideX, tilesPerSideY);
