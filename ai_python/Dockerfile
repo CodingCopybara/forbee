@@ -1,0 +1,33 @@
+FROM python:3.12-slim AS builder
+WORKDIR /python
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential curl ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+RUN python -m venv /python/venv
+ENV VIRTUAL_ENV=/python/venv
+ENV PATH="/python/venv/bin:$PATH"
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip cache purge
+COPY requirements.txt .
+RUN pip install --no-cache-dir --default-timeout=600 \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    -r requirements.txt
+
+FROM python:3.12-slim AS runtime
+WORKDIR /python
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libglib2.0-0 libsm6 libxext6 libxrender1 libgl1 libgomp1 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+COPY --from=builder /python/venv /python/venv
+ENV VIRTUAL_ENV=/python/venv
+ENV PATH="/python/venv/bin:$PATH"
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+ENV MPLBACKEND=Agg
+COPY . .
+EXPOSE 8003
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003"]
+
+# docker build -t forbeeregistry.azurecr.io/python:<버전> .
+# docker push forbeeregistry.azurecr.io/python:<버전>
