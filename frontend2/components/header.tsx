@@ -110,9 +110,10 @@ export default function Header() {
                 className="border-amber-300 text-amber-700 hover:bg-amber-50 bg-transparent"
               >
                 <LogIn className="w-4 h-4 mr-2" />
-                로그인
+                로그인/회원가입
               </Button>
             </Link>
+            
           )}
         </div>
       </div>
