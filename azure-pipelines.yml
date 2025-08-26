@@ -10,22 +10,27 @@ trigger:
     - oauth/**
     - user/**
     - ai/**
+    - ai_python/**
     - aiMap/**
     - chatbot/**
     - chatbot_ai/**
     - community/**
     - tree/**
 variables:
-  azureServiceConnection: 'forbee_rsg'
-  acrLoginServer: 'forbeeregistry.azurecr.io'
-  kubernetesServiceConnection: 'forbee-aks'
+  - group: aiMap-secrets
+  - group: app-secrets
+  - group: chatbot_ai-secrets
+  - group: community-secrets
+  - group: frontend2-secrets
+  - group: oauth-secrets
+  - group: user-secrets
 
 pool:
   vmImage: 'ubuntu-22.04'
 
 stages:
 - stage: Changes
-  displayName: '변경 사항'
+  displayName: '변경 사항 검색'
   jobs:
   - job: Change
     steps:
@@ -80,7 +85,7 @@ stages:
     steps:
     - task: Docker@2
       inputs:
-        containerRegistry: $(azureServiceConnection)
+        containerRegistry: 'forbee_rsg'
         repository: 'frontend2'
         command: 'buildAndPush'
         dockerfile: 'frontend2/Dockerfile'
@@ -90,7 +95,7 @@ stages:
           latest
         arguments: |
           --build-arg NEXT_PUBLIC_GW_URL="http://forbee.me"
-          --build-arg NEXT_PUBLIC_SGIS_CONSUMER_KEY="$(sgisConsumerKey)"  # sgisConsumerKey 넣어줘야 함.
+          --build-arg NEXT_PUBLIC_SGIS_CONSUMER_KEY="$(NEXT_PUBLIC_SGIS_CONSUMER_KEY)"
 
   - job: gateway
     displayName: '게이트웨이'
@@ -109,7 +114,7 @@ stages:
         publishJUnitResults: false
     - task: Docker@2
       inputs:
-        containerRegistry: $(azureServiceConnection)
+        containerRegistry: 'forbee_rsg'
         repository: 'gateway'
         command: 'buildAndPush'
         dockerfile: 'gateway/Dockerfile'
@@ -135,7 +140,7 @@ stages:
         publishJUnitResults: false
     - task: Docker@2
       inputs:
-        containerRegistry: $(azureServiceConnection)
+        containerRegistry: 'forbee_rsg'
         repository: 'oauth'
         command: 'buildAndPush'
         dockerfile: 'oauth/Dockerfile'
@@ -161,7 +166,7 @@ stages:
         publishJUnitResults: false
     - task: Docker@2
       inputs:
-        containerRegistry: $(azureServiceConnection)
+        containerRegistry: 'forbee_rsg'
         repository: 'user'
         command: 'buildAndPush'
         dockerfile: 'user/Dockerfile'
@@ -187,7 +192,7 @@ stages:
         publishJUnitResults: false
     - task: Docker@2
       inputs:
-        containerRegistry: $(azureServiceConnection)
+        containerRegistry: 'forbee_rsg'
         repository: 'ai'
         command: 'buildAndPush'
         dockerfile: 'ai/Dockerfile'
@@ -202,7 +207,7 @@ stages:
     steps:
     - task: Docker@2
       inputs:
-        containerRegistry: $(azureServiceConnection)
+        containerRegistry: 'forbee_rsg'
         repository: 'python'
         command: 'buildAndPush'
         dockerfile: 'ai_python/Dockerfile'
@@ -228,7 +233,7 @@ stages:
         publishJUnitResults: false
     - task: Docker@2
       inputs:
-        containerRegistry: $(azureServiceConnection)
+        containerRegistry: 'forbee_rsg'
         repository: 'aimap'
         command: 'buildAndPush'
         dockerfile: 'aiMap/Dockerfile'
@@ -254,7 +259,7 @@ stages:
         publishJUnitResults: false
     - task: Docker@2
       inputs:
-        containerRegistry: $(azureServiceConnection)
+        containerRegistry: 'forbee_rsg'
         repository: 'chatbot'
         command: 'buildAndPush'
         dockerfile: 'chatbot/Dockerfile'
@@ -269,7 +274,7 @@ stages:
     steps:
     - task: Docker@2
       inputs:
-        containerRegistry: $(azureServiceConnection)
+        containerRegistry: 'forbee_rsg'
         repository: 'chatbot_ai'
         command: 'buildAndPush'
         dockerfile: 'chatbot_ai/Dockerfile'
@@ -295,7 +300,7 @@ stages:
         publishJUnitResults: false
     - task: Docker@2
       inputs:
-        containerRegistry: $(azureServiceConnection)
+        containerRegistry: 'forbee_rsg'
         repository: 'community'
         command: 'buildAndPush'
         dockerfile: 'community/Dockerfile'
@@ -321,7 +326,7 @@ stages:
         publishJUnitResults: false
     - task: Docker@2
       inputs:
-        containerRegistry: $(azureServiceConnection)
+        containerRegistry: 'forbee_rsg'
         repository: 'tree'
         command: 'buildAndPush'
         dockerfile: 'tree/Dockerfile'
@@ -342,13 +347,28 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'frontend2/kubernetes'
+              TargetFolder: '$(Agent.BuildDirectory)/s/temp'
+          - script: |
+              echo "
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: next-public-sgis-consumer-key
+                namespace: default
+              type: Opaque
+              stringData:
+                key: $(NEXT_PUBLIC_SGIS_CONSUMER_KEY)
+              " > $(Agent.BuildDirectory)/s/temp/secret.yml
           - task: Kubernetes@1
             inputs:
-              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              kubernetesServiceConnection: 'forbee-aks'
               command: 'apply'
               useConfigurationFile: true
-              configuration: 'frontend2/kubernetes'
-              containers: '$(acrLoginServer)/frontend2:$(Build.BuildId)'
+              configuration: '$(Agent.BuildDirectory)/s/temp'
+              containers: 'forbeeregistry.azurecr.io/frontend2:$(Build.BuildId)'
 
   - deployment: DeployGateway
     displayName: '게이트웨이 배포'
@@ -360,11 +380,11 @@ stages:
           steps:
           - task: Kubernetes@1
             inputs:
-              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              kubernetesServiceConnection: 'forbee-aks'
               command: 'apply'
               useConfigurationFile: true
               configuration: 'gateway/kubernetes'
-              containers: '$(acrLoginServer)/gateway:$(Build.BuildId)'
+              containers: 'forbeeregistry.azurecr.io/gateway:$(Build.BuildId)'
 
   - deployment: DeployOauth
     displayName: 'OAuth 배포'
@@ -374,13 +394,28 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'oauth/kubernetes'
+              TargetFolder: '$(Agent.BuildDirectory)/s/temp'
+          - script: |
+              echo "
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: db-secret
+                namespace: default
+              type: Opaque
+              stringData:
+                DB_PASSWORD: $(DB_PASSWORD)
+              " > $(Agent.BuildDirectory)/s/temp/secret.yml
           - task: Kubernetes@1
             inputs:
-              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              kubernetesServiceConnection: 'forbee-aks'
               command: 'apply'
               useConfigurationFile: true
-              configuration: 'oauth/kubernetes'
-              containers: '$(acrLoginServer)/oauth:$(Build.BuildId)'
+              configuration: '$(Agent.BuildDirectory)/s/temp'
+              containers: 'forbeeregistry.azurecr.io/oauth:$(Build.BuildId)'
 
   - deployment: DeployUser
     displayName: 'User 배포'
@@ -390,13 +425,39 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'user/kubernetes'
+              TargetFolder: '$(Agent.BuildDirectory)/s/temp'
+          - script: |
+              echo "
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: db-secret
+                namespace: default
+              type: Opaque
+              stringData:
+                DB_PASSWORD: $(DB_PASSWORD)
+                AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
+              " > $(Agent.BuildDirectory)/s/temp/db-secret.yml
+              echo "
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: azure-storage-secret
+                namespace: default
+              type: Opaque
+              stringData:
+                AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
+              " > $(Agent.BuildDirectory)/s/temp/azure-storage-secret.yml
           - task: Kubernetes@1
             inputs:
-              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              kubernetesServiceConnection: 'forbee-aks'
               command: 'apply'
               useConfigurationFile: true
-              configuration: 'user/kubernetes'
-              containers: '$(acrLoginServer)/user:$(Build.BuildId)'
+              configuration: '$(Agent.BuildDirectory)/s/temp'
+              containers: 'forbeeregistry.azurecr.io/user:$(Build.BuildId)'
 
   - deployment: DeployAi
     displayName: 'AI/Python 배포'
@@ -413,15 +474,32 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'ai/kubernetes'
+              TargetFolder: '$(Agent.BuildDirectory)/s/temp'
           - script: |
-              sed -i 's|$(acrLoginServer)/ai:.*|$(acrLoginServer)/ai:$(Build.BuildId)|g' ai/kubernetes/deployment.yaml
-              sed -i 's|$(acrLoginServer)/python:.*|$(acrLoginServer)/python:$(Build.BuildId)|g' ai/kubernetes/deployment.yaml
+              echo "
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: app-secrets
+                namespace: default
+              type: Opaque
+              stringData:
+                DB_PASSWORD: $(DB_PASSWORD)
+                AZURE_STORAGE_ACCESS_KEY: $(AZURE_STORAGE_ACCESS_KEY)
+                OPENAI_API_KEY: $(OPENAI_API_KEY)
+              " > $(Agent.BuildDirectory)/s/temp/secret.yml
+          - script: |
+              sed -i 's|forbeeregistry.azurecr.io/ai:.*|forbeeregistry.azurecr.io/ai:$(Build.BuildId)|g' $(Agent.BuildDirectory)/s/temp/deployment.yaml
+              sed -i 's|forbeeregistry.azurecr.io/python:.*|forbeeregistry.azurecr.io/python:$(Build.BuildId)|g' $(Agent.BuildDirectory)/s/temp/deployment.yaml
           - task: Kubernetes@1
             inputs:
-              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              kubernetesServiceConnection: 'forbee-aks'
               command: 'apply'
               useConfigurationFile: true
-              configuration: 'ai/kubernetes'
+              configuration: '$(Agent.BuildDirectory)/s/temp'
 
   - deployment: DeployAiMap
     displayName: 'AI 맵 배포'
@@ -431,13 +509,29 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'aiMap/kubernetes'
+              TargetFolder: '$(Agent.BuildDirectory)/s/temp'
+          - script: |
+              echo "
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: sgis-api-keys
+                namespace: default
+              type: Opaque
+              stringData:
+                SGIS_CONSUMER_KEY: $(SGIS_CONSUMER_KEY)
+                SGIS_SECRET_KEY: $(SGIS_SECRET_KEY)
+              " > $(Agent.BuildDirectory)/s/temp/secret.yml
           - task: Kubernetes@1
             inputs:
-              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              kubernetesServiceConnection: 'forbee-aks'
               command: 'apply'
               useConfigurationFile: true
-              configuration: 'aiMap/kubernetes'
-              containers: '$(acrLoginServer)/aimap:$(Build.BuildId)'
+              configuration: '$(Agent.BuildDirectory)/s/temp'
+              containers: 'forbeeregistry.azurecr.io/aimap:$(Build.BuildId)'
 
   - deployment: DeployChatbot
     displayName: '챗봇 배포'
@@ -449,11 +543,11 @@ stages:
           steps:
           - task: Kubernetes@1
             inputs:
-              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              kubernetesServiceConnection: 'forbee-aks'
               command: 'apply'
               useConfigurationFile: true
               configuration: 'chatbot/kubernetes'
-              containers: '$(acrLoginServer)/chatbot:$(Build.BuildId)'
+              containers: 'forbeeregistry.azurecr.io/chatbot:$(Build.BuildId)'
 
   - deployment: DeployChatbotAi
     displayName: '챗봇 AI 배포'
@@ -463,13 +557,30 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'chatbot_ai/kubernetes'
+              TargetFolder: '$(Agent.BuildDirectory)/s/temp'
+          - script: |
+              echo "
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: app-secrets
+                namespace: default
+              type: Opaque
+              stringData:
+                DB_PASSWORD: $(DB_PASSWORD)
+                AZURE_STORAGE_ACCESS_KEY: $(AZURE_STORAGE_ACCESS_KEY)
+                OPENAI_API_KEY: $(OPENAI_API_KEY)
+              " > $(Agent.BuildDirectory)/s/temp/secret.yml
           - task: Kubernetes@1
             inputs:
-              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              kubernetesServiceConnection: 'forbee-aks'
               command: 'apply'
               useConfigurationFile: true
-              configuration: 'chatbot_ai/kubernetes'
-              containers: '$(acrLoginServer)/chatbot_ai:$(Build.BuildId)'
+              configuration: '$(Agent.BuildDirectory)/s/temp'
+              containers: 'forbeeregistry.azurecr.io/chatbot_ai:$(Build.BuildId)'
 
   - deployment: DeployCommunity
     displayName: '커뮤니티 배포'
@@ -479,13 +590,38 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'community/kubernetes'
+              TargetFolder: '$(Agent.BuildDirectory)/s/temp'
+          - script: |
+              echo "
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: db-secret
+                namespace: default
+              type: Opaque
+              stringData:
+                DB_PASSWORD: $(DB_PASSWORD)
+              " > $(Agent.BuildDirectory)/s/temp/db-secret.yml
+              echo "
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: azure-storage-key-secret
+                namespace: default
+              type: Opaque
+              stringData:
+                AZURE_STORAGE_KEY: $(AZURE_STORAGE_KEY)
+              " > $(Agent.BuildDirectory)/s/temp/azure-storage-key-secret.yml
           - task: Kubernetes@1
             inputs:
-              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              kubernetesServiceConnection: 'forbee-aks'
               command: 'apply'
               useConfigurationFile: true
-              configuration: 'community/kubernetes'
-              containers: '$(acrLoginServer)/community:$(Build.BuildId)'
+              configuration: '$(Agent.BuildDirectory)/s/temp'
+              containers: 'forbeeregistry.azurecr.io/community:$(Build.BuildId)'
 
   - deployment: DeployTree
     displayName: '트리 배포'
@@ -497,8 +633,8 @@ stages:
           steps:
           - task: Kubernetes@1
             inputs:
-              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              kubernetesServiceConnection: 'forbee-aks'
               command: 'apply'
               useConfigurationFile: true
               configuration: 'tree/kubernetes'
-              containers: '$(acrLoginServer)/tree:$(Build.BuildId)'
+              containers: 'forbeeregistry.azurecr.io/tree:$(Build.BuildId)'
