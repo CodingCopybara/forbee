@@ -55,7 +55,7 @@ CONFIDENCE_THRESHOLD = 0.5
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"\ndevice: {device}\n")
 # model = YOLO(script_dir / "bee_yolov8_detection.pt").to(device)
-model = YOLO(script_dir / "best.pt")  # 250825: 재학습 모델로 변경
+model = YOLO(script_dir / "best.pt").to(device)  # 250825: 재학습 모델로 변경
 
 # 데이터 모델
 class ImageAnalysisRequest(BaseModel):

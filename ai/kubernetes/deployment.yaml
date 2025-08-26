@@ -50,7 +50,9 @@ spec:
           periodSeconds: 5
           failureThreshold: 5
       - name: python
-        image: forbeeregistry.azurecr.io/python:v4
+        image: forbeeregistry.azurecr.io/python:test
+        ports:
+        - containerPort: 8003        
         env:
         - name: KAFKA_BOOTSTRAP_SERVERS
           value: "my-kafka:9092"
@@ -59,7 +61,26 @@ spec:
         envFrom:
           - secretRef:
               name: app-secrets
-        ports:
-        - containerPort: 8003
-
-# 파이썬 readiness, liveness 프로브는 main.py에도 설정해야 함
+        resources:
+          requests:
+            memory: "600Mi"
+            cpu: "250m"
+          limits:
+            memory: "800Mi"
+            cpu: "1"
+        readinessProbe:
+          httpGet:
+            path: '/health'
+            port: 8003
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: '/health'
+            port: 8003
+          initialDelaySeconds: 15
+          periodSeconds: 10          
+          timeoutSeconds: 2
+          failureThreshold: 3

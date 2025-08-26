@@ -1,0 +1,504 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - release
+  paths:
+    include:
+    - frontend2/**
+    - gateway/**
+    - oauth/**
+    - user/**
+    - ai/**
+    - aiMap/**
+    - chatbot/**
+    - chatbot_ai/**
+    - community/**
+    - tree/**
+variables:
+  azureServiceConnection: 'forbee_rsg'
+  acrLoginServer: 'forbeeregistry.azurecr.io'
+  kubernetesServiceConnection: 'forbee-aks'
+
+pool:
+  vmImage: 'ubuntu-22.04'
+
+stages:
+- stage: Changes
+  displayName: '변경 사항'
+  jobs:
+  - job: Change
+    steps:
+    - checkout: self
+      fetchDepth: 2
+    - script: |
+      set -e
+      CHANGED_FILES=$(git diff HEAD HEAD~1 --name-only)
+      if echo "$CHANGED_FILES" | grep -q "frontend2"; then
+        echo "##vso[task.setvariable variable=runFrontend;isOutput=true]true"
+      fi
+      if echo "$CHANGED_FILES" | grep -q "gateway"; then
+        echo "##vso[task.setvariable variable=runGateway;isOutput=true]true"
+      fi
+      if echo "$CHANGED_FILES" | grep -q "oauth"; then
+        echo "##vso[task.setvariable variable=runOauth;isOutput=true]true"
+      fi
+      if echo "$CHANGED_FILES" | grep -q "user"; then
+        echo "##vso[task.setvariable variable=runUser;isOutput=true]true"
+      fi
+      if echo "$CHANGED_FILES" | grep "ai" | grep -v -q "chatbot_ai"; then
+        echo "##vso[task.setvariable variable=runAi;isOutput=true]true"
+      fi
+      if echo "$CHANGED_FILES" | grep -q "ai_python"; then
+        echo "##vso[task.setvariable variable=runAiPython;isOutput=true]true"
+      fi
+      if echo "$CHANGED_FILES" | grep -q "aiMap"; then
+        echo "##vso[task.setvariable variable=runAiMap;isOutput=true]true"
+      fi
+      if echo "$CHANGED_FILES" | grep -q "chatbot"; then
+        echo "##vso[task.setvariable variable=runChatbot;isOutput=true]true"
+      fi
+      if echo "$CHANGED_FILES" | grep -q "chatbot_ai"; then
+        echo "##vso[task.setvariable variable=runChatbotAi;isOutput=true]true"
+      fi
+      if echo "$CHANGED_FILES" | grep -q "community"; then
+        echo "##vso[task.setvariable variable=runCommunity;isOutput=true]true"
+      fi
+      if echo "$CHANGED_FILES" | grep -q "tree"; then
+        echo "##vso[task.setvariable variable=runTree;isOutput=true]true"
+      fi
+    name: setVars
+
+- stage: BuildAndPush
+  displayName: '도커 빌드 및 푸시'
+  dependsOn: Changes
+  jobs:
+
+  - job: Frontend
+    displayName: '프론트엔드'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runFrontend'], 'true'))
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: $(azureServiceConnection)
+        repository: 'frontend2'
+        command: 'buildAndPush'
+        dockerfile: 'frontend2/Dockerfile'
+        buildContext: 'frontend2'
+        tags: |
+          $(Build.BuildId)
+          latest
+        arguments: |
+          --build-arg NEXT_PUBLIC_GW_URL="http://forbee.me"
+          --build-arg NEXT_PUBLIC_SGIS_CONSUMER_KEY="$(sgisConsumerKey)"  # sgisConsumerKey 넣어줘야 함.
+
+  - job: gateway
+    displayName: '게이트웨이'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runGateway'], 'true'))
+    steps:
+    - task: JavaToolInstaller@1
+      inputs:
+        versionSpec: '11'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'preinstalled'
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'gateway/pom.xml'
+        goals: 'clean package'
+        options: '-B -Dmaven.test.skip=true'
+        publishJUnitResults: false
+    - task: Docker@2
+      inputs:
+        containerRegistry: $(azureServiceConnection)
+        repository: 'gateway'
+        command: 'buildAndPush'
+        dockerfile: 'gateway/Dockerfile'
+        buildContext: 'gateway'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+  - job: oauth
+    displayName: 'OAuth'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runOauth'], 'true'))
+    steps:
+    - task: JavaToolInstaller@1
+      inputs:
+        versionSpec: '11'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'preinstalled'
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'oauth/pom.xml'
+        goals: 'clean package'
+        options: '-B -Dmaven.test.skip=true'
+        publishJUnitResults: false
+    - task: Docker@2
+      inputs:
+        containerRegistry: $(azureServiceConnection)
+        repository: 'oauth'
+        command: 'buildAndPush'
+        dockerfile: 'oauth/Dockerfile'
+        buildContext: 'oauth'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+  - job: user
+    displayName: 'User'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runUser'], 'true'))
+    steps:
+    - task: JavaToolInstaller@1
+      inputs:
+        versionSpec: '11'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'preinstalled'
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'user/pom.xml'
+        goals: 'clean package'
+        options: '-B -Dmaven.test.skip=true'
+        publishJUnitResults: false
+    - task: Docker@2
+      inputs:
+        containerRegistry: $(azureServiceConnection)
+        repository: 'user'
+        command: 'buildAndPush'
+        dockerfile: 'user/Dockerfile'
+        buildContext: 'user'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+  - job: ai
+    displayName: 'AI'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runAi'], 'true'))
+    steps:
+    - task: JavaToolInstaller@1
+      inputs:
+        versionSpec: '11'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'preinstalled'
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'ai/pom.xml'
+        goals: 'clean package'
+        options: '-B -Dmaven.test.skip=true'
+        publishJUnitResults: false
+    - task: Docker@2
+      inputs:
+        containerRegistry: $(azureServiceConnection)
+        repository: 'ai'
+        command: 'buildAndPush'
+        dockerfile: 'ai/Dockerfile'
+        buildContext: 'ai'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+  - job: aiPython
+    displayName: 'AI Python'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runAiPython'], 'true'))
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: $(azureServiceConnection)
+        repository: 'python'
+        command: 'buildAndPush'
+        dockerfile: 'ai_python/Dockerfile'
+        buildContext: 'ai_python'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+  - job: aiMap
+    displayName: 'AI 맵'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runAiMap'], 'true'))
+    steps:
+    - task: JavaToolInstaller@1
+      inputs:
+        versionSpec: '11'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'preinstalled'
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'aiMap/pom.xml'
+        goals: 'clean package'
+        options: '-B -Dmaven.test.skip=true'
+        publishJUnitResults: false
+    - task: Docker@2
+      inputs:
+        containerRegistry: $(azureServiceConnection)
+        repository: 'aimap'
+        command: 'buildAndPush'
+        dockerfile: 'aiMap/Dockerfile'
+        buildContext: 'aiMap'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+  - job: chatbot
+    displayName: '챗봇'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runChatbot'], 'true'))
+    steps:
+    - task: JavaToolInstaller@1
+      inputs:
+        versionSpec: '11'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'preinstalled'
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'chatbot/pom.xml'
+        goals: 'clean package'
+        options: '-B -Dmaven.test.skip=true'
+        publishJUnitResults: false
+    - task: Docker@2
+      inputs:
+        containerRegistry: $(azureServiceConnection)
+        repository: 'chatbot'
+        command: 'buildAndPush'
+        dockerfile: 'chatbot/Dockerfile'
+        buildContext: 'chatbot'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+  - job: chatbotAi
+    displayName: '챗봇-AI'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runChatbotAi'], 'true'))
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: $(azureServiceConnection)
+        repository: 'chatbot_ai'
+        command: 'buildAndPush'
+        dockerfile: 'chatbot_ai/Dockerfile'
+        buildContext: 'chatbot_ai'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+  - job: community
+    displayName: '커뮤니티'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runCommunity'], 'true'))
+    steps:
+    - task: JavaToolInstaller@1
+      inputs:
+        versionSpec: '11'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'preinstalled'
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'community/pom.xml'
+        goals: 'clean package'
+        options: '-B -Dmaven.test.skip=true'
+        publishJUnitResults: false
+    - task: Docker@2
+      inputs:
+        containerRegistry: $(azureServiceConnection)
+        repository: 'community'
+        command: 'buildAndPush'
+        dockerfile: 'community/Dockerfile'
+        buildContext: 'community'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+  - job: tree
+    displayName: '트리'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runTree'], 'true'))
+    steps:
+    - task: JavaToolInstaller@1
+      inputs:
+        versionSpec: '11'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'preinstalled'
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'tree/pom.xml'
+        goals: 'clean package'
+        options: '-B -Dmaven.test.skip=true'
+        publishJUnitResults: false
+    - task: Docker@2
+      inputs:
+        containerRegistry: $(azureServiceConnection)
+        repository: 'tree'
+        command: 'buildAndPush'
+        dockerfile: 'tree/Dockerfile'
+        buildContext: 'tree'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+- stage: Deploy
+  displayName: '쿠버네티스 배포'
+  dependsOn: BuildAndPush
+  jobs:
+  - deployment: DeployFrontend
+    displayName: '프론트엔드 배포'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runFrontend'], 'true'))
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            inputs:
+              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: 'frontend2/kubernetes'
+              containers: '$(acrLoginServer)/frontend2:$(Build.BuildId)'
+
+  - deployment: DeployGateway
+    displayName: '게이트웨이 배포'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runGateway'], 'true'))
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            inputs:
+              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: 'gateway/kubernetes'
+              containers: '$(acrLoginServer)/gateway:$(Build.BuildId)'
+
+  - deployment: DeployOauth
+    displayName: 'OAuth 배포'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runOauth'], 'true'))
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            inputs:
+              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: 'oauth/kubernetes'
+              containers: '$(acrLoginServer)/oauth:$(Build.BuildId)'
+
+  - deployment: DeployUser
+    displayName: 'User 배포'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runUser'], 'true'))
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            inputs:
+              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: 'user/kubernetes'
+              containers: '$(acrLoginServer)/user:$(Build.BuildId)'
+
+  - deployment: DeployAi
+    displayName: 'AI/Python 배포'
+    condition: |
+      and(
+        succeeded(),
+        or(
+          eq(dependencies.Changes.outputs['Change.setVars.runAi'], 'true'),
+          eq(dependencies.Changes.outputs['Change.setVars.runAiPython'], 'true')
+        )
+      )
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: |
+              sed -i 's|$(acrLoginServer)/ai:.*|$(acrLoginServer)/ai:$(Build.BuildId)|g' ai/kubernetes/deployment.yaml
+              sed -i 's|$(acrLoginServer)/python:.*|$(acrLoginServer)/python:$(Build.BuildId)|g' ai/kubernetes/deployment.yaml
+          - task: Kubernetes@1
+            inputs:
+              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: 'ai/kubernetes'
+
+  - deployment: DeployAiMap
+    displayName: 'AI 맵 배포'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runAiMap'], 'true'))
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            inputs:
+              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: 'aiMap/kubernetes'
+              containers: '$(acrLoginServer)/aimap:$(Build.BuildId)'
+
+  - deployment: DeployChatbot
+    displayName: '챗봇 배포'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runChatbot'], 'true'))
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            inputs:
+              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: 'chatbot/kubernetes'
+              containers: '$(acrLoginServer)/chatbot:$(Build.BuildId)'
+
+  - deployment: DeployChatbotAi
+    displayName: '챗봇 AI 배포'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runChatbotAi'], 'true'))
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            inputs:
+              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: 'chatbot_ai/kubernetes'
+              containers: '$(acrLoginServer)/chatbot_ai:$(Build.BuildId)'
+
+  - deployment: DeployCommunity
+    displayName: '커뮤니티 배포'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runCommunity'], 'true'))
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            inputs:
+              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: 'community/kubernetes'
+              containers: '$(acrLoginServer)/community:$(Build.BuildId)'
+
+  - deployment: DeployTree
+    displayName: '트리 배포'
+    condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runTree'], 'true'))
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            inputs:
+              kubernetesServiceConnection: $(kubernetesServiceConnection)
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: 'tree/kubernetes'
+              containers: '$(acrLoginServer)/tree:$(Build.BuildId)'
