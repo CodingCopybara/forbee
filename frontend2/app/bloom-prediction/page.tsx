@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useMemo, useRef, useEffect } from "react"
@@ -209,6 +210,7 @@ export default function BloomPredictionPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex flex-col md:flex-row h-screen">
+        
         {/* 좌측 사이드바 */}
         <div className="w-full md:w-80 bg-white shadow-lg overflow-y-auto order-2 md:order-1 h-1/2 md:h-full">
           <div className="p-6 border-b">
@@ -264,114 +266,69 @@ export default function BloomPredictionPage() {
             onMarkerClick={handleLocationSelect}
             selectedLocation={selectedLocation}
           />
-
-          {/* 하단 결과 표시 영역 */}
-          {result && (
-            <div ref={resultRef} className="absolute bottom-0 left-0 right-0 bg-white border-t shadow-lg">
-              <div className="p-6">
-                {result.status === "fail" ? (
-                  <div className="p-4 bg-red-50 text-red-800 border border-red-200 rounded-lg">
-                    AI 예측에 실패했습니다.
-                  </div>
-                ) : (
-                  <>
-                    {/* <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">개화 예측 결과</h3>
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        신뢰도 {result.confidence}%
-                      </Badge>
-                    </div> */}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="h-5 w-5 text-amber-600" />
-                            <div>
-                              <p className="text-sm text-gray-600">예상 개화일</p>
-                              <p className="font-semibold">{result.predictedDate}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="h-5 w-5 text-amber-600" />
-                            <div>
-                              <p className="text-sm text-gray-600">전년도 개화일</p>
-                              <p className="font-semibold">{result.previousYearBloomDate}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="h-5 w-5 text-amber-600" />
-                            <div>
-                              <p className="text-sm text-gray-600">최근 10년 평균 개화일</p>
-                              <p className="font-semibold">{result.avgBloomDate}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-2">
-                            <Thermometer className="h-5 w-5 text-red-500" />
-                            <div>
-                              <p className="text-sm text-gray-600">기온</p>
-                              <p className="font-semibold">{result.temperature}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card> */}
-
-                      {/* <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-2">
-                            <Droplets className="h-5 w-5 text-blue-500" />
-                            <div>
-                              <p className="text-sm text-gray-600">습도</p>
-                              <p className="font-semibold">{result.humidity}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card> */}
-
-                      {/* <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-2">
-                            <Wind className="h-5 w-5 text-gray-500" />
-                            <div>
-                              <p className="text-sm text-gray-600">풍속</p>
-                              <p className="font-semibold">{result.windSpeed}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card> */}
-                    </div>
-
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                      <h4 className="font-medium text-amber-900 mb-2">
-                        {result.station} - {result.flower} 개화 예측 정보
-                      </h4>
-                      <p className="text-sm text-amber-800">AI 예측에 성공했습니다.</p>
-                      <p className="text-sm text-amber-800">해당 관측소에 전년도 개화일 데이터가 존재하지 않으면 표시되지 않을 수 있습니다.</p>
-                      <p className="text-sm text-amber-800">최근 10년 평균 개화일 데이터는 최근 10년간의 데이터를 기준으로 산정됩니다. 최근 관측 데이터가 없는 경우, 표시되지 않을 수 있습니다.</p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
-      {/* 지역 선택 팝업 */}
+        {/* 결과 표시 영역 (모바일에서 지도와 사이드바 사이에 표시) */}
+        {result && (
+          <div ref={resultRef} className="order-2 md:hidden bg-white border-t-2 p-4 relative overflow-y-auto flex-shrink-0 h-auto">
+            <button className="absolute top-2 right-2 p-1" onClick={() => setResult(null)}>
+              <img src="https://forbee.blob.core.windows.net/blob/public/icons/x.png" alt="닫기" className="w-6 h-6" />
+            </button>
+            <h3 className="text-lg font-semibold mb-2">개화 예측 결과</h3>
+            {result.status === "fail" ? (
+              <div className="p-4 bg-red-50 text-red-800 border border-red-200 rounded-lg">
+                AI 예측에 실패했습니다.
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <Card>
+                    <CardContent className="p-3">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-5 w-5 text-amber-600" />
+                        <div>
+                          <p className="text-xs text-gray-600">예상 개화일</p>
+                          <p className="font-semibold text-sm">{result.predictedDate}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-3">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-5 w-5 text-amber-600" />
+                        <div>
+                          <p className="text-xs text-gray-600">전년도 개화일</p>
+                          <p className="font-semibold text-sm">{result.previousYearBloomDate}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="col-span-2">
+                    <CardContent className="p-3">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-5 w-5 text-amber-600" />
+                        <div>
+                          <p className="text-xs text-gray-600">최근 10년 평균 개화일</p>
+                          <p className="font-semibold text-sm">{result.avgBloomDate}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <h4 className="font-medium text-amber-900 mb-1 text-sm">
+                    {result.station} - {result.flower} 개화 예측 정보
+                  </h4>
+                  <p className="text-xs text-amber-800">AI 예측에 성공했습니다.</p>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 모달 */}
       {showLocationPopup && selectedLocation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
@@ -441,7 +398,5 @@ export default function BloomPredictionPage() {
 
       <AlertModal message={alertMessage} onClose={() => setAlertMessage("")} />
     </div>
-    </div>
   )
-  
 }
