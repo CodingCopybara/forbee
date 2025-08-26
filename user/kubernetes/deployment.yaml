@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: user
-          image: forbeeregistry.azurecr.io/user:08200147
+          image: forbeeregistry.azurecr.io/user:08261114
           ports:
             - containerPort: 8080
           env:
