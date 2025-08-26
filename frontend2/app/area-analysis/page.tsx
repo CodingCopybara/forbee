@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
+import { RequireMemberWithAlert } from "@/components/requirewithalert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MapPin, Search, Loader2 } from "lucide-react"
@@ -151,7 +152,15 @@ function HoneyDropGame({ imageSrc = "https://forbee.blob.core.windows.net/blob/p
   )
 }
 
-export default function MapPredict() {
+export default function MapPredictPage() {
+  return (
+    <RequireMemberWithAlert>
+      <MapPredict /> {/* <- 권한 확인 후에만 마운트됨 */}
+    </RequireMemberWithAlert>
+  )
+}
+
+function MapPredict() {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstance = useRef<any>(null)
   const [isMapInitialized, setIsMapInitialized] = useState(false)

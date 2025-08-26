@@ -3,6 +3,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react"
 import axios from "axios"
+import { RequireMemberWithAlert } from "@/components/requirewithalert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -115,6 +116,14 @@ function AlertModal({ message, onClose }: { message: string; onClose: () => void
 }
 
 export default function BloomPredictionPage() {
+  return (
+    <RequireMemberWithAlert>
+      <BloomPrediction /> {/* <- 권한 확인 후에만 마운트됨 */}
+    </RequireMemberWithAlert>
+  )
+}
+
+function BloomPrediction() {
   const [searchKeyword, setSearchKeyword] = useState("") 
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const [selectedFlower, setSelectedFlower] = useState<number | null>(null)

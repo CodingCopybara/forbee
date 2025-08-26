@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
+import { RequireMemberWithAlert } from "@/components/requirewithalert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -120,6 +121,14 @@ async function createTreeApplication(payload: CreateTreePayload) {
 }
 
 export default function NectarSupportPage() {
+  return (
+    <RequireMemberWithAlert>
+      <NectarSupport /> {/* <- 권한 확인 후에만 마운트됨 */}
+    </RequireMemberWithAlert>
+  )
+}
+
+function NectarSupport() {
   const [selectedSource, setSelectedSource] = useState<string>("")
   const [applicationStep, setApplicationStep] = useState<"info" | "form" | "success">("info")
   const [sitePhotos, setSitePhotos] = useState<File[]>([])
