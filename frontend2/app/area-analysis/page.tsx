@@ -40,7 +40,7 @@ function AlertModal({ message, onClose }: { message: string; onClose: () => void
 /**
  * 🍯 간단 미니게임 (워커 없이)
  */
-function HoneyDropGame({ imageSrc = "/honey-dnaji.png" }: { imageSrc?: string }) {
+function HoneyDropGame({ imageSrc = "https://forbee.blob.core.windows.net/blob/public/honey-dnaji.png" }: { imageSrc?: string }) {
   const areaRef = useRef<HTMLDivElement>(null)
   const [score, setScore] = useState(0)
   const [miss, setMiss] = useState(0)
@@ -182,7 +182,7 @@ export default function MapPredict() {
 
   useEffect(() => {
     if (typeof window.sop !== "undefined") {
-      honeycombIconRef.current = new window.sop.icon({ iconUrl: "/markers/honeycomb.png", iconSize: [64, 64], iconAnchor: [16, 32] })
+      honeycombIconRef.current = new window.sop.icon({ iconUrl: "https://forbee.blob.core.windows.net/blob/public/honey-dnaji.png", iconSize: [48, 48], iconAnchor: [16, 32] })
     }
   }, [])
 
@@ -324,7 +324,7 @@ export default function MapPredict() {
           return crs
         })()
 
-        const map = new window.sop.map(mapRef.current, { scale: false, panControl: false, zoomSliderControl: true, minZoom: 10, maxZoom: 19, crs: satelliteCRS })
+        const map = new window.sop.map(mapRef.current, { scale: false, panControl: false, zoomSliderControl: false, dragging: true, tourchZoom:true, touchPan: true, minZoom: 10, maxZoom: 19, crs: satelliteCRS })
         mapInstance.current = map
 
         const satelliteTileLayer = new window.sop.TileLayer("https://xdworld.vworld.kr/2d/Satellite/service/{z}/{x}/{y}.jpeg", { maxZoom: 19, minZoom: 10, crossOrigin: "anonymous" })
@@ -402,17 +402,17 @@ export default function MapPredict() {
     const mapElement = mapRef.current
     const tileWidth = mapElement.offsetWidth
     const tileHeight = mapElement.offsetHeight
-    const minTargetSize = 3000
+    const minTargetSize = 1200
 
     const tilesPerSideX = Math.ceil(minTargetSize / tileWidth)
     const tilesPerSideY = Math.ceil(minTargetSize / tileHeight)
     const finalWidth = tileWidth * tilesPerSideX
     const finalHeight = tileHeight * tilesPerSideY
 
-    console.log("지도 div 크기:", tileWidth, "x", tileHeight);
-    console.log("캡처 최소 목표 크기:", minTargetSize);
-    console.log("가로/세로 타일 수:", tilesPerSideX, tilesPerSideY);
-    console.log("최종 캡처 이미지 크기 (px):", finalWidth, "x", finalHeight);
+    // console.log("지도 div 크기:", tileWidth, "x", tileHeight);
+    // console.log("캡처 최소 목표 크기:", minTargetSize);
+    // console.log("가로/세로 타일 수:", tilesPerSideX, tilesPerSideY);
+    // console.log("최종 캡처 이미지 크기 (px):", finalWidth, "x", finalHeight);
 
     const capturedImages: HTMLCanvasElement[] = []
     const startOffsetX = -Math.floor(tilesPerSideX / 2)
@@ -499,9 +499,9 @@ export default function MapPredict() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="flex h-screen">
+      <div className="flex flex-col md:flex-row h-screen">
         {/* 좌측 사이드바 */}
-        <div className="w-80 bg-white shadow-lg overflow-y-auto">
+        <div className="w-full md:w-80 bg-white shadow-lg overflow-y-auto order-2 md:order-1 h-1/2 md:h-full">
           <div className="p-6 border-b">
             <h1 className="text-2xl font-bold text-gray-900">양봉 입지 분석</h1>
             <p className="text-sm text-gray-600 mt-2">AI를 이용해 원하는 위치가 양봉하기 적합한지 분석해드려요.</p>
@@ -554,14 +554,14 @@ export default function MapPredict() {
         </div>
 
         {/* 메인 지도 영역 */}
-        <div className="flex-1 relative grid place-items-center p-4">
+        <div className="relative p-4 order-1 md:order-2 h-1/2 md:h-full md:flex-1">
           <div className="relative w-full h-full">
             {mapInitializationError ? (
-              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", border: "1px dashed gray", borderRadius: "8px", backgroundColor: "#f9f9f9" }}>
+              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "8px", backgroundColor: "#f9f9f9" }}>
                 <p style={{ color: "#555" }}>{mapInitializationError}</p>
               </div>
             ) : (
-              <div className="w-full h-full" ref={mapRef}></div>
+              <div className="w-full h-full" ref={mapRef} style={{ touchAction: 'manipulation' }}></div>
             )}
 
             {/* 분석 오버레이 + 미니게임 */}
@@ -576,7 +576,7 @@ export default function MapPredict() {
                     <div className="h-2 bg-amber-400 animate-pulse" style={{ width: "66%" }} />
                   </div>
                 </div>
-                {showGame && <HoneyDropGame imageSrc="/honey-dnaji.png" />}
+                {showGame && <HoneyDropGame imageSrc="https://forbee.blob.core.windows.net/blob/public/honey-dnaji.png" />}
               </div>
             )}
           </div>
@@ -585,7 +585,7 @@ export default function MapPredict() {
             <div className="absolute inset-0 grid place-items-center z-[1000] bg-white rounded-lg shadow-lg p-4 h-full overflow-auto">
               {/* 닫기 버튼 */}
               <button className="absolute top-2 right-2 p-0 text-gray-500 bg-transparent" onClick={() => setShowResultPopup(false)}>
-                <img src="/icons/x.png" alt="닫기" className="w-12 h-12 object-contain" />
+                <img src="https://forbee.blob.core.windows.net/blob/public/icons/x.png" alt="닫기" className="w-12 h-12 object-contain" />
               </button>
 
               <div className="flex flex-col md:flex-row gap-4 w-full items-stretch mt-10">
