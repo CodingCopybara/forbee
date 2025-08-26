@@ -37,6 +37,12 @@ spring:
            uri: http://localhost:8084
            predicates:
             - Path=/memberRequestLists/**
+
+         - id: milwon-application
+           uri: http://localhost:8084
+           predicates:
+            - Path=/trees/**
+        
          - id: file
            uri: http://localhost:8084
            predicates:

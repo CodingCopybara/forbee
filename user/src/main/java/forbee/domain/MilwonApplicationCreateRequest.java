@@ -30,7 +30,7 @@ public class MilwonApplicationCreateRequest {
     @NotNull
     private String desiredQty;
 
-    private String photoUrl;
+    private String photoUrls;
     private String reason;
 
     // getters/setters ...
@@ -46,8 +46,8 @@ public class MilwonApplicationCreateRequest {
     public void setDesiredFlora(String v) { this.desiredFlora = v; }
     public String getDesiredQty() { return desiredQty; }
     public void setDesiredQty(String v) { this.desiredQty = v; }
-    public String getPhotoUrl() { return photoUrl; }
-    public void setPhotoUrl(String v) { this.photoUrl = v; }
+    public String getPhotoUrls() { return photoUrls; }
+    public void setPhotoUrls(String v) { this.photoUrls = v; }
     public String getReason() { return reason; }
     public void setReason(String v) { this.reason = v; }
 }

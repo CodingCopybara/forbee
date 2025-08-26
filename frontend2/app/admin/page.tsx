@@ -53,16 +53,34 @@ interface MembershipRequest {
 }
 
 interface NectarRequest {
-  id: string
-  name: string
-  email: string
-  phone: string
-  beehiveLocation: string
-  nectarType: string
-  quantity: number
-  reason: string
-  submittedAt: string
-  status: "pending" | "approved" | "rejected"
+  id: number; // MilwonApplication의 id는 Long 타입
+  userId: number; // MilwonApplication의 userId는 Long 타입
+  applicantName: string; // MilwonApplication의 applicantName
+  phone: string; // MilwonApplication의 phone
+  apiaryAddress: string; // MilwonApplication의 apiaryAddress
+  apiarySize?: "small" | "medium" | "large"; // MilwonApplication의 apiarySize
+  desiredFlora: string; // MilwonApplication의 desiredFlora
+  desiredQty: number; // MilwonApplication의 desiredQty
+  photoUrl?: string; // MilwonApplication의 photoUrl
+  reason?: string; // MilwonApplication의 reason
+  status: "PENDING" | "APPROVED" | "REJECTED"; // MilwonApplication의 status (Enum)
+  createdAt: string; // MilwonApplication의 createdAt
+
+  // Merged from user data
+  name: string; // User의 name
+  email: string; // User의 username (email)
+  // phone은 MilwonApplication에도 있으므로 중복 제거
+
+  // Mapped fields for UI compatibility
+  beehiveLocation: string; // Mapped from apiaryAddress
+  nectarType: string; // Mapped from desiredFlora
+  quantity: number; // Mapped from desiredQty
+  submittedAt: string; // Mapped from createdAt
+  _links?: { // Optional, if needed for detail view
+    self: {
+      href: string;
+    };
+  };
 }
 
 interface User {
@@ -181,19 +199,74 @@ export default function AdminPage() {
 
         } else {
           // Fetch Nectar Request Lists (assuming similar structure and no user data needed for now)
-          const nectarReqRes = await fetch(`${process.env.NEXT_PUBLIC_GW_URL}/nectarRequestLists`, {
+          const nectarReqRes = await fetch(`${process.env.NEXT_PUBLIC_GW_URL}/trees`, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
             }
           })
+          console.log(nectarReqRes)
           if (!nectarReqRes.ok) {
             throw new Error(`HTTP error! status: ${nectarReqRes.status}`)
           }
-          const nectarReqJson = await nectarReqRes.json()
-          const rawNectarRequests = Array.isArray(nectarReqJson?._embedded?.nectarRequestLists)
-            ? nectarReqJson._embedded.nectarRequestLists
+          const rawNectarRequests: any[] = await nectarReqRes.json()
+          console.log("Raw Nectar Requests:", rawNectarRequests)
+
+          // 2. Fetch User Data (조합원 가입 요청과 동일한 로직)
+          const userRes = await fetch(`${process.env.NEXT_PUBLIC_GW_URL}/users`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
+          })
+          if (!userRes.ok) {
+            throw new Error(`HTTP error! status: ${userRes.status}`)
+          }
+          const userJson = await userRes.json()
+          const rawUsers = Array.isArray(userJson?._embedded?.users)
+            ? userJson._embedded.users
             : []
-          setNectarRequests(rawNectarRequests as NectarRequest[])
+
+          const usersWithId: User[] = rawUsers.map((user: any) => {
+            const selfLink = user._links?.self?.href;
+            const userId = selfLink ? parseInt(selfLink.substring(selfLink.lastIndexOf('/') + 1), 10) : undefined; // userId를 number로 파싱
+            return {
+              ...user,
+              userId: userId,
+              email: user.username
+            } as User;
+          });
+
+          const userMap = new Map(usersWithId.filter(user => user.userId !== undefined).map(user => [user.userId!, user]));
+
+          // 3. Merge data and map to NectarRequest interface
+          const combinedNectarRequests: NectarRequest[] = rawNectarRequests.map((req: any) => {
+            const user: User | undefined = userMap.get(req.userId); // MilwonApplication의 userId는 Long 타입
+            return {
+              id: req.id, // MilwonApplication의 id (Long)
+              userId: req.userId,
+              applicantName: req.applicantName,
+              phone: req.phone,
+              apiaryAddress: req.apiaryAddress,
+              apiarySize: req.apiarySize,
+              desiredFlora: req.desiredFlora,
+              desiredQty: req.desiredQty,
+              photoUrl: req.photoUrl,
+              reason: req.reason,
+              status: req.status.toUpperCase() as "PENDING" | "APPROVED" | "REJECTED", // 상태를 대문자로 변환
+
+              // Merged from user data
+              name: user?.name || 'N/A',
+              email: user?.username || 'N/A', // user.username이 email
+              // phone은 MilwonApplication에도 있으므로 그대로 사용
+
+              // Mapped fields for UI compatibility
+              beehiveLocation: req.apiaryAddress, // apiaryAddress를 beehiveLocation으로 매핑
+              nectarType: req.desiredFlora, // desiredFlora를 nectarType으로 매핑
+              quantity: req.desiredQty, // desiredQty를 quantity로 매핑
+              submittedAt: req.createdAt, // createdAt을 submittedAt으로 매핑
+              _links: req._links, // _links가 있다면 포함
+            };
+          });
+          setNectarRequests(combinedNectarRequests)
         }
       } catch (e: any) {
         setError(e.message)

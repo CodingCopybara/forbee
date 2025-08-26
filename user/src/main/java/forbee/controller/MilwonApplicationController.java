@@ -14,7 +14,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/trees")
@@ -32,6 +34,7 @@ public class MilwonApplicationController {
 
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody MilwonApplicationCreateRequest req) {
+        log.info("요청 접수됨");
 
         // 1) 프론트가 보낸 username(=email)으로 유저 조회
         String username = req.getUsername();
@@ -50,7 +53,7 @@ public class MilwonApplicationController {
         app.setApiarySize(req.getApiarySize());
         app.setDesiredFlora(req.getDesiredFlora());
         app.setDesiredQty(req.getDesiredQty());
-        app.setPhotoUrl(req.getPhotoUrl());
+        app.setPhotoUrls(req.getPhotoUrls());
         app.setReason(req.getReason());
 
         // 3) 저장
@@ -60,5 +63,49 @@ public class MilwonApplicationController {
             "id", saved.getId().toString(),
             "status", saved.getStatus().name()
         ));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<MilwonApplication>> getAllApplications() {
+        log.info("GET /trees 요청 접수됨");
+        List<MilwonApplication> applications = appRepo.findAll();
+        return ResponseEntity.ok(applications);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<MilwonApplication> getApplicationById(@PathVariable Long id) {
+        return appRepo.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<?> approveApplication(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        Optional<MilwonApplication> optionalApp = appRepo.findById(id);
+        if (optionalApp.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        MilwonApplication app = optionalApp.get();
+        app.setStatus(MilwonApplication.Status.APPROVED);
+        app.setProcessMessage(payload.get("processMessage"));
+        appRepo.save(app);
+
+        return ResponseEntity.ok(Map.of("status", "APPROVED"));
+    }
+
+    @PutMapping("/{id}/deny")
+    public ResponseEntity<?> denyApplication(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        Optional<MilwonApplication> optionalApp = appRepo.findById(id);
+        if (optionalApp.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        MilwonApplication app = optionalApp.get();
+        app.setStatus(MilwonApplication.Status.REJECTED);
+        app.setProcessMessage(payload.get("processMessage"));
+        appRepo.save(app);
+
+        return ResponseEntity.ok(Map.of("status", "REJECTED"));
     }
 }
