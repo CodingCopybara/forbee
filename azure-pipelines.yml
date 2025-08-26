@@ -2,7 +2,7 @@ trigger:
   batch: true
   branches:
     include:
-    - main
+    - release
   paths:
     include:
     - frontend2/**
@@ -96,12 +96,12 @@ stages:
     displayName: '게이트웨이'
     condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runGateway'], 'true'))
     steps:
-    - task: JavaToolInstaller@0
+    - task: JavaToolInstaller@1
       inputs:
         versionSpec: '11'
         jdkArchitectureOption: 'x64'
         jdkSourceOption: 'preinstalled'
-    - task: Maven@3
+    - task: Maven@4
       inputs:
         mavenPomFile: 'gateway/pom.xml'
         goals: 'clean package'
@@ -122,12 +122,12 @@ stages:
     displayName: 'OAuth'
     condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runOauth'], 'true'))
     steps:
-    - task: JavaToolInstaller@0
+    - task: JavaToolInstaller@1
       inputs:
         versionSpec: '11'
         jdkArchitectureOption: 'x64'
         jdkSourceOption: 'preinstalled'
-    - task: Maven@3
+    - task: Maven@4
       inputs:
         mavenPomFile: 'oauth/pom.xml'
         goals: 'clean package'
@@ -148,12 +148,12 @@ stages:
     displayName: 'User'
     condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runUser'], 'true'))
     steps:
-    - task: JavaToolInstaller@0
+    - task: JavaToolInstaller@1
       inputs:
         versionSpec: '11'
         jdkArchitectureOption: 'x64'
         jdkSourceOption: 'preinstalled'
-    - task: Maven@3
+    - task: Maven@4
       inputs:
         mavenPomFile: 'user/pom.xml'
         goals: 'clean package'
@@ -174,12 +174,12 @@ stages:
     displayName: 'AI'
     condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runAi'], 'true'))
     steps:
-    - task: JavaToolInstaller@0
+    - task: JavaToolInstaller@1
       inputs:
         versionSpec: '11'
         jdkArchitectureOption: 'x64'
         jdkSourceOption: 'preinstalled'
-    - task: Maven@3
+    - task: Maven@4
       inputs:
         mavenPomFile: 'ai/pom.xml'
         goals: 'clean package'
@@ -215,12 +215,12 @@ stages:
     displayName: 'AI 맵'
     condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runAiMap'], 'true'))
     steps:
-    - task: JavaToolInstaller@0
+    - task: JavaToolInstaller@1
       inputs:
         versionSpec: '11'
         jdkArchitectureOption: 'x64'
         jdkSourceOption: 'preinstalled'
-    - task: Maven@3
+    - task: Maven@4
       inputs:
         mavenPomFile: 'aiMap/pom.xml'
         goals: 'clean package'
@@ -241,12 +241,12 @@ stages:
     displayName: '챗봇'
     condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runChatbot'], 'true'))
     steps:
-    - task: JavaToolInstaller@0
+    - task: JavaToolInstaller@1
       inputs:
         versionSpec: '11'
         jdkArchitectureOption: 'x64'
         jdkSourceOption: 'preinstalled'
-    - task: Maven@3
+    - task: Maven@4
       inputs:
         mavenPomFile: 'chatbot/pom.xml'
         goals: 'clean package'
@@ -282,12 +282,12 @@ stages:
     displayName: '커뮤니티'
     condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runCommunity'], 'true'))
     steps:
-    - task: JavaToolInstaller@0
+    - task: JavaToolInstaller@1
       inputs:
         versionSpec: '11'
         jdkArchitectureOption: 'x64'
         jdkSourceOption: 'preinstalled'
-    - task: Maven@3
+    - task: Maven@4
       inputs:
         mavenPomFile: 'community/pom.xml'
         goals: 'clean package'
@@ -308,12 +308,12 @@ stages:
     displayName: '트리'
     condition: and(succeeded(), eq(dependencies.Changes.outputs['Change.setVars.runTree'], 'true'))
     steps:
-    - task: JavaToolInstaller@0
+    - task: JavaToolInstaller@1
       inputs:
         versionSpec: '11'
         jdkArchitectureOption: 'x64'
         jdkSourceOption: 'preinstalled'
-    - task: Maven@3
+    - task: Maven@4
       inputs:
         mavenPomFile: 'tree/pom.xml'
         goals: 'clean package'
