@@ -492,8 +492,8 @@ stages:
                 OPENAI_API_KEY: $(OPENAI_API_KEY)
               " > $(Agent.BuildDirectory)/s/temp/secret.yml
           - script: |
-              sed -i 's|forbeeregistry.azurecr.io/ai:.*|forbeeregistry.azurecr.io/ai:$(Build.BuildId)|g' $(Agent.BuildDirectory)/s/temp/deployment.yaml
-              sed -i 's|forbeeregistry.azurecr.io/python:.*|forbeeregistry.azurecr.io/python:$(Build.BuildId)|g' $(Agent.BuildDirectory)/s/temp/deployment.yaml
+              sed -i 's|forbeeregistry.azurecr.io/ai:.*|forbeeregistry.azurecr.io/ai:$(Build.BuildId)|g' $(Agent.BuildDirectory)/s/temp/deployment.yml
+              sed -i 's|forbeeregistry.azurecr.io/python:.*|forbeeregistry.azurecr.io/python:$(Build.BuildId)|g' $(Agent.BuildDirectory)/s/temp/deployment.yml
           - task: Kubernetes@1
             inputs:
               kubernetesServiceConnection: 'forbee-aks'
