@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useMemo, useRef, useEffect } from "react"
@@ -200,7 +201,7 @@ export default function BloomPredictionPage() {
   }
 
   const ResultPanel = () => (
-    <div ref={resultRef} className="bg-white border-t-2 p-4 relative overflow-y-auto">
+    <div ref={resultRef} className="bg-white p-4 relative">
       <button className="absolute top-2 right-2 p-1" onClick={() => setResult(null)}>
         <img src="https://forbee.blob.core.windows.net/blob/public/icons/x.png" alt="닫기" className="w-6 h-6" />
       </button>
@@ -250,7 +251,9 @@ export default function BloomPredictionPage() {
             <h4 className="font-medium text-amber-900 mb-1 text-sm">
               {result?.station} - {result?.flower} 개화 예측 정보
             </h4>
-            <p className="text-xs text-amber-800">AI 예측에 성공했습니다.</p>
+            <p className="text-sm text-amber-800">AI 예측에 성공했습니다.</p>
+            <p className="text-sm text-amber-800">해당 관측소에 전년도 개화일 데이터가 존재하지 않으면 표시되지 않을 수 있습니다.</p>
+            <p className="text-sm text-amber-800">최근 10년 평균 개화일 데이터는 최근 10년간의 데이터를 기준으로 산정됩니다. 최근 관측 데이터가 없는 경우, 표시되지 않을 수 있습니다.</p>
           </div>
         </>
       )}
@@ -261,7 +264,7 @@ export default function BloomPredictionPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="flex flex-col md:flex-row h-screen">
 
-        {/* 사이드바 */}
+        {/* Sidebar */}
         <div className="w-full md:w-80 bg-white shadow-lg order-2 md:order-1 overflow-y-auto flex-1 md:flex-none">
           <div className="p-6 border-b">
             <h1 className="text-2xl font-bold text-gray-900">개화 시기 예측</h1>
@@ -308,8 +311,9 @@ export default function BloomPredictionPage() {
           </div>
         </div>
 
+        {/* Right Column (Map + Desktop Result) */}
         <div className="flex-1 flex flex-col p-4 order-1 md:order-2">
-          {/* 지도 영역 */}
+          {/* Map Container */}
           <div className="flex-1 relative">
             <BloomMap
               locations={locations}
@@ -318,16 +322,16 @@ export default function BloomPredictionPage() {
             />
           </div>
 
-          {/* 데스크탑 결과 */}
+          {/* Result Panel (Desktop) */}
           {result && (
-            <div className="hidden md:block flex-shrink-0 pt-4 overflow-y-auto md:h-1/3">
+            <div className="hidden md:block flex-shrink-0 pt-4 overflow-y-auto md:h-1/3 border-t-2">
               <ResultPanel />
             </div>
           )}
         </div>
       </div>
 
-      {/* 모달 */}
+      {/* Modals */}
       {showLocationPopup && selectedLocation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
@@ -396,6 +400,13 @@ export default function BloomPredictionPage() {
       )}
 
       <AlertModal message={alertMessage} onClose={() => setAlertMessage("")} />
+
+      {/* Result Panel (Mobile) */}
+      {result && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t-2 rounded-t-2xl shadow-2xl max-h-[50vh] overflow-y-auto">
+          <ResultPanel />
+        </div>
+      )}
     </div>
   )
 }
