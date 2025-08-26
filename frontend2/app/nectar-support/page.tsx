@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
+import { RequireMemberWithAlert } from "@/components/requirewithalert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,7 +12,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { TreePine, Flower2, Cherry, Leaf, MapPin, Calendar, Info, CheckCircle, ArrowLeft } from "lucide-react"
+import { CheckCircle, ArrowLeft, TreePine, Flower2, Cherry, Leaf, MapPin, Calendar, Info } from "lucide-react"
+
+// 파일 업로드 결과 타입
+interface UploadedFile {
+  url: string;
+  filename: string;
+}
 
 const nectarSources = [
   {
@@ -65,7 +72,7 @@ async function getAccessToken(): Promise<string | null> {
   return localStorage.getItem("accessToken");
 }
 
-async function uploadOne(file: File): Promise<string> {
+async function uploadOne(file: File): Promise<UploadedFile> {
   const token = await getAccessToken();
   const fd = new FormData();
   fd.append("file", file);
@@ -80,8 +87,7 @@ async function uploadOne(file: File): Promise<string> {
     try { m = await res.text(); } catch {}
     throw new Error(`파일 업로드 실패: ${res.status} ${m}`);
   }
-  const data = (await res.json()) as { url: string };
-  return data.url;
+  return res.json() as Promise<UploadedFile>;
 }
 
 type CreateTreePayload = {
@@ -92,7 +98,7 @@ type CreateTreePayload = {
   apiarySize?: "small" | "medium" | "large";
   desiredFlora: string;  // "아카시아" | "개나리" | "매화" | "벚꽃"
   desiredQty: number;
-  photoUrl?: string;     // 대표 1장
+  photoUrls?: string;     // 여러 파일 정보를 담는 JSON 문자열
   reason?: string;
 };
 
@@ -115,6 +121,14 @@ async function createTreeApplication(payload: CreateTreePayload) {
 }
 
 export default function NectarSupportPage() {
+  return (
+    <RequireMemberWithAlert>
+      <NectarSupport /> {/* <- 권한 확인 후에만 마운트됨 */}
+    </RequireMemberWithAlert>
+  )
+}
+
+function NectarSupport() {
   const [selectedSource, setSelectedSource] = useState<string>("")
   const [applicationStep, setApplicationStep] = useState<"info" | "form" | "success">("info")
   const [sitePhotos, setSitePhotos] = useState<File[]>([])
@@ -155,12 +169,11 @@ export default function NectarSupportPage() {
       setLoading(true)
 
       // 1) 선택된 사진 업로드 (병렬)
-      const uploadedUrls = await Promise.all(sitePhotos.map(uploadOne))
-      const primaryPhoto = uploadedUrls[0] // 대표 1장만 저장 (여러 장은 추후 확장)
+      const uploadedFiles = await Promise.all(sitePhotos.map(uploadOne))
       const username = localStorage.getItem("username") || "";
 
       // 2) 프론트 값 → 백엔드 DTO 매핑
-      const payload = {
+      const payload: CreateTreePayload = {
         username,
         applicantName: formData.name.trim(),
         phone: formData.phone.trim(),
@@ -168,7 +181,8 @@ export default function NectarSupportPage() {
         apiarySize: (formData.farmSize || undefined) as "small" | "medium" | "large" | undefined,
         desiredFlora: formData.nectarType,              // "아카시아" 등
         desiredQty: Number(formData.quantity || 0),
-        photoUrl: primaryPhoto,
+        // 업로드된 파일 정보 배열을 JSON 문자열로 변환하여 전송
+        photoUrls: uploadedFiles.length > 0 ? JSON.stringify(uploadedFiles) : undefined,
         reason: formData.reason?.trim() || "",
       }
 

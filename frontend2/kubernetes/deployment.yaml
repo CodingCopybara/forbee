@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: frontend2
-        image: forbeeregistry.azurecr.io/frontend2:08260943
+        image: forbeeregistry.azurecr.io/frontend2:08261136
         ports:
         - containerPort: 3000
         env:

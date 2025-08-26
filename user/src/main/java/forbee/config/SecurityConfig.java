@@ -14,7 +14,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
             .csrf().disable() // CSRF 비활성화 (API 서비스이므로)
             .authorizeRequests()
-                .antMatchers("/api/user-profiles", "/users/**", "/files/**", "/memberRequestLists/**").permitAll() // 회원가입 후 프로필 생성 엔드포인트 및 /users/** 허용
+                .antMatchers("/api/user-profiles", "/users/**", "/files/**", "/memberRequestLists/**", "/trees/**").permitAll() // 회원가입 후 프로필 생성 엔드포인트 및 /users/**, /trees/** 허용
                 .anyRequest().authenticated(); // 그 외 모든 요청은 인증 필요
     }
 }

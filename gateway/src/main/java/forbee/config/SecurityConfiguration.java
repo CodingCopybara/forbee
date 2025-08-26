@@ -29,6 +29,7 @@ public class SecurityConfiguration {
                 "/chatbot/chat",
                 "/api/health",       
                 "/users/**",
+                "/trees/**",
                 "/posts/**",
                 "/comments/**",
                 "/ai/**",

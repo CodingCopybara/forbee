@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
+import { RequireMemberWithAlert } from "@/components/requirewithalert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MapPin, Search, Loader2 } from "lucide-react"
@@ -151,7 +152,15 @@ function HoneyDropGame({ imageSrc = "https://forbee.blob.core.windows.net/blob/p
   )
 }
 
-export default function MapPredict() {
+export default function MapPredictPage() {
+  return (
+    <RequireMemberWithAlert>
+      <MapPredict /> {/* <- 권한 확인 후에만 마운트됨 */}
+    </RequireMemberWithAlert>
+  )
+}
+
+function MapPredict() {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstance = useRef<any>(null)
   const [isMapInitialized, setIsMapInitialized] = useState(false)
@@ -182,7 +191,7 @@ export default function MapPredict() {
 
   useEffect(() => {
     if (typeof window.sop !== "undefined") {
-      honeycombIconRef.current = new window.sop.icon({ iconUrl: "/markers/honeycomb.png", iconSize: [64, 64], iconAnchor: [16, 32] })
+      honeycombIconRef.current = new window.sop.icon({ iconUrl: "https://forbee.blob.core.windows.net/blob/public/honey-dnaji.png", iconSize: [48, 48], iconAnchor: [16, 32] })
     }
   }, [])
 
@@ -324,7 +333,7 @@ export default function MapPredict() {
           return crs
         })()
 
-        const map = new window.sop.map(mapRef.current, { scale: false, panControl: false, zoomSliderControl: true, dragging: true, touchZoom: true, touchPan: true, minZoom: 10, maxZoom: 19, crs: satelliteCRS })
+        const map = new window.sop.map(mapRef.current, { scale: false, panControl: false, zoomSliderControl: false, dragging: true, tourchZoom:true, touchPan: true, minZoom: 10, maxZoom: 19, crs: satelliteCRS })
         mapInstance.current = map
 
         const satelliteTileLayer = new window.sop.TileLayer("https://xdworld.vworld.kr/2d/Satellite/service/{z}/{x}/{y}.jpeg", { maxZoom: 19, minZoom: 10, crossOrigin: "anonymous" })
@@ -402,17 +411,17 @@ export default function MapPredict() {
     const mapElement = mapRef.current
     const tileWidth = mapElement.offsetWidth
     const tileHeight = mapElement.offsetHeight
-    const minTargetSize = 3000
+    const minTargetSize = 1200
 
     const tilesPerSideX = Math.ceil(minTargetSize / tileWidth)
     const tilesPerSideY = Math.ceil(minTargetSize / tileHeight)
     const finalWidth = tileWidth * tilesPerSideX
     const finalHeight = tileHeight * tilesPerSideY
 
-    console.log("지도 div 크기:", tileWidth, "x", tileHeight);
-    console.log("캡처 최소 목표 크기:", minTargetSize);
-    console.log("가로/세로 타일 수:", tilesPerSideX, tilesPerSideY);
-    console.log("최종 캡처 이미지 크기 (px):", finalWidth, "x", finalHeight);
+    // console.log("지도 div 크기:", tileWidth, "x", tileHeight);
+    // console.log("캡처 최소 목표 크기:", minTargetSize);
+    // console.log("가로/세로 타일 수:", tilesPerSideX, tilesPerSideY);
+    // console.log("최종 캡처 이미지 크기 (px):", finalWidth, "x", finalHeight);
 
     const capturedImages: HTMLCanvasElement[] = []
     const startOffsetX = -Math.floor(tilesPerSideX / 2)
@@ -561,7 +570,7 @@ export default function MapPredict() {
                 <p style={{ color: "#555" }}>{mapInitializationError}</p>
               </div>
             ) : (
-              <div className="w-full h-full" ref={mapRef}></div>
+              <div className="w-full h-full" ref={mapRef} style={{ touchAction: 'manipulation' }}></div>
             )}
 
             {/* 분석 오버레이 + 미니게임 */}

@@ -6,6 +6,6 @@ import java.util.*;
 
 import java.util.UUID;
 
-public interface MilwonApplicationRepository extends JpaRepository<MilwonApplication, UUID> {
+public interface MilwonApplicationRepository extends JpaRepository<MilwonApplication, Long> {
     List<MilwonApplication> findByUserId(Long userId);
 }

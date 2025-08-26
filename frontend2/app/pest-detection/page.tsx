@@ -2,7 +2,9 @@
 
 import type React from "react"
 import { useState, useRef, useEffect, useMemo } from "react"
+// @ts-ignore
 import { useRouter } from "next/navigation"
+import { RequireMemberWithAlert } from "@/components/requirewithalert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -54,7 +56,15 @@ async function postJSON<T = unknown>(url: string, body: any, headers: Record<str
 }
 
 export default function PestDetectionPage() {
-  const router = useRouter()
+  return (
+    <RequireMemberWithAlert>
+      <PestDetectionScreen /> {/* <- 권한 확인 후에만 마운트됨 */}
+    </RequireMemberWithAlert>
+  )
+}
+
+function PestDetectionScreen() {
+    const router = useRouter()
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisComplete, setAnalysisComplete] = useState(false)

@@ -41,11 +41,14 @@ public class MilwonApplication {
     @Column(name = "desired_qty", nullable = false, length = 20)
     private String desiredQty;
 
-    @Column(name = "photo_url", columnDefinition = "text")
-    private String photoUrl;
+    @Column(name = "photo_urls", columnDefinition = "text")
+    private String photoUrls;
 
     @Column(name = "reason", columnDefinition = "text")
     private String reason;
+
+    @Column(name = "process_message", columnDefinition = "text")
+    private String processMessage;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
@@ -84,11 +87,14 @@ public class MilwonApplication {
     public String getDesiredQty() { return desiredQty; }
     public void setDesiredQty(String desiredQty) { this.desiredQty = desiredQty; }
 
-    public String getPhotoUrl() { return photoUrl; }
-    public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
+    public String getPhotoUrls() { return photoUrls; }
+    public void setPhotoUrls(String photoUrls) { this.photoUrls = photoUrls; }
 
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }
+
+    public String getProcessMessage() { return processMessage; }
+    public void setProcessMessage(String processMessage) { this.processMessage = processMessage; }
 
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }

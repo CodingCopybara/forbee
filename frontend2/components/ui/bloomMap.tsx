@@ -47,17 +47,17 @@ export function BloomMap({ locations, onMarkerClick, selectedLocation }: bloomMa
         const map = new window.sop.map(mapRef.current, {
           scale: false,
           panControl: false,
-          zoomSliderControl: true,
+          zoomSliderControl: false,
           minZoom: 2,
           maxZoom: 4,
           dragging: true,
           touchZoom: true,
           touchPan: true,
-          zoomSliderControlOptions: {
-            position: "TOP_RIGHT",
-            step: 1,
-            range: [2, 4],
-          },
+          // zoomSliderControlOptions: {
+          //   position: "TOP_RIGHT",
+          //   step: 1,
+          //   range: [2, 4],
+          // },
         })
         mapInstance.current = map
 
@@ -169,5 +169,5 @@ export function BloomMap({ locations, onMarkerClick, selectedLocation }: bloomMa
     )
   }
 
-  return <div ref={mapRef} style={{ width: "100%", height: "100%", zIndex: 0, touchAction: 'manipulation' }} />
+  return <div ref={mapRef} style={{ width: "100%", height: "100%", zIndex: 0, touchAction: 'none' }} />
 }
