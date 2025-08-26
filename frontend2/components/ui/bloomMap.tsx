@@ -50,6 +50,9 @@ export function BloomMap({ locations, onMarkerClick, selectedLocation }: bloomMa
           zoomSliderControl: true,
           minZoom: 2,
           maxZoom: 4,
+          dragging: true,
+          touchZoom: true,
+          touchPan: true,
           zoomSliderControlOptions: {
             position: "TOP_RIGHT",
             step: 1,
@@ -166,5 +169,5 @@ export function BloomMap({ locations, onMarkerClick, selectedLocation }: bloomMa
     )
   }
 
-  return <div ref={mapRef} style={{ width: "100%", height: "100%", zIndex: 0 }} />
+  return <div ref={mapRef} style={{ width: "100%", height: "100%", zIndex: 0, touchAction: 'manipulation' }} />
 }

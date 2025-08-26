@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import axios from "axios"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -121,6 +121,13 @@ export default function BloomPredictionPage() {
   const [result, setResult] = useState<BloomResult | null>(null)
   const [showLocationPopup, setShowLocationPopup] = useState(false)
   const [alertMessage, setAlertMessage] = useState("")
+  const resultRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (result && resultRef.current) {
+      resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [result]);
   
 
   const handleLocationSelect = (location: Location) => {
@@ -142,8 +149,8 @@ export default function BloomPredictionPage() {
 
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_GW_URL}/plants/predict-bloom`;
-      console.log("Requesting API URL:", apiUrl);
-      console.log("NEXT_PUBLIC_GW_URL:", process.env.NEXT_PUBLIC_GW_URL);
+      // console.log("Requesting API URL:", apiUrl);
+      // console.log("NEXT_PUBLIC_GW_URL:", process.env.NEXT_PUBLIC_GW_URL);
 
       if (!flowerInfo) {
         setAlertMessage("꽃이 선택되지 않았습니다.");
@@ -163,14 +170,14 @@ export default function BloomPredictionPage() {
         species: flowerInfo.name,
         location: selectedLocation.name,
       };
-      console.log("주는 데이터:", params);
+      // console.log("주는 데이터:", params);
 
       // POST 요청
       const response = await axios.post(apiUrl, null, { params,   headers: {
         Authorization: `Bearer ${accessToken}`,
       }, });
       const apiResponse = response.data; 
-      console.log("받는 데이터:", apiResponse);
+      // console.log("받는 데이터:", apiResponse);
 
       // 결과 구성
       const newResult: BloomResult = {
@@ -201,9 +208,9 @@ export default function BloomPredictionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="flex h-screen">
+      <div className="flex flex-col md:flex-row h-screen">
         {/* 좌측 사이드바 */}
-        <div className="w-80 bg-white shadow-lg overflow-y-auto">
+        <div className="w-full md:w-80 bg-white shadow-lg overflow-y-auto order-2 md:order-1 h-1/2 md:h-full">
           <div className="p-6 border-b">
             <h1 className="text-2xl font-bold text-gray-900">개화 시기 예측</h1>
             <p className="text-sm text-gray-600 mt-2">AI를 이용해 가까운 관측소의 올해 개화시기를 예측하여 알려드려요.</p>
@@ -251,7 +258,7 @@ export default function BloomPredictionPage() {
         </div>
 
         {/* 메인 지도 영역 */}
-        <div className="flex-1 relative grid place-items-center p-4">
+        <div className="relative p-4 order-1 md:order-2 h-1/2 md:h-full md:flex-1">
           <BloomMap
             locations={locations}
             onMarkerClick={handleLocationSelect}
@@ -260,7 +267,7 @@ export default function BloomPredictionPage() {
 
           {/* 하단 결과 표시 영역 */}
           {result && (
-            <div className="absolute bottom-0 left-0 right-0 bg-white border-t shadow-lg">
+            <div ref={resultRef} className="absolute bottom-0 left-0 right-0 bg-white border-t shadow-lg">
               <div className="p-6">
                 {result.status === "fail" ? (
                   <div className="p-4 bg-red-50 text-red-800 border border-red-200 rounded-lg">
