@@ -19,7 +19,6 @@ trigger:
 variables:
   - group: aiMap-secrets
   - group: app-secrets
-  - group: chatbot_ai-secrets
   - group: community-secrets
   - group: frontend2-secrets
   - group: oauth-secrets
