@@ -37,42 +37,42 @@ stages:
     - checkout: self
       fetchDepth: 2
     - script: |
-      set -e
-      CHANGED_FILES=$(git diff HEAD HEAD~1 --name-only)
-      if echo "$CHANGED_FILES" | grep -q "frontend2"; then
-        echo "##vso[task.setvariable variable=runFrontend;isOutput=true]true"
-      fi
-      if echo "$CHANGED_FILES" | grep -q "gateway"; then
-        echo "##vso[task.setvariable variable=runGateway;isOutput=true]true"
-      fi
-      if echo "$CHANGED_FILES" | grep -q "oauth"; then
-        echo "##vso[task.setvariable variable=runOauth;isOutput=true]true"
-      fi
-      if echo "$CHANGED_FILES" | grep -q "user"; then
-        echo "##vso[task.setvariable variable=runUser;isOutput=true]true"
-      fi
-      if echo "$CHANGED_FILES" | grep "ai" | grep -v -q "chatbot_ai"; then
-        echo "##vso[task.setvariable variable=runAi;isOutput=true]true"
-      fi
-      if echo "$CHANGED_FILES" | grep -q "ai_python"; then
-        echo "##vso[task.setvariable variable=runAiPython;isOutput=true]true"
-      fi
-      if echo "$CHANGED_FILES" | grep -q "aiMap"; then
-        echo "##vso[task.setvariable variable=runAiMap;isOutput=true]true"
-      fi
-      if echo "$CHANGED_FILES" | grep -q "chatbot"; then
-        echo "##vso[task.setvariable variable=runChatbot;isOutput=true]true"
-      fi
-      if echo "$CHANGED_FILES" | grep -q "chatbot_ai"; then
-        echo "##vso[task.setvariable variable=runChatbotAi;isOutput=true]true"
-      fi
-      if echo "$CHANGED_FILES" | grep -q "community"; then
-        echo "##vso[task.setvariable variable=runCommunity;isOutput=true]true"
-      fi
-      if echo "$CHANGED_FILES" | grep -q "tree"; then
-        echo "##vso[task.setvariable variable=runTree;isOutput=true]true"
-      fi
-    name: setVars
+        set -e
+        CHANGED_FILES=$(git diff HEAD HEAD~1 --name-only)
+        if echo "$CHANGED_FILES" | grep -q "frontend2"; then
+          echo "##vso[task.setvariable variable=runFrontend;isOutput=true]true"
+        fi
+        if echo "$CHANGED_FILES" | grep -q "gateway"; then
+          echo "##vso[task.setvariable variable=runGateway;isOutput=true]true"
+        fi
+        if echo "$CHANGED_FILES" | grep -q "oauth"; then
+          echo "##vso[task.setvariable variable=runOauth;isOutput=true]true"
+        fi
+        if echo "$CHANGED_FILES" | grep -q "user"; then
+          echo "##vso[task.setvariable variable=runUser;isOutput=true]true"
+        fi
+        if echo "$CHANGED_FILES" | grep "ai" | grep -v -q "chatbot_ai"; then
+          echo "##vso[task.setvariable variable=runAi;isOutput=true]true"
+        fi
+        if echo "$CHANGED_FILES" | grep -q "ai_python"; then
+          echo "##vso[task.setvariable variable=runAiPython;isOutput=true]true"
+        fi
+        if echo "$CHANGED_FILES" | grep -q "aiMap"; then
+          echo "##vso[task.setvariable variable=runAiMap;isOutput=true]true"
+        fi
+        if echo "$CHANGED_FILES" | grep -q "chatbot"; then
+          echo "##vso[task.setvariable variable=runChatbot;isOutput=true]true"
+        fi
+        if echo "$CHANGED_FILES" | grep -q "chatbot_ai"; then
+          echo "##vso[task.setvariable variable=runChatbotAi;isOutput=true]true"
+        fi
+        if echo "$CHANGED_FILES" | grep -q "community"; then
+          echo "##vso[task.setvariable variable=runCommunity;isOutput=true]true"
+        fi
+        if echo "$CHANGED_FILES" | grep -q "tree"; then
+          echo "##vso[task.setvariable variable=runTree;isOutput=true]true"
+        fi
+      name: setVars
 
 - stage: BuildAndPush
   displayName: '도커 빌드 및 푸시'
@@ -362,12 +362,11 @@ stages:
               stringData:
                 key: $(NEXT_PUBLIC_SGIS_CONSUMER_KEY)
               " > $(Agent.BuildDirectory)/s/temp/secret.yml
-          - task: Kubernetes@1
+          - task: KubernetesManifest@1
             inputs:
               kubernetesServiceConnection: 'forbee-aks'
-              command: 'apply'
-              useConfigurationFile: true
-              configuration: '$(Agent.BuildDirectory)/s/temp'
+              action: 'deploy'
+              manifests: '$(Agent.BuildDirectory)/s/temp'
               containers: 'forbeeregistry.azurecr.io/frontend2:$(Build.BuildId)'
 
   - deployment: DeployGateway
@@ -378,12 +377,11 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: Kubernetes@1
+          - task: KubernetesManifest@1
             inputs:
               kubernetesServiceConnection: 'forbee-aks'
-              command: 'apply'
-              useConfigurationFile: true
-              configuration: 'gateway/kubernetes'
+              action: 'deploy'
+              manifests: 'gateway/kubernetes'
               containers: 'forbeeregistry.azurecr.io/gateway:$(Build.BuildId)'
 
   - deployment: DeployOauth
@@ -409,12 +407,11 @@ stages:
               stringData:
                 DB_PASSWORD: $(DB_PASSWORD)
               " > $(Agent.BuildDirectory)/s/temp/secret.yml
-          - task: Kubernetes@1
+          - task: KubernetesManifest@1
             inputs:
               kubernetesServiceConnection: 'forbee-aks'
-              command: 'apply'
-              useConfigurationFile: true
-              configuration: '$(Agent.BuildDirectory)/s/temp'
+              action: 'deploy'
+              manifests: '$(Agent.BuildDirectory)/s/temp'
               containers: 'forbeeregistry.azurecr.io/oauth:$(Build.BuildId)'
 
   - deployment: DeployUser
@@ -451,12 +448,11 @@ stages:
               stringData:
                 AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
               " > $(Agent.BuildDirectory)/s/temp/azure-storage-secret.yml
-          - task: Kubernetes@1
+          - task: KubernetesManifest@1
             inputs:
               kubernetesServiceConnection: 'forbee-aks'
-              command: 'apply'
-              useConfigurationFile: true
-              configuration: '$(Agent.BuildDirectory)/s/temp'
+              action: 'deploy'
+              manifests: '$(Agent.BuildDirectory)/s/temp'
               containers: 'forbeeregistry.azurecr.io/user:$(Build.BuildId)'
 
   - deployment: DeployAi
@@ -494,12 +490,11 @@ stages:
           - script: |
               sed -i 's|forbeeregistry.azurecr.io/ai:.*|forbeeregistry.azurecr.io/ai:$(Build.BuildId)|g' $(Agent.BuildDirectory)/s/temp/deployment.yml
               sed -i 's|forbeeregistry.azurecr.io/python:.*|forbeeregistry.azurecr.io/python:$(Build.BuildId)|g' $(Agent.BuildDirectory)/s/temp/deployment.yml
-          - task: Kubernetes@1
+          - task: KubernetesManifest@1
             inputs:
               kubernetesServiceConnection: 'forbee-aks'
-              command: 'apply'
-              useConfigurationFile: true
-              configuration: '$(Agent.BuildDirectory)/s/temp'
+              action: 'deploy'
+              manifests: '$(Agent.BuildDirectory)/s/temp'
 
   - deployment: DeployAiMap
     displayName: 'AI 맵 배포'
@@ -525,12 +520,11 @@ stages:
                 SGIS_CONSUMER_KEY: $(SGIS_CONSUMER_KEY)
                 SGIS_SECRET_KEY: $(SGIS_SECRET_KEY)
               " > $(Agent.BuildDirectory)/s/temp/secret.yml
-          - task: Kubernetes@1
+          - task: KubernetesManifest@1
             inputs:
               kubernetesServiceConnection: 'forbee-aks'
-              command: 'apply'
-              useConfigurationFile: true
-              configuration: '$(Agent.BuildDirectory)/s/temp'
+              action: 'deploy'
+              manifests: '$(Agent.BuildDirectory)/s/temp'
               containers: 'forbeeregistry.azurecr.io/aimap:$(Build.BuildId)'
 
   - deployment: DeployChatbot
@@ -541,12 +535,11 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: Kubernetes@1
+          - task: KubernetesManifest@1
             inputs:
               kubernetesServiceConnection: 'forbee-aks'
-              command: 'apply'
-              useConfigurationFile: true
-              configuration: 'chatbot/kubernetes'
+              action: 'deploy'
+              manifests: 'chatbot/kubernetes'
               containers: 'forbeeregistry.azurecr.io/chatbot:$(Build.BuildId)'
 
   - deployment: DeployChatbotAi
@@ -574,12 +567,11 @@ stages:
                 AZURE_STORAGE_ACCESS_KEY: $(AZURE_STORAGE_ACCESS_KEY)
                 OPENAI_API_KEY: $(OPENAI_API_KEY)
               " > $(Agent.BuildDirectory)/s/temp/secret.yml
-          - task: Kubernetes@1
+          - task: KubernetesManifest@1
             inputs:
               kubernetesServiceConnection: 'forbee-aks'
-              command: 'apply'
-              useConfigurationFile: true
-              configuration: '$(Agent.BuildDirectory)/s/temp'
+              action: 'deploy'
+              manifests: '$(Agent.BuildDirectory)/s/temp'
               containers: 'forbeeregistry.azurecr.io/chatbot_ai:$(Build.BuildId)'
 
   - deployment: DeployCommunity
@@ -615,12 +607,11 @@ stages:
               stringData:
                 AZURE_STORAGE_KEY: $(AZURE_STORAGE_KEY)
               " > $(Agent.BuildDirectory)/s/temp/azure-storage-key-secret.yml
-          - task: Kubernetes@1
+          - task: KubernetesManifest@1
             inputs:
               kubernetesServiceConnection: 'forbee-aks'
-              command: 'apply'
-              useConfigurationFile: true
-              configuration: '$(Agent.BuildDirectory)/s/temp'
+              action: 'deploy'
+              manifests: '$(Agent.BuildDirectory)/s/temp'
               containers: 'forbeeregistry.azurecr.io/community:$(Build.BuildId)'
 
   - deployment: DeployTree
@@ -631,10 +622,9 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: Kubernetes@1
+          - task: KubernetesManifest@1
             inputs:
               kubernetesServiceConnection: 'forbee-aks'
-              command: 'apply'
-              useConfigurationFile: true
-              configuration: 'tree/kubernetes'
+              action: 'deploy'
+              manifests: 'tree/kubernetes'
               containers: 'forbeeregistry.azurecr.io/tree:$(Build.BuildId)'
