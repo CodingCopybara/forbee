@@ -213,7 +213,6 @@ function MapPredict() {
       lng = latlng[0]
     }
     setCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`)
-    setAnalysisCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`)
 
     const utmkPos = window.sop.utmk(center.x, center.y)
 
@@ -229,11 +228,9 @@ function MapPredict() {
       })
       const addr = res.data.full_addr || "주소를 불러오지 못했습니다."
       setAddress(addr)
-      setAnalysisAddress(addr)
     } catch (err) {
       console.error("주소 조회 실패", err)
       setAddress("주소를 불러오지 못했습니다.")
-      setAnalysisAddress("주소를 불러오지 못했습니다.")
     }
   }
 
@@ -425,6 +422,10 @@ function MapPredict() {
   // ⛏️ 전체 분석 → 응답 받는 즉시 로딩 종료 & 팝업 표시
   const captureAndPredict = async () => {
     if (!mapRef.current || !mapInstance.current) return
+
+    setAnalysisAddress(address)
+    setAnalysisCoordinates(coordinates)
+
     setIsLoading(true)
     const gameTimer = setTimeout(() => setShowGame(true), 700)
 
@@ -570,7 +571,7 @@ function MapPredict() {
             <p className="text-sm text-amber-800">AI 양봉 입지 분석 서비스입니다.</p>
             <p className="text-sm text-amber-800">지도의 중앙에 분석을 원하는 장소를 두세요.</p>
             <p className="text-sm text-amber-800">
-              꿀벌이 활동하기 좋은 <span className="text-red-400 font-semibold">최적의 반경 600~800m</span>에 대해서 선택하신 중심을 기준으로 분석합니다.
+              꿀벌이 활동하기 좋은 <span className="text-red-400 font-semibold">최적의 반경 500~800m</span>에 대해서 선택하신 중심을 기준으로 분석합니다.
             </p>
             <p className="text-sm text-amber-800">선택한 지역에 대해, 부정적인 요소와 긍정적인 요소를 판단하고 등급을 산정합니다.</p>
             <p className="text-sm text-amber-800">각 요소에 대한 비율을 확인 할 수 있고, 그에 따른 안내도 드릴 수 있어요.</p>
