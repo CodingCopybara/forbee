@@ -28,38 +28,32 @@
 
 ## 📸 주요 기능 (Key Features)
 
-### 1. 꿀벌 활동 예측 AI
-
-#### 🌸 **밀원수 개화 시기 예측**
+### 🌸 **밀원수 개화 시기 예측**
 - 전국 관측소의 40년치 기상 데이터와 개화 데이터를 학습한 AI 모델(PyTorch, Scikit-learn 기반)이 아카시아, 유채꽃 등 주요 밀원수의 올해 개화 시기를 예측합니다.
 - 양봉 농가는 이를 통해 약 40일 전부터 시작되는 채밀 준비를 최적의 시점에 시작할 수 있습니다.
 
 > `[스크린샷 삽입: 전국 지도 위에 밀원수별 예상 개화일이 표시된 화면]`
 
-#### 🗺️ **최적 양봉 입지 분석**
+### 🗺️ **최적 양봉 입지 분석**
 - 이동 양봉 농가를 위해, 지도에서 선택한 지역의 양봉 적합성을 이미지 기반(OpenCV, PyTorch)으로 분석합니다.
 - 위성 사진을 분석하여 반경 800m 내의 논, 밭 등 농약 위험 요소를 식별하고, LLM이 종합적인 입지 분석 보고서를 생성합니다.
 
 > `[스크린샷 삽입: 지도에서 지역을 선택하고 분석 결과 보고서가 표시된 화면]`
 
-### 2. 꿀벌 건강 관리 AI
-
-#### 🩺 **질병/해충 진단 및 AI 리포트**
+### 🩺 **질병/해충 진단 및 AI 리포트**
 - 양봉 농가가 벌통 내부 사진을 업로드하면, **YOLO(Ultralytics)** 기반의 AI가 꿀벌 응애, 낭충봉아부패병 등 주요 질병 및 해충을 신속하게 진단합니다.
 - 진단 결과를 바탕으로 **LangChain**과 **RAG** 기술을 활용한 AI가 즉각적인 대응 방안을 포함한 상세 리포트를 제공하여 초기 대응을 돕습니다.
+- 궁금한 점은 AI 챗봇으로 실시간으로 문답을 이어갈 수 있습니다.
+- 더 전문적인 소견이 필요할 경우, 'QnA 작성하기' 버튼을 통해 커뮤니티에 질문을 올리면 양봉농협 소속 꿀벌 전문 수의사가 직접 답변을 제공합니다.
 
-> `[스크린샷 삽입: 사진 업로드 화면, AI 진단 결과 및 리포트 화면]`
+> `[스크린샷 삽입: 질병 탐지 리포트 기반 대화가 표시된 화면]`
 
-#### 💬 **수의사 연계 Q&A 및 AI 챗봇**
-- 진단 결과에 대해 궁금한 점은 AI 챗봇을 통해 실시간으로 문답을 이어갈 수 있습니다.
-- 더 전문적인 소견이 필요할 경우, 'Q&A 작성하기' 버튼을 통해 커뮤니티에 질문을 올리면 양봉농협 소속 꿀벌 전문 수의사가 직접 답변을 제공합니다.
-
-![Chatbot](assets/chatbot_1.png)
-
-### 3. 커뮤니티 및 정보 허브
+### 👀. 커뮤니티 및 꿀벌 챗봇
 
 - **게시판:** 양봉 농가들이 자유롭게 소통하는 `자유게시판`, 농협의 중요 소식을 전하는 `공지사항`, 전문가의 답변을 받는 `Q&A 게시판`을 제공합니다.
-- **지식 챗봇:** **RAG(Retrieval-Augmented Generation)** 와 **Chroma DB**를 활용하여 꿀벌 관련 전문 지식부터 사이트 이용 방법, 양봉농협 금융 상품 안내까지 다양한 정보를 제공합니다.
+- **꿀벌 챗봇:** **RAG(Retrieval-Augmented Generation)** 와 **Chroma DB**를 활용하여 꿀벌 관련 전문 지식부터 사이트 이용 방법, 양봉농협 금융 상품 안내까지 다양한 정보를 제공합니다.
+
+![Chatbot](assets/chatbot_1.png)
 
 <br>
 
@@ -203,7 +197,7 @@ graph TD
     - 각 서비스 디렉토리의 `.env.example` 또는 `application.yml` 파일을 참고하여 DB, JWT, Azure, OpenAI API Key 등의 환경 변수를 설정합니다.
 3.  **Docker Compose로 전체 서비스 실행**
     ```shell
-    docker-compose up -d
+    이건 하나하나 다 작성해야함. 너무귀찮아 너무귀찮아 너무귀찮아.
     ```
 
 <br>
@@ -239,6 +233,9 @@ graph TD
 | **프로필** | <img src="https://github.com/fndl5759.png" width="150"> | <img src="https://github.com/cucumberbatc.png" width="150"> | <img src="https://github.com/thlee17.png" width="150"> | <img src="https://github.com/dlafhr789.png" width="150"> | <img src="https://github.com/Mnemosyne1234.png" width="150"> |
 | **역할** | 개화시기 예측 (예측 모델)<br>양봉입지 분석 (이미지 분석) | 질병/해충 탐지 (에이전트)<br> | 질병/해충 탐지 (이상 탐지)<br>배포 (CICD) | 계정 (JWT&Spring Boot)<br>프론트엔드 (React)<br>배포 (Azure & Kubernetes) | 챗봇 (LLM & Agent & RAG)<br>커뮤니티 (?)<br>클라우드 (?) |
 | **GitHub**| [@fndl5759](https://www.github.com/fndl5759) | [@cucumberbatc](https://www.github.com/cucumberbatc) | [@thlee17](https://www.github.com/thlee17) | [@dlafhr789](https://www.github.com/dlafhr789) | [@Mnemosyne1234](https://www.github.com/Mnemosyne1234) |
+
+<br>
+
 1. [주요 기능](#주요-기능-key-features)
 2. [기술 스택](#기술-스택-tech-stack)
 3. [아키텍처](#아키텍처-architecture)
