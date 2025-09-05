@@ -223,6 +223,11 @@ graph TD
 - **Database**: Azure Database for MySQL
 - **Storage**: Azure Blob Storage
 
+### 4. 도메인 등록
+- Azure Kubernetes Service에 배포된 Ingress Controller의 외부 IP 주소를 확인합니다.
+- 구매한 `forbee.me` 도메인의 DNS 설정에서, 해당 외부 IP 주소를 A 레코드로 추가하여 도메인과 서비스를 연결했었습니다.
+- 현제는 **비용 이슈**로 인하여 서버를 닫아 놓은 상태입니다. ~~Azure VM 너무비싸~~
+
 <br>
 
 ## 👨‍💻 팀원 소개 (Team)
