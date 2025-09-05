@@ -333,7 +333,7 @@ function BloomPrediction() {
 
           {/* Result Panel (Desktop) */}
           {result && (
-            <div className="hidden md:block flex-shrink-0 pt-4 overflow-y-auto md:h-1/3 border-t-2">
+            <div className="hidden md:block flex-shrink-0 pt-4 overflow-y-auto md:h-1/3">
               <ResultPanel />
             </div>
           )}

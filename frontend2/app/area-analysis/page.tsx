@@ -213,7 +213,6 @@ function MapPredict() {
       lng = latlng[0]
     }
     setCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`)
-    setAnalysisCoordinates(`${lat.toFixed(4)}, ${lng.toFixed(4)}`)
 
     const utmkPos = window.sop.utmk(center.x, center.y)
 
@@ -229,13 +228,31 @@ function MapPredict() {
       })
       const addr = res.data.full_addr || "주소를 불러오지 못했습니다."
       setAddress(addr)
-      setAnalysisAddress(addr)
     } catch (err) {
       console.error("주소 조회 실패", err)
       setAddress("주소를 불러오지 못했습니다.")
-      setAnalysisAddress("주소를 불러오지 못했습니다.")
     }
   }
+
+    // // 지도 검색 기능
+  // const handleSearch = async () => {
+  //   if (!searchAddress || !mapInstance.current) return;
+
+  //   try {
+  //     const res = await axios.get(`${process.env.NEXT_PUBLIC_GW_URL}/maps/search-address`, { params: { query: searchAddress } });
+  //     const data = res.data;
+
+  //     if (data && data.x != null && data.y != null) {
+  //       const utmkPos = proj4("EPSG:4326", "EPSG:5179", [data.x, data.y]);
+  //       mapInstance.current.setView(window.sop.utmk(utmkPos[0], utmkPos[1]), 16); 
+  //     } else {
+  //       alert("검색 결과가 없습니다.");
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     alert("주소 검색 실패");
+  //   }
+  // };
 
   const calculateRecommendation = (ratios: PixelRatios) => {
     const weights: { [key: string]: number } = {
@@ -244,7 +261,7 @@ function MapPredict() {
       "논": -3,
       "밭": -3,
       "비닐하우스": -1,
-      "수역": 0.5,
+      "수역": 0.3,
     }
 
     let score = 0
@@ -271,19 +288,35 @@ function MapPredict() {
 
     const labelDescriptions: Record<string, { high: string; mid: string; low: string }> = {
       "활엽수림": {
-        high: "이 지역은 활엽수림이 풍부한 것으로 보입니다. 꿀벌에게 매우 유리합니다.",
-        mid: "활엽수림이 적절히 분포합니다.",
-        low: "활엽수림이 거의 없습니다.",
+        high: "이 지역은 활엽수림이 풍부한 것으로 보입니다. 활엽수림은 꿀벌에게 가장 이상적인 환경입니다. 다양한 활엽수종은 계절에 따라 꽃을 피워 꿀벌에게 연중 안정적인 꿀과 꽃가루를 공급합니다. 이는 꿀벌 군집의 생존과 번식, 그리고 꿀 생산량을 극대화하는 데 매우 유리합니다.",
+        mid: "활엽수림이 적절히 분포하여 꿀벌의 채집 활동에 도움을 줍니다. 하지만 더 넓은 활엽수림이 있을 때만큼 풍부한 밀원(꿀과 꽃가루를 얻는 식물)을 기대하기는 어렵습니다. 따라서 다른 주변 식생에 대한 의존도가 높아질 수 있습니다.",
+        low: "활엽수림이 거의 없어 꿀벌이 기대할 수 있는 자연적인 밀원이 부족합니다. 꿀벌이 먹이를 확보하기 위해 다른 식생이나 인공적인 먹이 공급원에 의존해야 하므로, 군집의 건강과 꿀 생산량에 부정적인 영향을 미칠 수 있습니다."
       },
       "침엽수림": {
-        high: "침엽수림이 넓지만 꿀 공급은 제한적입니다.",
-        mid: "은신처 역할은 하지만 밀원은 제한적입니다.",
-        low: "침엽수림이 거의 없습니다.",
+        high: "침엽수림이 넓게 분포해 있지만 대부분의 침엽수는 꿀벌에게 풍부한 꿀을 제공하지 않습니다. 그러나 그늘과 은신처 역할은 충분히 할 수 있어 기후 완화에는 긍정적입니다.",
+        mid: "침엽수림이 일부 존재하여 꿀벌에게 일정한 은신처 역할은 하지만, 밀원 식물이 부족해 먹이 공급에는 제한적입니다. 추가적인 밀원 확보가 필요합니다.",
+        low: "침엽수림이 거의 없지만, 꿀벌의 활동에 큰 영향은 없습니다. 밀원 확보는 다른 식생에 의존해야 합니다."
       },
-      "논": { high: "농약 위험이 큽니다.", mid: "일부 피해 가능성.", low: "위험 낮음." },
-      "밭": { high: "농약 위험이 큽니다.", mid: "관리 필요.", low: "위험 낮음." },
-      "비닐하우스": { high: "활동에 불리.", mid: "부분 제약.", low: "자유로운 비행." },
-      "수역": { high: "활동 면적 제한.", mid: "물 공급 유리.", low: "물 공급 부족." },
+      "논": {
+        high: "이 지역은 농약 사용량이 많아 꿀벌에게 치명적인 위험이 될 수 있습니다. 특히, 벼농사에 주로 사용되는 살충제나 제초제는 꿀벌의 활동 시기와 겹치는 경우가 많아 대규모 폐사로 이어질 수 있습니다. 넓은 논은 꿀벌이 활동할 수 있는 밀원이 거의 없어 꿀벌이 먹이를 찾기 어렵게 만듭니다.",
+        mid: "논이 주변에 일부 분포해 있어 농약 피해 가능성이 존재합니다. 꿀벌이 주로 활동하는 채집 반경과 논의 농약 살포 시기를 반드시 확인하고, 꿀벌 군집 관리에 주의를 기울여야 합니다.",
+        low: "논이 거의 없어 농약 피해 가능성이 낮습니다. 주변 환경은 상대적으로 안전하지만, 분포 비율과 상관없이 양봉장과 가까운 위치에 논이 존재할 경우, 주의가 필요합니다."
+      },
+      "밭": {
+        high: "이 지역은 농약 사용 가능성이 매우 커 꿀벌에게 치명적인 위험이 될 수 있습니다. 밭은 겉으로 보기에 꿀벌의 먹이(밀원)를 제공하는 것처럼 보이지만, 꿀벌이 농약에 노출될 경우 생존율이 급격히 낮아지고, 여왕벌과 애벌레에게까지 피해를 입혀 벌집 전체가 붕괴될 위험이 있습니다.",
+        mid: "밭이 일부 분포하여 농약에 의한 꿀벌 피해 가능성이 있습니다. 꿀벌이 주로 활동하는 채집 반경과 밭의 농약 살포 시기를 반드시 확인하고, 필요시 꿀벌을 다른 곳으로 옮기는 등 관리에 신경 써야 합니다.",
+        low: "밭이 거의 없어 농약으로 인한 꿀벌 피해 위험이 낮습니다. 꿀벌이 자유롭게 먹이를 찾을 수 있는 환경이라 군집 건강에 긍정적인 영향을 줍니다. 하지만, 분포 비율과 상관없이 양봉장과 가까운 위치에 밭이 존재할 경우, 주의가 필요합니다."
+      },
+      "비닐하우스": {
+        high: "이 지역은 꿀벌이 활동하기에 매우 불리한 환경입니다. 비닐하우스는 꿀벌의 자유로운 비행을 방해하며, 일단 안으로 들어간 꿀벌은 출구를 찾지 못해 죽을 위험이 높습니다. 또한, 외부에서는 비닐하우스 내부의 작물 재배 시기와 농약 살포 시기를 파악하기 어려워 꿀벌이 치명적인 피해를 입을 가능성이 큽니다.",
+        mid: "비닐하우스가 부분적으로 분포해 있어 꿀벌의 이동에 어느 정도 제약이 생길 수 있습니다. 꿀벌이 비닐하우스 안으로 들어갔을 때 길을 잃거나 농약에 노출될 위험이 있으므로, 양봉 관리 시 주의가 필요합니다.",
+        low: "비닐하우스가 거의 없어 꿀벌이 자유롭게 날아다니며 먹이를 구할 수 있습니다. 하지만, 분포 비율과 상관없이 양봉장과 가까운 위치에 비닐하우스가 존재할 경우, 주의가 필요합니다."
+      },
+      "수역": {
+        high: "해당 분석은 민물과 바다를 구분하지 못하니 이 점 참고하시기 바랍니다. 수역이 넓으면 꿀벌이 활동할 수 있는 면적이 제한됩니다. 이는 꿀벌의 주요 식량인 밀원(꿀과 꽃가루를 얻는 식물)이 부족해져 꿀 생산량이 줄어들 수 있다는 뜻입니다. 또한, 넓은 수역 주변의 높은 습도는 벌집 내 질병이나 곰팡이 번식 가능성을 높일 수 있습니다.",
+        mid: "해당 분석은 민물과 바다를 구분하지 못하니 이 점 참고하시기 바랍니다. 이 지역은 꿀벌이 필요로 하는 물을 얻기 좋은 환경을 갖추고 있습니다. 물은 꿀벌이 벌통의 온도와 습도를 조절하고, 꿀의 농도를 맞추는 데 필수적인 자원입니다. 적절한 수원은 꿀벌 군집을 건강하게 유지하고 꿀 생산량을 늘리는 데 긍정적인 영향을 줍니다.",
+        low: "해당 분석은 민물과 바다를 구분하지 못하니 이 점 참고하시기 바랍니다. 이 지역은 꿀벌이 물을 얻기 어려운 환경입니다. 물은 벌통의 온도와 꿀의 농도를 조절하는 데 꼭 필요하며, 꿀벌 군집의 건강에 큰 영향을 미칩니다. 따라서 양봉업자가 별도로 물을 공급해주는 노력이 필요합니다."
+      }
     }
 
     const getLabelDescription = (label: string, percent: number) => {
@@ -389,6 +422,10 @@ function MapPredict() {
   // ⛏️ 전체 분석 → 응답 받는 즉시 로딩 종료 & 팝업 표시
   const captureAndPredict = async () => {
     if (!mapRef.current || !mapInstance.current) return
+
+    setAnalysisAddress(address)
+    setAnalysisCoordinates(coordinates)
+
     setIsLoading(true)
     const gameTimer = setTimeout(() => setShowGame(true), 700)
 
@@ -534,7 +571,7 @@ function MapPredict() {
             <p className="text-sm text-amber-800">AI 양봉 입지 분석 서비스입니다.</p>
             <p className="text-sm text-amber-800">지도의 중앙에 분석을 원하는 장소를 두세요.</p>
             <p className="text-sm text-amber-800">
-              꿀벌이 활동하기 좋은 <span className="text-red-400 font-semibold">최적의 반경 600~800m</span>에 대해서 선택하신 중심을 기준으로 분석합니다.
+              꿀벌이 활동하기 좋은 <span className="text-red-400 font-semibold">최적의 반경 500~800m</span>에 대해서 선택하신 중심을 기준으로 분석합니다.
             </p>
             <p className="text-sm text-amber-800">선택한 지역에 대해, 부정적인 요소와 긍정적인 요소를 판단하고 등급을 산정합니다.</p>
             <p className="text-sm text-amber-800">각 요소에 대한 비율을 확인 할 수 있고, 그에 따른 안내도 드릴 수 있어요.</p>
@@ -559,6 +596,20 @@ function MapPredict() {
             <Button onClick={() => setShowResultPopup(true)} disabled={!resultImageSrc || showResultPopup} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800">
               결과 보기
             </Button>
+
+            {/* 임시 진입로 - 실제 서비스에서는 제거
+            <Button
+              onClick={() => {
+                const recommendation = calculateRecommendation(dummyRatios);
+                setRecommendationText(recommendation);
+                setPixelRatios(dummyRatios);
+                setResultImageSrc(dummyImage);
+                setShowResultPopup(true);
+              }}
+              className="w-full bg-green-500 hover:bg-green-600 text-white mt-2"
+            >
+              임시 진입
+            </Button> */}
           </div>
         </div>
 
