@@ -236,9 +236,9 @@ graph TD
 
 <br>
 
-1. [주요 기능](#주요-기능-key-features)
-2. [기술 스택](#기술-스택-tech-stack)
-3. [아키텍처](#아키텍처-architecture)
-4. [시작하기](#시작하기-getting-started)
-5. [배포](#배포-deployment)
-6. [팀원 소개](#팀원-소개-team)
+1. [주요 기능](#-주요-기능-key-features)
+2. [기술 스택](#-기술-스택-tech-stack)
+3. [아키텍처](#-아키텍처-architecture)
+4. [시작하기](#-시작하기-getting-started)
+5. [배포](#-배포-deployment)
+6. [팀원 소개](#-팀원-소개-team)
