@@ -236,7 +236,68 @@ graph TD
 | :---: | :---: | :---: | :---: | :---: | :---: |
 | **이름** | 이재승 | 김보라 | 이태현 | 전임록 | 최미소 |
 | **프로필** | <img src="https://github.com/fndl5759.png" width="150"> | <img src="https://github.com/cucumberbatc.png" width="150"> | <img src="https://github.com/thlee17.png" width="150"> | <img src="https://github.com/dlafhr789.png" width="150"> | <img src="https://github.com/Mnemosyne1234.png" width="150"> |
-| **역할** | 개화시기 예측 (예측 모델)<br>양봉입지 분석 (이미지 분석) | 질병/해충 탐지 (에이전트)<br> | 질병/해충 탐지 (이상 탐지)<br>배포 (CICD) | 계정 (JWT&Spring Boot)<br>프론트엔드 (React)<br>배포 (Azure & Kubernetes) | 챗봇 (LLM & Agent & RAG)<br>커뮤니티 (?)<br>클라우드 (?) |
+| **역할** | 개화시기 예측 (예측 모델)<br>양봉입지 분석 (이미지 분석) | 질병/해충 탐지 (에이전트)<br> | 질병/해충 탐지 (이상 탐지)<br>배포 (CICD) | 계정 (JWT&Spring Boot)<br>프론트엔드 (React)<br>배포 (Azure & Kubernetes) | 챗봇 (LLM & Agent & RAG)<br>커뮤니티 페이지 설계<br>클라우드 관리- **Infra (`/infra`):** Kafka 등 인프라 실행 환경 구성
+
+<br>
+
+## 🚀 시작하기 (Getting Started)
+
+### Prerequisites
+- Java 11+
+- Node.js 18+
+- Docker & Docker Compose
+- Python 3.9+
+
+### Installation & Execution
+1.  **저장소 복제**
+    ```shell
+    git clone [Your Repository URL]
+    cd forbee
+    ```
+2.  **환경 변수 설정**
+    - 각 서비스 디렉토리의 `.env.example` 또는 `application.yml` 파일을 참고하여 DB, JWT, Azure, OpenAI API Key 등의 환경 변수를 설정합니다.
+3.  **Docker Compose로 전체 서비스 실행**
+    ```shell
+    이건 하나하나 다 작성해야함. 너무귀찮아 너무귀찮아 너무귀찮아.
+    ```
+
+<br>
+
+## 🚀 배포 (Deployment)
+
+본 프로젝트는 Azure 클라우드 환경에 Kubernetes를 기반으로 배포되었습니다. 모든 배포 과정은 Azure Pipelines를 통해 CI/CD 파이프라인으로 자동화되어 있습니다.
+
+### 1. 핵심 전략
+- **Containerization**: 모든 마이크로서비스는 Docker 컨테이너 이미지로 빌드되어 일관된 실행 환경을 보장합니다.
+- **Orchestration**: Kubernetes를 사용하여 컨테이너화된 애플리케이션을 안정적으로 배포하고 확장, 관리합니다. 각 서비스의 배포 및 네트워크 설정은 `/kubernetes` 디렉토리 내의 `deployment.yaml`, `service.yaml` 파일에 정의되어 있습니다.
+
+### 2. CI/CD 파이프라인 (Azure Pipelines)
+- **Source & Trigger**: `release` 브랜치에 코드가 Push되면 자동으로 파이프라인이 실행됩니다.
+- **Build & Test**: 각 서비스(Spring Boot, Next.js, Python)의 소스 코드를 빌드하고 테스트를 수행합니다.
+- **Dockerize & Push**: 빌드가 완료된 애플리케이션을 Docker 이미지로 만들어 Azure Container Registry(ACR)에 Push합니다.
+- **Deploy to AKS**: ACR에 Push된 최신 버전의 이미지를 Azure Kubernetes Service(AKS) 클러스터에 배포하여 서비스를 업데이트합니다.
+
+### 3. 실행 환경
+- **Cloud Platform**: Microsoft Azure
+- **Container Orchestrator**: Azure Kubernetes Service (AKS)
+- **Container Registry**: Azure Container Registry (ACR)
+- **Database**: Azure Database for MySQL
+- **Storage**: Azure Blob Storage
+
+### 4. 도메인 등록
+- Azure Kubernetes Service에 배포된 Ingress Controller의 외부 IP 주소를 확인합니다.
+- 구매한 `forbee.me` 도메인의 DNS 설정에서, 해당 외부 IP 주소를 A 레코드로 추가하여 도메인과 서비스를 연결했었습니다.
+- 현제는 **비용 이슈**로 인하여 서버를 닫아 놓은 상태입니다. ~~Azure VM 너무비싸~~
+
+<br>
+
+## 👨‍💻 팀원 소개 (Team)
+
+| | 👑 팀장 👑 | 팀원 1 | 팀원 2 | 팀원 3 | 팀원 4 |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **이름** | 이재승 | 김보라 | 이태현 | 전임록 | 최미소 |
+| **프로필** | <img src="https://github.com/fndl5759.png" width="150"> | <img src="https://github.com/cucumberbatc.png" width="150"> | <img src="https://github.com/thlee17.png" width="150"> | <img src="https://github.com/dlafhr789.png" width="150"> | <img src="https://github.com/Mnemosyne1234.png" width="150"> |
+| **역할** | 개화시기 예측 (예측 모델)<br>양봉입지 분석 (이미지 분석) | 질병/해충 탐지 (에이전트)<br> | 질병/해충 탐지 (이상 탐지)<br>배포 (CICD) | 계정 (JWT&Spring Boot)<br>프론트엔드 (React)<br>배포 (Azure & Kubernetes) | 챗봇 (LLM & Agent & RAG)<br>커뮤니티 페이지 설계<br>클라우드 인프라 프로비저닝 및 권한 관리(IAM/RBAC) |
 | **GitHub**| [@fndl5759](https://www.github.com/fndl5759) | [@cucumberbatc](https://www.github.com/cucumberbatc) | [@thlee17](https://www.github.com/thlee17) | [@dlafhr789](https://www.github.com/dlafhr789) | [@Mnemosyne1234](https://www.github.com/Mnemosyne1234) |
 
 <br>
