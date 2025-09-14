@@ -297,7 +297,7 @@ graph TD
 | :---: | :---: | :---: | :---: | :---: | :---: |
 | **이름** | 이재승 | 김보라 | 이태현 | 전임록 | 최미소 |
 | **프로필** | <img src="https://github.com/fndl5759.png" width="150"> | <img src="https://github.com/cucumberbatc.png" width="150"> | <img src="https://github.com/thlee17.png" width="150"> | <img src="https://github.com/dlafhr789.png" width="150"> | <img src="https://github.com/Mnemosyne1234.png" width="150"> |
-| **역할** | 개화시기 예측 (예측 모델)<br>양봉입지 분석 (이미지 분석) | 질병/해충 탐지 (에이전트)<br> | 질병/해충 탐지 (이상 탐지)<br>배포 (CICD) | 계정 (JWT&Spring Boot)<br>프론트엔드 (React)<br>배포 (Azure & Kubernetes) | 챗봇 (LLM & Agent & RAG)<br>커뮤니티 페이지 설계<br>클라우드 인프라 프로비저닝 및 권한 관리(IAM/RBAC) |
+| **역할** | 개화시기 예측 (예측 모델)<br>양봉입지 분석 (이미지 분석) | 질병/해충 탐지 (에이전트)<br> | 질병/해충 탐지 (이상 탐지)<br>배포 (CICD) | 계정 (JWT&Spring Boot)<br>프론트엔드 (React)<br>배포 (Azure & Kubernetes) | 챗봇 (LLM & Agent & RAG)<br>커뮤니티 페이지 설계<br>클라우드 인프라 프로비저닝 및 IAM/RBAC 권한 관리(DevOps/플랫폼 엔지니어링) |
 | **GitHub**| [@fndl5759](https://www.github.com/fndl5759) | [@cucumberbatc](https://www.github.com/cucumberbatc) | [@thlee17](https://www.github.com/thlee17) | [@dlafhr789](https://www.github.com/dlafhr789) | [@Mnemosyne1234](https://www.github.com/Mnemosyne1234) |
 
 <br>
